@@ -12,6 +12,7 @@ from app.models.crawl_job import CrawlJob
 from app.models.keyword_hit import KeywordHit
 from app.models.monitored_keyword import MonitoredKeyword
 from app.models.source import Source
+from app.scrapers.default import DefaultScraper
 from app.services.es import elastic_service
 from app.services.keyword_detector import detect_keywords, normalize_keyword
 from app.services.notifications import notification_hub
