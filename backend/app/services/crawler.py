@@ -12,16 +12,16 @@ from app.models.crawl_job import CrawlJob
 from app.models.keyword_hit import KeywordHit
 from app.models.monitored_keyword import MonitoredKeyword
 from app.models.source import Source
-from app.scrapers.ria import RIAScraper
-from app.scrapers.timessscraper import DefaultScraper, TimesScraper
 from app.services.es import elastic_service
 from app.services.keyword_detector import detect_keywords, normalize_keyword
 from app.services.notifications import notification_hub
 
-CRAWLERS = {
-    "news1": TimesScraper,
-    "news2": RIAScraper,
-}
+
+# TODO: implement source-specific scrapers and map them using the crawler_key field in the Source model. For now, we will use a default scraper for all sources.
+# CRAWLERS = {
+#     "news1": TimesScraper,
+#     "news2": RIAScraper,
+# }
 
 
 class CrawlService:
@@ -187,6 +187,7 @@ class CrawlService:
             raise
 
     def _get_crawler_class(self):
+        #TODO: implement source-specific scrapers and map them using the crawler_key field in the Source model. For now, we will use a default scraper for all sources.
         # crawler_cls = CRAWLERS.get(crawler_key)
         # if not crawler_cls:
         #     raise ValueError(f"Unsupported crawler key: {crawler_key}")
