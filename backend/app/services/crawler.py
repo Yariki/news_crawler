@@ -13,7 +13,7 @@ from app.models.keyword_hit import KeywordHit
 from app.models.monitored_keyword import MonitoredKeyword
 from app.models.source import Source
 from app.scrapers.ria import RIAScraper
-from app.scrapers.timessscraper import TimesScraper
+from app.scrapers.timessscraper import DefaultScraper, TimesScraper
 from app.services.es import elastic_service
 from app.services.keyword_detector import detect_keywords, normalize_keyword
 from app.services.notifications import notification_hub
@@ -116,7 +116,7 @@ class CrawlService:
                 if existing:
                     continue
 
-                scraped = await asyncio.to_thread(scraper.scrape_article, url)
+                scraped = await asyncio.to_thread(scraper.fetch_article, url)
                 matched_keywords = detect_keywords(scraped.content_text, active_keywords)
                 article = Article(
                     source_id=source.id,
@@ -186,12 +186,12 @@ class CrawlService:
             await self.db.refresh(job)
             raise
 
-    def _get_crawler_class(self, crawler_key: str):
-        crawler_cls = CRAWLERS.get(crawler_key)
-        if not crawler_cls:
-            raise ValueError(f"Unsupported crawler key: {crawler_key}")
-        return crawler_cls
+    def _get_crawler_class(self):
+        # crawler_cls = CRAWLERS.get(crawler_key)
+        # if not crawler_cls:
+        #     raise ValueError(f"Unsupported crawler key: {crawler_key}")
+        return DefaultScraper  # crawler_cls
 
     def _build_scraper(self, source: Source):
-        crawler_cls = self._get_crawler_class(source.crawler_key)
+        crawler_cls = self._get_crawler_class()
         return crawler_cls(source.base_url)
