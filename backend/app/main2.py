@@ -8,7 +8,8 @@ if __package__ in {None, ""}:
 
 from app.scrapers.default import DefaultScraper
 
-BASE_URL = "https://russian.rt.com/"
+BASE_URL =  "https://ria.ru/"
+# "https://russian.rt.com/"
 # "https://ria.ru/"
 # "https://ru.themoscowtimes.com/news"
 
@@ -19,9 +20,9 @@ async def main():
     urs = await scraper.discover_article_urls()
 
     for u in urs:
-        print(u)
         article =  await scraper.fetch_article(u)
-        print(article.title)
+        print(f"{article.external_id} {article.title}")
+        print("-" * 100)
 
 
 asyncio.run(main())

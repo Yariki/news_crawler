@@ -157,5 +157,5 @@ class BaseScraper(ABC):
         return list(dict.fromkeys(tags))[:10]
 
     def _extract_external_id(self, url: str) -> str:
-        match = re.search(r"-a(\d+)$", url.rstrip("/"))
+        match = re.search(fr"(\d{4,10})", url.rstrip("/"))
         return match.group(1) if match else url.rstrip("/").split("/")[-1]

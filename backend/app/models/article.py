@@ -12,7 +12,7 @@ class Article(PrimaryIdMixin):
     """Article model representing a news article fetched from a source."""
     __tablename__ = "articles"
 
-    source_id: Mapped[int] = mapped_column(ForeignKey("sources.id", ondelete="CASCADE"), nullable=False)
+    source_id: Mapped[UUID] = mapped_column(ForeignKey("sources.id", ondelete="CASCADE"), nullable=False)
     external_id: Mapped[str] = mapped_column(String(255), nullable=False)
     url: Mapped[str] = mapped_column(String(1000), nullable=False, unique=True)
     title: Mapped[str] = mapped_column(String(1000), nullable=False)

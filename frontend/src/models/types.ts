@@ -1,25 +1,45 @@
 
+export enum SourseType {
+  Unknown = 0,
+  NewsSite = 1,
+  Blog = 2,
+  Forum = 3,
+  SocialMedia = 4,
+  TelegramChannel = 5,
+  WhatsappChannel = 6,
+  Other = 7
+}
+
+export enum  Status {
+  Running = 1,
+  Completed = 2,
+  Failed = 3,
+  Waiting = 4,
+  Cancelled = 5,
+}
+
 export interface SourceItem {
-  id: number
+  id: string
   name: string
   base_url: string
   language: string
-  source_type: string
+  source_type: SourseType
   crawler_key: string
   is_enabled: boolean
   scrape_interval_minutes: number
 }
 
-export interface KeywordItem {
-  id: number
+// Monitored keywords
+export interface KeywordItem { 
+  id: string
   keyword: string
   is_enabled: boolean
 }
 
 export interface JobItem {
-  id: number
-  source_id: number
-  status: string
+  id: string
+  source_id: string
+  status: Status
   started_at: string
   finished_at: string | null
   articles_found: number
@@ -28,7 +48,7 @@ export interface JobItem {
 }
 
 export interface SearchHit {
-  article_id: number
+  article_id: string
   title: string
   url: string
   published_at: string | null
@@ -58,15 +78,15 @@ export interface CreateSourcePayload {
   name: string
   base_url: string
   language: string
-  source_type: string
+  source_type: SourseType
   crawler_key: string
   scrape_interval_minutes: number
   is_enabled: boolean
 }
 
 export interface ArticleItem {
-  id: number
-  source_id: number
+  id: string
+  source_id: string
   url: string
   title: string
   author: string | null
