@@ -118,6 +118,9 @@ class CrawlService:
                     continue
 
                 scraped = await asyncio.to_thread(scraper.fetch_article, url)
+                if not scraped:
+                    continue
+                
                 matched_keywords = detect_keywords(scraped.content_text, active_keywords)
                 article = Article(
                     source_id=source.id,

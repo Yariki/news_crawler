@@ -2,15 +2,15 @@ from abc import ABC
 
 import hashlib
 import re
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
 from dateutil import parser as date_parser
-from app.core.const import ARTICLE_LINK_RE, DATE_RE
-from app.scrapers.timessscraper import ScrapedArticle
+
+from app.core.const import ARTICLE_LINK_RE, LINK_RE, PATTERNS
+from app.dto.scraped_article import ScrapedArticle
 
 
 class BaseScraper(ABC):
@@ -37,17 +37,20 @@ class BaseScraper(ABC):
             if not href:
                 continue
             full_url = urljoin(self.base_url, href)
-            path = urlparse(full_url).path.rstrip("/")
-            if ARTICLE_LINK_RE.search(path) and full_url not in seen:
+            print(f"Discovered URL: {full_url}; {any(pattern.search(full_url) for pattern in PATTERNS)}")
+            if any(pattern.search(full_url) for pattern in PATTERNS) and full_url not in seen:
                 seen.add(full_url)
                 found.append(full_url)
 
         return found
 
-    async def fetch_article(self, url: str) -> ScrapedArticle:
+    async def fetch_article(self, url: str) -> ScrapedArticle | None:
         """Fetches the article URL and extracts structured data. This method should be overridden by subclasses for site-specific parsing logic."""
         response = await self.client.get(url)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError:
+            return None
 
         soup = BeautifulSoup(response.text, "lxml")
 
@@ -59,6 +62,10 @@ class BaseScraper(ABC):
         tags = self._get_tags(soup)
         external_id = self._extract_external_id(url)
         checksum = hashlib.sha256(content_text.encode("utf-8")).hexdigest()
+
+        if not title or not content_text:
+            return None
+
 
         return ScrapedArticle(
             external_id=external_id,

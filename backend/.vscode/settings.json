@@ -19,7 +19,7 @@
     "titleBar.inactiveForeground": "#e7e7e799",
     "tab.hoverBackground": "#d1d1d1",
     "tab.activeBackground": "#060e38",
-    "tab.activeForeground": "#e7e7e7",
+    "tab.activeForeground": "#e7e7e7"
   },
   "peacock.color": "#18298d",
   "tabsColor.byDirectory": {
