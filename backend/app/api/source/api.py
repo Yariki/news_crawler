@@ -4,9 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.source.services.source_service import SourceService
 from app.db.session import get_db
 from app.schemas.source import SourceCreate
+from app.services.crawler import CrawlService
 
 router = APIRouter(
-    prefix="source"
+    prefix="/sources"
 )
 
 @router.get("")
@@ -27,6 +28,11 @@ async def create_source(data: SourceCreate,
                         db: AsyncSession = Depends(get_db)):
     result = SourceService(db).create_source(data)
     return result
+
+@router.put("/{source_id}/run")
+async def run_source(source_id: UUID4,
+                     db: AsyncSession = Depends(get_db)):
+    return CrawlService(db).run_source(source_id)
 
 
 

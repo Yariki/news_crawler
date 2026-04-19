@@ -22,7 +22,14 @@ async def lifespan(_: FastAPI):
         scheduler.shutdown(wait=False)
 
 
-app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app = FastAPI(
+    title=settings.app_name,
+    lifespan=lifespan,
+    docs_url="/docs" if settings.app_mode != "prod" else None,
+    redoc_url="/redoc" if settings.app_mode != "prod" else None,
+    openapi_url="/openapi.json" if settings.app_mode != "prod" else None,
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
