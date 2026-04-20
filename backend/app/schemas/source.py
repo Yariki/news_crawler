@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, HttpUrl
 
 
-class SourceCreate(BaseModel):
+class SourceCreateUpdate(BaseModel):
     name: str
     base_url: HttpUrl
     language: str

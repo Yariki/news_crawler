@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.exceptions import HTTPException
 
 from app.models.source import Source
-from app.schemas.source import SourceCreate
+from app.schemas.source import SourceCreateUpdate
 
 
 
@@ -21,10 +21,11 @@ class SourceService:
         result = await self.db.scalars(query)
         return list(result.all())
 
-    async def create_source(self, payload: SourceCreate) -> Source:
+    async def create_source(self, payload: SourceCreateUpdate) -> Source:
+        base_url = str(payload.base_url).rstrip("/")
         source = Source(
             name=payload.name,
-            base_url=str(payload.base_url),
+            base_url=base_url,
             language=payload.language,
             source_type=payload.source_type,
             crawler_key=payload.crawler_key,
