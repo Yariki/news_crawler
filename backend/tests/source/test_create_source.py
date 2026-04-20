@@ -3,7 +3,12 @@ from tests.source.source_test_helper import create_source_payload
 
 async def test_create_source(client):
 
-    payload = create_source_payload()
+    payload = create_source_payload(
+        name="Test Source",
+        crawler_key="test_crawler_key",
+        scrape_interval_minutes=1,
+        is_enabled=True,
+    )
 
     response = await client.post("/sources", json=payload)
 

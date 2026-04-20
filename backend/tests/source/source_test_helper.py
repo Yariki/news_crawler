@@ -1,10 +1,13 @@
-def create_source_payload():
+from app.dto import scraped_article
+
+
+def create_source_payload(name, crawler_key, scrape_interval_minutes, is_enabled):
     return {
-        "name": "Test Source",
+        "name": name,
         "base_url": "https://example.com",
         "language": "en",
         "source_type": 1,
-        "crawler_key": "test_crawler",
-        "scrape_interval_minutes": 1440,
-        "is_enabled": True,
+        "crawler_key": crawler_key,
+        "scrape_interval_minutes": scrape_interval_minutes,
+        "is_enabled": is_enabled,
     }
