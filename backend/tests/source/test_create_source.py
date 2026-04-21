@@ -12,7 +12,7 @@ async def test_create_source(client):
 
     response = await client.post("/sources", json=payload)
 
-    assert response.status_code == 200
+    assert response.status_code == 201
     data = response.json()
     assert data["name"] == payload["name"]
     assert data["base_url"] == payload["base_url"]

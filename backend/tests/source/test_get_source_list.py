@@ -1,7 +1,7 @@
 from tests.source.source_test_helper import create_source_payload
 
 
-async def test_create_source(client):
+async def test_get_source_list(client):
 
     source1 = create_source_payload(
         name="source1",
@@ -10,7 +10,7 @@ async def test_create_source(client):
         is_enabled=True,
     )
     response = await client.post("/sources", json=source1)
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     source2 = create_source_payload(
         name="source1",
@@ -19,7 +19,7 @@ async def test_create_source(client):
         is_enabled=True,
     )
     response = await client.post("/sources", json=source2)
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     response = await client.get("/sources")
 

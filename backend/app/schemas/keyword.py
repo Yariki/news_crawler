@@ -13,3 +13,7 @@ class MonitoredKeywordRead(BaseModel):
 
 class MonitoredKeywordCreate(BaseModel):
     keyword: str = Field(min_length=1, max_length=128)
+
+class MonitoredKeywordUpdate(BaseModel): 
+    is_enabled: bool
+    keyword: str = Field(min_length=1, max_length=128) 
