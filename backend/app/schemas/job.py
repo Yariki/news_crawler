@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import UUID4, BaseModel
 
 
 class CrawlJobRead(BaseModel):
-    id: str
-    source_id: str
+    id: UUID4
+    source_id: UUID4
     status: str
     started_at: datetime
     finished_at: datetime | None

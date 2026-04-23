@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import UUID4, BaseModel, Field
 
 
 class MonitoredKeywordRead(BaseModel):
-    id: str
+    id: UUID4
     keyword: str
     is_enabled: bool
 

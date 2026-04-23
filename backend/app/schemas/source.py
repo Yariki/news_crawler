@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, UUID4
 
 
 class SourceCreateUpdate(BaseModel):
@@ -14,7 +14,7 @@ class SourceCreateUpdate(BaseModel):
 
 
 class SourceRead(BaseModel):
-    id: str
+    id: UUID4
     name: str
     base_url: str
     language: str

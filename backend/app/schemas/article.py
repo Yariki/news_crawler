@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import UUID4, BaseModel
 
 
 class ArticleRead(BaseModel):
-    id: str
+    id: UUID4
     source_id: str
     url: str
     title: str
@@ -23,7 +23,7 @@ class ArticleRead(BaseModel):
 
 
 class SearchHit(BaseModel):
-    article_id: str
+    article_id: UUID4
     title: str
     url: str
     published_at: str | None

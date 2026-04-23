@@ -23,15 +23,15 @@
   },
   "peacock.color": "#18298d",
   "tabsColor.byDirectory": {
-    "news_crawler/backend/app/scrapers": {
+    "/app/scrapers": {
       "backgroundColor": "#b2fc68",
       "fontColor": "black"
     },
-    "news_crawler/backend/app/services": {
+    "/app/services": {
       "backgroundColor": "#fcd568",
       "fontColor": "black"
     },
-    "news_crawler/backend/app/api": {
+    "/app/api": {
       "backgroundColor": "#6899fc",
       "fontColor": "black"
     },
