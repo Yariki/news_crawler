@@ -15,27 +15,22 @@ from app.services.notifications import notification_hub
 
 from app.api.keywords.api import router as keywords_router
 from app.api.source.api import router as source_router
+from app.api.dashboard.api import router as dashboard_router
 
 router = APIRouter(prefix="/api")
 
 router.include_router(keywords_router)
 router.include_router(source_router)
+router.include_router(dashboard_router)
 
 @router.get("/health")
 async def health() -> dict:
     return {"status": "ok"}
 
-@router.get("/crawler-types")
-async def get_crawler_types():
-    return CrawlService.CRAWLER_TYPES
-
-@router.get("/jobs", response_model=list[CrawlJobRead])
-async def get_jobs(db: AsyncSession = Depends(get_db)):
-    return await CrawlService(db).list_jobs()
-
-@router.get("/dashboard", response_model=DashboardStats)
-async def get_dashboard(db: AsyncSession = Depends(get_db)):
-    return await CrawlService(db).dashboard_stats()
+# TODO: check if we need it or move to admin panel
+# @router.get("/crawler-types")
+# async def get_crawler_types():
+#     return CrawlService.CRAWLER_TYPES
 
 @router.get("/articles/recent", response_model=list[ArticleRead])
 async def get_recent_articles(limit: int = 20, db: AsyncSession = Depends(get_db)):

@@ -48,10 +48,10 @@ export const useAppStore = defineStore('app', {
       this.loading = true
       try {
         const [stats, sources, keywords, jobs, crawlerTypes] = await Promise.all([
-          api.get('/dashboard'),
+          api.get('/dashboard/stats'),
           api.get('/sources'),
           api.get('/keywords'),
-          api.get('/jobs'),
+          api.get('/dashboard/jobs'),
           api.get('/crawler-types'),
         ])
         this.stats = stats.data

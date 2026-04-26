@@ -7,7 +7,7 @@ from app.db.session import get_db
 from app.schemas.source import SourceCreateUpdate
 from app.services.crawler import CrawlService
 
-router = APIRouter(prefix="/sources")
+router = APIRouter(prefix="/sources", tags=["sources"])
 
 
 @router.get("")

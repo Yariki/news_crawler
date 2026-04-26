@@ -10,6 +10,7 @@ from app.schemas.keyword import MonitoredKeywordCreate, MonitoredKeywordRead, Mo
 
 router = APIRouter(
     prefix="/keywords",
+    tags=["keywords"],
 )
 
 
