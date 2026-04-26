@@ -10,7 +10,7 @@
               <v-text-field v-model="store.sourceForm.name" label="Display name" class="mb-2" />
               <v-text-field v-model="store.sourceForm.base_url" label="Base URL" class="mb-2" />
               <v-text-field v-model="store.sourceForm.language" label="Language" class="mb-2" />
-              <v-select v-model="store.sourceForm.source_type" :items="sourceTypes" label="Source type" class="mb-2" />
+              <v-select v-model="store.sourceForm.source_type" :items="SourceTypes" item-value="value" item-title="label" label="Source type" class="mb-2" />
               <v-select
                 v-model="store.sourceForm.crawler_key"
                 :items="store.crawlerTypes"
@@ -45,10 +45,10 @@
 
 <script setup lang="ts">
 import { useAppStore } from '../stores/app'
+import { SourceTypes } from '../models/types';
 
 const store = useAppStore()
 
-const sourceTypes = ['news_site', 'facebook_page', 'telegram_channel']
 const sourceHeaders = [
   { title: 'Name', key: 'name' },
   { title: 'URL', key: 'base_url' },

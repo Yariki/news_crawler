@@ -20,10 +20,10 @@ export const useDashboardStore = defineStore('dashboard', {
       this.loading = true
       try {
         const [stats, sources, keywords, jobs, recentArticles] = await Promise.all([
-          api.get('/dashboard'),
+          api.get('/dashboard/stats'),
           api.get('/sources'),
           api.get('/keywords'),
-          api.get('/jobs'),
+          api.get('/dashboard/jobs'),
           api.get('/articles/recent?limit=20'),
         ])
         this.stats = stats.data
@@ -45,7 +45,7 @@ export const useDashboardStore = defineStore('dashboard', {
       this.newKeyword = ''
       await this.loadAll()
     },
-    async deleteKeyword(keywordId: number) {
+    async deleteKeyword(keywordId: string) {
       await api.delete(`/keywords/${keywordId}`)
       await this.loadAll()
     },

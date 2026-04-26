@@ -1,4 +1,22 @@
 
+export const SourceTypes = [
+  { value: 1, label: 'News Site' },
+  { value: 2, label: 'Blog' },
+  { value: 3, label: 'Forum' },
+  { value: 4, label: 'Social Media' },
+  { value: 5, label: 'Telegram Channel' },
+  { value: 6, label: 'Whatsapp Channel' },
+  { value: 7, label: 'Other' },
+];
+
+export const Statuses = [
+  { value: 1, label: 'Running' },
+  { value: 2, label: 'Completed' },
+  { value: 3, label: 'Failed' },
+  { value: 4, label: 'Waiting' },
+  { value: 5, label: 'Cancelled' },
+];
+
 export enum SourseType {
   Unknown = 0,
   NewsSite = 1,

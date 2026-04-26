@@ -28,7 +28,7 @@ export const useAppStore = defineStore('app', {
       name: '',
       base_url: '',
       language: 'ru',
-      source_type: 'news_site',
+      source_type: 1,
       crawler_key: 'themoscowtimes_ru',
       scrape_interval_minutes: 1440,
       is_enabled: true,
@@ -74,7 +74,7 @@ export const useAppStore = defineStore('app', {
       this.newKeyword = ''
       await this.refreshAll()
     },
-    async deleteKeyword(keywordId: number) {
+    async deleteKeyword(keywordId: string) {
       await api.delete(`/keywords/${keywordId}`)
       await this.refreshAll()
     },
@@ -92,7 +92,7 @@ export const useAppStore = defineStore('app', {
         name: '',
         base_url: '',
         language: 'ru',
-        source_type: 'news_site',
+        source_type: 1,
         crawler_key: this.crawlerTypes[0]?.key || 'themoscowtimes_ru',
         scrape_interval_minutes: 1440,
         is_enabled: true,
