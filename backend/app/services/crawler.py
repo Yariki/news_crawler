@@ -12,6 +12,7 @@ from app.models.crawl_job import CrawlJob
 from app.models.keyword_hit import KeywordHit
 from app.models.monitored_keyword import MonitoredKeyword
 from app.models.source import Source
+from app.models.status import Status
 from app.scrapers.default import DefaultScraper
 from app.services.es import elastic_service
 from app.services.keyword_detector import detect_keywords, normalize_keyword
@@ -30,12 +31,25 @@ class CrawlService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
+
+
+    async def get_active_keywords(self) -> list[str]:
+        result = await self.db.scalars(
+            select(MonitoredKeyword.keyword)
+            .where(MonitoredKeyword.is_enabled.is_(True))
+            .order_by(MonitoredKeyword.keyword)
+        )
+        keywords = [normalize_keyword(value) for value in result.all() if value]
+        return keywords or settings.default_keywords_list
+    
+    
     async def run_source(self, source_id: int) -> CrawlJob:
+        """Runs the crawling process for a given source. This includes discovering article URLs, fetching article data, detecting keywords, and storing results in the database and search index."""
         source = await self.db.get(Source, source_id)
         if not source:
             raise ValueError(f"Source {source_id} not found")
 
-        job = CrawlJob(source_id=source.id, status="running")
+        job = CrawlJob(source_id=source.id, status=Status.RUNNING)
         self.db.add(job)
         await self.db.commit()
         await self.db.refresh(job)
@@ -112,13 +126,13 @@ class CrawlService:
                     )
 
             job.articles_created = created
-            job.status = "completed"
+            job.status = Status.COMPLETED
             job.finished_at = datetime.now(timezone.utc)
             await self.db.commit()
             await self.db.refresh(job)
             return job
         except Exception as exc:
-            job.status = "failed"
+            job.status = Status.FAILED
             job.finished_at = datetime.now(timezone.utc)
             job.error_message = str(exc)
             await self.db.commit()

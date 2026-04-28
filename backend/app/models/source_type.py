@@ -11,3 +11,4 @@ class SourceType(IntEnum):
     TELEGRAM_CHANNEL = 5
     WHATSAPP_CHANNEL = 6
     OTHER = 7
+    RSS = 8
