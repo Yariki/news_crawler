@@ -1,6 +1,7 @@
+from dataclasses import dataclass
 from datetime import datetime
 
-
+@dataclass
 class RssFeed:
     """
     Data Transfer Object (DTO) representing an RSS feed item.
@@ -14,4 +15,4 @@ class RssFeed:
     content_text: str | None
     summary: str | None
     tags: list[str] | None
-    checksum: str
+    checksum: str | None
