@@ -22,7 +22,8 @@ class BaseCrawler(ABC):
             .where(MonitoredKeyword.is_enabled.is_(True))
             .order_by(MonitoredKeyword.keyword)
         )
-        keywords = [normalize_keyword(value) for value in result.all() if value]
+        keywords = [normalize_keyword(value)
+                    for value in result.all() if value]
         return keywords or settings.default_keywords_list
 
     async def _index_article(self, article: Article, source: Source, matched_words: list[str]):
