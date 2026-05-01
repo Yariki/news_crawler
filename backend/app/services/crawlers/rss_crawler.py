@@ -1,8 +1,14 @@
 import asyncio
+import logging
 from datetime import datetime, timezone
 
-import select
+import httpx
+from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
+
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 from app.models import CrawlJob, Source, Article, KeywordHit
 from app.models.status import Status
@@ -14,13 +20,13 @@ from app.services.notifications import notification_hub
 
 
 class RssCrawlService(BaseCrawler):
-
+    """Service class responsible for crawling RSS feed sources. It implements the crawl method defined in the BaseCrawler abstract class, which includes discovering article URLs from the RSS feed, fetching article data, detecting keywords, and storing results in the database and search index."""
 
     def __init__(self, db: AsyncSession):
         super().__init__(db)
 
     async def crawl(self, source_id: str) -> CrawlJob |  None:
-        """"""
+        """ Runs the crawling process for a given RSS source. This includes discovering article URLs, fetching article data, detecting keywords, and storing results in the database and search index."""
         source = await self.db.get(Source, source_id)
         if not source:
             raise ValueError("Source not found")
@@ -32,7 +38,7 @@ class RssCrawlService(BaseCrawler):
 
         try:
             scraper = RssScraper(source.url)
-            urls = await asyncio.to_thread(scraper.discover_rss_urls)
+            urls = await scraper.discover_rss_urls()
             job.articles_found = len(urls)
             active_keywords = await self._get_keywords()
             created = 0
@@ -42,7 +48,7 @@ class RssCrawlService(BaseCrawler):
                 if exists:
                     continue
 
-                article_data = await asyncio.to_thread(scraper.fetch_article, url)
+                article_data = await scraper.fetch_article(url)
                 if not article_data:
                     continue
 
@@ -79,18 +85,28 @@ class RssCrawlService(BaseCrawler):
                 if matched_words:
                     await self._send_notification(article, matched_words)
 
-                job.articles_created = created
-                job.status = Status.COMPLETED
-                job.finished_at = datetime.now(timezone.utc)
-                await self.db.commit()
-                await self.db.refresh(job)
+            job.articles_created = created
+            job.status = Status.COMPLETED
 
-                return job
-
+        except httpx.HTTPStatusError as ex:
+            job.status = Status.FAILED
+            job.error_message = f"HTTP error {ex.response.status_code}: {ex.request.url}"
+            logger.error("HTTP error crawling source %s: %s", source_id, ex)
+        except httpx.RequestError as ex:
+            job.status = Status.FAILED
+            job.error_message = f"Network error: {ex}"
+            logger.error("Network error crawling source %s: %s", source_id, ex)
+        except SQLAlchemyError as ex:
+            job.status = Status.FAILED
+            job.error_message = f"Database error: {ex}"
+            logger.error("Database error crawling source %s: %s", source_id, ex)
         except Exception as ex:
             job.status = Status.FAILED
-            job.error_message = str(ex)
+            job.error_message = f"Unexpected error: {ex}"
+            logger.exception("Unexpected error crawling source %s", source_id)
         finally:
-            job.finished_at = datetime.now()
+            job.finished_at = datetime.now(timezone.utc)
             await self.db.commit()
             await self.db.refresh(job)
+
+        return job

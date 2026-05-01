@@ -1,10 +1,7 @@
-from abc import ABC, abstractclassmethod
-
+from abc import ABC, abstractmethod
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.config import settings
-from app.dto.scraped_article import ScrapedArticle
 from app.models import MonitoredKeyword, CrawlJob, Source, Article
 from app.services.keyword_detector import normalize_keyword
 
@@ -14,8 +11,7 @@ class BaseCrawler(ABC):
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    @classmethod
-    @abstractclassmethod
+    @abstractmethod
     async def crawl(self, source_id: str) -> CrawlJob | None:
         """Abstract method to be implemented by specific crawler types. This method should contain the logic for crawling a source, including discovering article URLs, fetching article data, detecting keywords, and storing results in the database and search index."""
         pass
@@ -28,7 +24,6 @@ class BaseCrawler(ABC):
         )
         keywords = [normalize_keyword(value) for value in result.all() if value]
         return keywords or settings.default_keywords_list
-
 
     async def _index_article(self, article: Article, source: Source, matched_words: list[str]):
         from app.services.es import elastic_service

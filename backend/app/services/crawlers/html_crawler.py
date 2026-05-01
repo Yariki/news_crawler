@@ -2,6 +2,12 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timezone
+import logging
+
+import httpx
+from sqlalchemy.exc import SQLAlchemyError 
+
+logger = logging.getLogger(__name__)
 
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,7 +43,7 @@ class HtmlCrawlService (BaseCrawler):
 
         try:
             scraper = self._build_scraper(source)
-            urls = await asyncio.to_thread(scraper.discover_article_urls)
+            urls = await scraper.discover_article_urls()
             job.articles_found = len(urls)
             active_keywords = await self._get_keywords()
             created = 0
@@ -47,7 +53,7 @@ class HtmlCrawlService (BaseCrawler):
                 if existing:
                     continue
 
-                scraped = await asyncio.to_thread(scraper.fetch_article, url)
+                scraped = await scraper.fetch_article(url)
                 if not scraped:
                     continue
                 
@@ -86,16 +92,28 @@ class HtmlCrawlService (BaseCrawler):
             job.articles_created = created
             job.status = Status.COMPLETED
             job.finished_at = datetime.now(timezone.utc)
-            await self.db.commit()
-            await self.db.refresh(job)
-            return job
-        except Exception as exc:
+        except SQLAlchemyError as db_exc:
+            logger.error(f"Database error during crawl job for source {source_id}: {db_exc}")
             job.status = Status.FAILED
-            job.finished_at = datetime.now(timezone.utc)
+            job.error_message = "Database error occurred during crawling."            
+        except httpx.HTTPStatusError as http_exc:
+            logger.error(f"HTTP error during crawl job for source {source_id}: {http_exc}")
+            job.status = Status.FAILED
+            job.error_message = f"HTTP error {http_exc.response.status_code} while crawling."
+        except httpx.RequestError as req_exc:
+            logger.error(f"Network error during crawl job for source {source_id}: {req_exc}")
+            job.status = Status.FAILED
+            job.error_message = "Network error occurred during crawling."
+        except Exception as exc:
+            logger.error(f"Unexpected error during crawl job for source {source_id}: {exc}")
+            job.status = Status.FAILED
             job.error_message = str(exc)
+        finally:
+            job.finished_at = datetime.now(timezone.utc)
             await self.db.commit()
             await self.db.refresh(job)
-            raise
+            
+        return job
 
     def _get_crawler_class(self):
         #TODO: implement source-specific scrapers and map them using the crawler_key field in the Source model. For now, we will use a default scraper for all sources.
