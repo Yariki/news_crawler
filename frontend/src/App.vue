@@ -1,14 +1,14 @@
 <template>
-  <v-app>
-    <router-view />
-  </v-app>
+    <v-app>
+        <router-view/>
+    </v-app>
 </template>
 
 <style>
 html,
 body,
 #app {
-  height: 100%;
-  margin: 0;
+    height: 100%;
+    margin: 0;
 }
 </style>
