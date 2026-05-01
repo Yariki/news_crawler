@@ -9,7 +9,6 @@ from app.models.article import Article
 from app.schemas.article import ArticleRead, SearchHit
 from app.schemas.dashboard import DashboardStats
 from app.schemas.job import CrawlJobRead
-from app.services.crawler import CrawlService
 from app.services.es import elastic_service
 from app.services.notifications import notification_hub
 

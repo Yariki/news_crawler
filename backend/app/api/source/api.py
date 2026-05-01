@@ -5,7 +5,7 @@ from app.api.source.services.source_service import SourceService
 from app.db.base import PrimaryIdMixin
 from app.db.session import get_db
 from app.schemas.source import SourceCreateUpdate
-from app.services.crawler import CrawlService
+from app.services.crawlers.html_crawler import HtmlCrawlService
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
@@ -60,4 +60,4 @@ async def create_source(data: SourceCreateUpdate, db: AsyncSession = Depends(get
 
 @router.put("/{source_id}/run")
 async def run_source(source_id: UUID4, db: AsyncSession = Depends(get_db)):
-    return await CrawlService(db).run_source(source_id)
+    return await HtmlCrawlService(db).crawl(source_id)

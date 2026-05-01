@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 @dataclass
 class ScrapedArticle:
+    """Data Transfer Object (DTO) representing a scraped article."""
     external_id: str
     url: str
     title: str
@@ -11,7 +12,7 @@ class ScrapedArticle:
     content_html: str | None
     content_text: str
     summary: str | None
-    language: str
+    language: str | None
     tags: list[str]
     raw_payload_json: dict
     checksum: str

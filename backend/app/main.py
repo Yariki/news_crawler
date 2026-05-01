@@ -13,6 +13,7 @@ from app.services.scheduler import refresh_scheduler_jobs, scheduler
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    """Lifespan function to initialize resources before the application starts."""
     await elastic_service.ensure_index()
     await refresh_scheduler_jobs()
     scheduler.start()

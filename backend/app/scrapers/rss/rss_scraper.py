@@ -7,23 +7,11 @@ from bs4 import BeautifulSoup
 
 from app.dto.rss_feed import RssFeed
 from app.dto.scraped_article import ScrapedArticle
-
-ARTICLE_CHARACTERS_NUMBER = 40
-
+from app.utils.bot_challenge_detector import looks_like_bot_challenge
+from app.utils.html_utils import extract_rss_content_html, html_to_text, get_content
 
 class RssScraper:
     """Scraper for fetching articles from RSS feeds."""
-
-    CHALLENGE_MARKERS = (
-        "please enable js",
-        "please enable javascript",
-        "disable any ad blocker",
-        "attention required",
-        "cf-browser-verification",
-        "cloudflare",
-        "datadome",
-        "just a moment...",
-    )
 
     def __init__(self, rss_url: str):
         self.rss_url = rss_url
@@ -43,9 +31,9 @@ class RssScraper:
         feeds: list[RssFeed] = []
 
         for item in response_feeds.entries:
-            rss_html = self._extract_rss_content_html(item)
-            rss_text = self._html_to_text(rss_html) if rss_html else None
-
+            rss_html = extract_rss_content_html(item,)
+            rss_text = html_to_text(rss_html) if rss_html else None
+            
             feed = RssFeed(
                 id=item.get("id", ""),
                 url=item.get("link", ""),
@@ -71,13 +59,13 @@ class RssScraper:
         try:
             response.raise_for_status()
             soup = BeautifulSoup(response.text, "lxml")
-            content_html, content_text = self._get_content(soup)
+            content_html, content_text = get_content(soup)
 
         except httpx.HTTPStatusError:
-            if self._looks_like_bot_challenge(response.text):
+            if looks_like_bot_challenge(response.text):
                 print(f"Bot challenge detected for URL: {feed.url}")
             content_html = feed.content_html
-            content_text = feed.content_text.strip()
+            content_text = feed.content_text.strip() if feed.content_text else None
 
         if not feed.title or not content_text:
             return None
@@ -104,42 +92,3 @@ class RssScraper:
             },
             checksum=hashlib.sha256(content_text.encode("utf-8")).hexdigest(),
         )
-
-    def _extract_rss_content_html(self, item: dict) -> str | None:
-        """Extract rich HTML body from RSS/Atom entry if available."""
-        content_blocks = item.get("content") or []
-        for block in content_blocks:
-            value = block.get("value")
-            if value and len(value.strip()) > ARTICLE_CHARACTERS_NUMBER:
-                return value
-
-        summary = item.get("summary")
-        if summary and len(summary.strip()) > ARTICLE_CHARACTERS_NUMBER:
-            return summary
-
-        return None
-
-    def _html_to_text(self, html: str) -> str:
-        soup = BeautifulSoup(html, "lxml")
-        text = soup.get_text(" ", strip=True)
-        return " ".join(text.split())
-
-    def _looks_like_bot_challenge(self, html: str) -> bool:
-        text = html.lower()
-        return any(marker in text for marker in self.CHALLENGE_MARKERS)
-
-    def _get_content(self, soup: BeautifulSoup) -> tuple[str | None, str]:
-        for container_selector in ["article", "main", "body"]:
-            container = soup.select_one(container_selector)
-            if not container:
-                continue
-
-            paragraphs = [p.get_text(" ", strip=True) for p in container.select("p")]
-            paragraphs = [p for p in paragraphs if len(p) > 40]
-
-            if paragraphs:
-                html = "\n".join(str(p) for p in container.select("p"))
-                text = "\n\n".join(paragraphs)
-                return html, text
-
-        return None, soup.get_text(" ", strip=True)

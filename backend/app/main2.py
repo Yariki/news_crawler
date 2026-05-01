@@ -17,31 +17,32 @@ BASE_URL =  "https://ria.ru/"
 # "https://ria.ru/"
 # "https://ru.themoscowtimes.com/news"
 
-# async def main():
-#     """A simple test function to demonstrate the DefaultScraper."""
-#     scraper = DefaultScraper(BASE_URL)
-#
-#     urs = await scraper.discover_article_urls()
-#
-#     for u in urs:
-#         article =  await scraper.fetch_article(u)
-#         print(f"{article.external_id} {article.title}")
-#         print("-" * 100)
-#
-#
-# asyncio.run(main())
+async def main():
+    """A simple test function to demonstrate the DefaultScraper."""
+    scraper = DefaultScraper(BASE_URL)
 
-rss_url = "http://newsrss.bbc.co.uk/rss/newsonline_world_edition/front_page/rss.xml"
-rss_url2= "http://www.nytimes.com/services/xml/rss/nyt/World.xml"
+    urs = await scraper.discover_article_urls()
 
-async def main_rss_read():
-    scraper = RssScraper(rss_url2)
+    for u in urs:
+        article =  await scraper.fetch_article(u)
+        print(f"{article.external_id} {article.title}")
+        print("-" * 100)
 
-    feeds = await scraper.discover_rss_urls()
-    for feed in feeds:
-        article: ScrapedArticle = await scraper.fetch_article(feed)
-        if article:
-            print(f"{article.external_id} {article.title}")
-            print("-" * 100)
 
-asyncio.run(main_rss_read())
+asyncio.run(main())
+
+# rss_url = "http://newsrss.bbc.co.uk/rss/newsonline_world_edition/front_page/rss.xml"
+# rss_url2= "http://www.nytimes.com/services/xml/rss/nyt/World.xml"
+# rss_url3 = "http://texty.org.ua/mod/news/?view=rss"
+#
+# async def main_rss_read():
+#     scraper = RssScraper(rss_url3)
+#
+#     feeds = await scraper.discover_rss_urls()
+#     for feed in feeds:
+#         article: ScrapedArticle = await scraper.fetch_article(feed)
+#         if article:
+#             print(f"{article.external_id} {article.title}")
+#             print("-" * 100)
+#
+# asyncio.run(main_rss_read())

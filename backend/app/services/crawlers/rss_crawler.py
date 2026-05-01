@@ -7,21 +7,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import CrawlJob, Source, Article, KeywordHit
 from app.models.status import Status
 from app.scrapers.rss.rss_scraper import RssScraper
-from app.services.base_crawler import BaseCrawler
+from app.services.crawlers.base_crawler import BaseCrawler
 from app.services.es import elastic_service
 from app.services.keyword_detector import detect_keywords
 from app.services.notifications import notification_hub
 
 
-class RssCrawler(BaseCrawler):
+class RssCrawlService(BaseCrawler):
 
 
     def __init__(self, db: AsyncSession):
         super().__init__(db)
 
-    async def crawl(self, source_id: int) -> CrawlJob:
+    async def crawl(self, source_id: str) -> CrawlJob |  None:
         """"""
-        source = await self.db.execute(Source, source_id)
+        source = await self.db.get(Source, source_id)
         if not source:
             raise ValueError("Source not found")
 
@@ -34,7 +34,7 @@ class RssCrawler(BaseCrawler):
             scraper = RssScraper(source.url)
             urls = await asyncio.to_thread(scraper.discover_rss_urls)
             job.articles_found = len(urls)
-            active_keywords = await self.get_keywords()
+            active_keywords = await self._get_keywords()
             created = 0
 
             for url in urls:
@@ -50,7 +50,7 @@ class RssCrawler(BaseCrawler):
                 article = Article(
                     source_id=source_id,
                     external_id=article_data.id,
-                    url=article.url,
+                    url=url,
                     title=article_data.title,
                     author=article_data.author,
                     published_at=article_data.published_at,
@@ -73,33 +73,11 @@ class RssCrawler(BaseCrawler):
 
                 await self.db.commit()
                 await self.db.refresh(article)
-
-                await elastic_service.index_article(
-                    {
-                        "article_id": article.id,
-                        "source_id": source_id,
-                        "source_name": source.name,
-                        "title": article.title,
-                        "content_text": article.content_text,
-                        "published_at": article.published_at.isoformat() if article.published_at else None,
-                        "url": article.url,
-                        "language": article.language,
-                        "is_alert": article.is_alert,
-                        "matched_keywords": matched_words,
-                    }
-                )
-
                 created += 1
+
+                await self._index_article(article, source, matched_words)
                 if matched_words:
-                    await notification_hub.broadcast(
-                        "keywords_alert", {
-                            "article_id": article.id,
-                            "title": article.title,
-                            "url": article.url,
-                            "matched_keywords": matched_words,
-                            "published_at": article.published_at,
-                        }
-                    )
+                    await self._send_notification(article, matched_words)
 
                 job.articles_created = created
                 job.status = Status.COMPLETED

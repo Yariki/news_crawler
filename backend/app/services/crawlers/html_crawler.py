@@ -14,36 +14,17 @@ from app.models.monitored_keyword import MonitoredKeyword
 from app.models.source import Source
 from app.models.status import Status
 from app.scrapers.default import DefaultScraper
+from app.services.crawlers.base_crawler import BaseCrawler
 from app.services.es import elastic_service
 from app.services.keyword_detector import detect_keywords, normalize_keyword
 from app.services.notifications import notification_hub
 
-
-# TODO: implement source-specific scrapers and map them using the crawler_key field in the Source model. For now, we will use a default scraper for all sources.
-# CRAWLERS = {
-#     "news1": TimesScraper,
-#     "news2": RIAScraper,
-# }
-
-
-class CrawlService:
+class HtmlCrawlService (BaseCrawler):
 
     def __init__(self, db: AsyncSession) -> None:
-        self.db = db
+        super().__init__(db)
 
-
-
-    async def get_active_keywords(self) -> list[str]:
-        result = await self.db.scalars(
-            select(MonitoredKeyword.keyword)
-            .where(MonitoredKeyword.is_enabled.is_(True))
-            .order_by(MonitoredKeyword.keyword)
-        )
-        keywords = [normalize_keyword(value) for value in result.all() if value]
-        return keywords or settings.default_keywords_list
-    
-    
-    async def run_source(self, source_id: int) -> CrawlJob:
+    async def crawl(self, source_id: str) -> CrawlJob:
         """Runs the crawling process for a given source. This includes discovering article URLs, fetching article data, detecting keywords, and storing results in the database and search index."""
         source = await self.db.get(Source, source_id)
         if not source:
@@ -58,7 +39,7 @@ class CrawlService:
             scraper = self._build_scraper(source)
             urls = await asyncio.to_thread(scraper.discover_article_urls)
             job.articles_found = len(urls)
-            active_keywords = await self.get_active_keywords()
+            active_keywords = await self._get_keywords()
             created = 0
 
             for url in urls:
@@ -96,34 +77,11 @@ class CrawlService:
 
                 await self.db.commit()
                 await self.db.refresh(article)
-
-                await elastic_service.index_article(
-                    {
-                        "article_id": article.id,
-                        "source_id": source.id,
-                        "source_name": source.name,
-                        "title": article.title,
-                        "content_text": article.content_text,
-                        "published_at": article.published_at.isoformat() if article.published_at else None,
-                        "url": article.url,
-                        "language": article.language,
-                        "is_alert": article.is_alert,
-                        "matched_keywords": matched_keywords,
-                    }
-                )
                 created += 1
 
+                await self._send_notification(article, source, matched_keywords)
                 if matched_keywords:
-                    await notification_hub.broadcast(
-                        "keyword_alert",
-                        {
-                            "article_id": article.id,
-                            "title": article.title,
-                            "url": article.url,
-                            "matched_keywords": matched_keywords,
-                            "published_at": article.published_at.isoformat() if article.published_at else None,
-                        },
-                    )
+                    await self._index_article(article,  matched_keywords)
 
             job.articles_created = created
             job.status = Status.COMPLETED

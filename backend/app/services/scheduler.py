@@ -4,22 +4,21 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import select
 
 from app.db.session import AsyncSessionLocal
-from app.models import Source
 from app.models.source import Source
 from app.models.source_type import SourceType
-from app.services.crawler import CrawlService
-from app.services.rss_crawler import RssCrawler
+from app.services.crawlers.html_crawler import HtmlCrawlService
+from app.services.crawlers.rss_crawler import RssCrawlService
 
 scheduler = AsyncIOScheduler(timezone="UTC")
 
 async def _run_source_job(source_id: int) -> None:
     async with AsyncSessionLocal() as db:
-        service = CrawlService(db)
-        await service.run_source(source_id)
+        service = HtmlCrawlService(db)
+        await service.crawl(source_id)
 
 async def _run_rss_job(source_id: int) -> None:
     async with AsyncSessionLocal() as db:
-        service = RssCrawler(db)
+        service = RssCrawlService(db)
         await service.crawl(source_id)
 
 switcher = {
