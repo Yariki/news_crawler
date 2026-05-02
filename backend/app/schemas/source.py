@@ -14,7 +14,7 @@ class SourceCreateUpdate(BaseModel):
 
 
 class SourceRead(BaseModel):
-    id: UUID4
+    id: str
     name: str
     base_url: str
     language: str

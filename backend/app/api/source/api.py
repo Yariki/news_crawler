@@ -4,18 +4,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.source.services.source_service import SourceService
 from app.db.base import PrimaryIdMixin
 from app.db.session import get_db
-from app.schemas.source import SourceCreateUpdate
+from app.schemas.job import CrawlJobRead
+from app.schemas.source import SourceCreateUpdate, SourceRead
 from app.services.crawlers.html_crawler import HtmlCrawlService
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
 
-@router.get("")
+@router.get("", status_code=200, response_model=list[SourceRead])
 async def get_source_list(db: AsyncSession = Depends(get_db)):
     result = await SourceService(db).list_sources()
     return [
         {
-            "id": _.id,
+            "id": str(_.id),
             "name": _.name,
             "base_url": _.base_url,
             "language": _.language,
@@ -27,12 +28,11 @@ async def get_source_list(db: AsyncSession = Depends(get_db)):
         for _ in result
     ]
 
-
-@router.get("/{source_id}")
-async def get_source(source_id: UUID4, db: AsyncSession = Depends(get_db)):
+@router.get("/{source_id}", status_code=200, response_model=SourceRead)
+async def get_source(source_id: str, db: AsyncSession = Depends(get_db)):
     result = await SourceService(db).get_source(source_id)
     return {
-        "id": result.id,
+        "id": str(result.id),
         "name": result.name,
         "base_url": result.base_url,
         "language": result.language,
@@ -42,12 +42,11 @@ async def get_source(source_id: UUID4, db: AsyncSession = Depends(get_db)):
         "scrape_interval_minutes": result.scrape_interval_minutes,
     }
 
-
-@router.post("", status_code=201)
+@router.post("", status_code=201, response_model=SourceRead)
 async def create_source(data: SourceCreateUpdate, db: AsyncSession = Depends(get_db)):
     result = await SourceService(db).create_source(data)
     return {
-        "id": result.id,
+        "id": str(result.id),
         "name": result.name,
         "base_url": result.base_url,
         "language": result.language,
@@ -57,7 +56,16 @@ async def create_source(data: SourceCreateUpdate, db: AsyncSession = Depends(get
         "scrape_interval_minutes": result.scrape_interval_minutes,
     }
 
-
-@router.put("/{source_id}/run")
-async def run_source(source_id: UUID4, db: AsyncSession = Depends(get_db)):
-    return await HtmlCrawlService(db).crawl(source_id)
+@router.put("/{source_id}/run", status_code=200, response_model=CrawlJobRead)
+async def run_source(source_id: str, db: AsyncSession = Depends(get_db)):
+    job = await HtmlCrawlService(db).crawl(source_id)
+    return {
+        "id": job.id,
+        "source_id": job.source_id,
+        "status": job.status,
+        "error_message": job.error_message,
+        "started_at": job.started_at,
+        "finished_at": job.finished_at,
+        "articles_found": job.articles_found,
+        "articles_created": job.articles_created,
+    }

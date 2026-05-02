@@ -9,7 +9,8 @@
                         <v-form @submit.prevent="store.createSource">
                             <v-text-field v-model="store.sourceForm.name" label="Display name" class="mb-2"/>
                             <v-text-field v-model="store.sourceForm.base_url" label="Base URL" class="mb-2"/>
-                            <v-text-field v-model="store.sourceForm.language" label="Language" class="mb-2"/>
+                            <v-select v-model="store.sourceForm.language" label="Language" :items="Languages"  item-value="value"
+                                      item-title="label" class="mb-2"/>
                             <v-select v-model="store.sourceForm.source_type" :items="SourceTypes" item-value="value"
                                       item-title="label" label="Source type" class="mb-2"/>
                             <v-select
@@ -49,7 +50,8 @@
 
 <script setup lang="ts">
 import {useAppStore} from '../stores/app'
-import {SourceTypes} from '../models/types';
+import {SourceTypes, Languages} from '../models/types';
+
 
 const store = useAppStore()
 

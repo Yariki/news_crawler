@@ -12,7 +12,7 @@ router = APIRouter(
 
 @router.get("/jobs")
 async def get_jobs(db: AsyncSession = Depends(get_db)):
-    result = DashboardService(db).list_jobs()
+    result = await DashboardService(db).list_jobs()
     return [
         {
             "id": _.id,

@@ -38,7 +38,7 @@ class SourceService:
         return source
 
 
-    async def get_source(self, id: UUID4) -> Source:
+    async def get_source(self, id: str) -> Source:
         query = (
             select(Source)
             .where(Source.id == id)

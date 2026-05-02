@@ -29,7 +29,7 @@ export const useAppStore = defineStore('app', {
             base_url: '',
             language: 'ru',
             source_type: 1,
-            crawler_key: 'themoscowtimes_ru',
+            crawler_key: '',
             scrape_interval_minutes: 1440,
             is_enabled: true,
         } as CreateSourcePayload,
@@ -47,18 +47,17 @@ export const useAppStore = defineStore('app', {
         async refreshAll() {
             this.loading = true
             try {
-                const [stats, sources, keywords, jobs, crawlerTypes] = await Promise.all([
+                const [stats, sources, keywords, jobs] = await Promise.all([
                     api.get('/dashboard/stats'),
                     api.get('/sources'),
                     api.get('/keywords'),
                     api.get('/dashboard/jobs'),
-                    api.get('/crawler-types'),
+                    //api.get('/crawler-types'),
                 ])
                 this.stats = stats.data
                 this.sources = sources.data
                 this.keywords = keywords.data
                 this.jobs = jobs.data
-                this.crawlerTypes = crawlerTypes.data
                 this.initialized = true
             } finally {
                 this.loading = false
