@@ -20,12 +20,15 @@ class ElasticService:
             index=INDEX_NAME,
             mappings={
                 "properties": {
-                    "article_id": {"type": "integer"},
-                    "source_id": {"type": "integer"},
+                    "article_id": {"type": "text"},
+                    "source_id": {"type": "text"},
                     "source_name": {"type": "keyword"},
                     "title": {"type": "text"},
                     "content_text": {"type": "text"},
-                    "published_at": {"type": "date", "format": "strict_date_optional_time||epoch_millis"},
+                    "published_at": {
+                        "type": "date",
+                        "format": "strict_date_optional_time||epoch_millis",
+                    },
                     "url": {"type": "keyword"},
                     "language": {"type": "keyword"},
                     "is_alert": {"type": "boolean"},
@@ -38,7 +41,12 @@ class ElasticService:
         await asyncio.to_thread(self._ensure_index_sync)
 
     async def index_article(self, payload: dict) -> None:
-        await asyncio.to_thread(self.client.index, index=INDEX_NAME, id=str(payload["article_id"]), document=payload)
+        await asyncio.to_thread(
+            self.client.index,
+            index=INDEX_NAME,
+            id=str(payload["article_id"]),
+            document=payload,
+        )
 
     async def search(self, query: str) -> dict:
         return await asyncio.to_thread(

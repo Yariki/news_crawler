@@ -8,16 +8,13 @@ from app.models.source import Source
 from app.schemas.source import SourceCreateUpdate
 
 
-
 class SourceService:
-    def __init__(self, db: AsyncSession ) -> None:
+
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async  def list_sources(self) -> list[Source]:
-        query = (
-            select(Source)
-            .order_by(Source.name)
-        )
+    async def list_sources(self) -> list[Source]:
+        query = select(Source).order_by(Source.name)
         result = await self.db.scalars(query)
         return list(result.all())
 
@@ -30,27 +27,18 @@ class SourceService:
             source_type=payload.source_type,
             crawler_key=payload.crawler_key,
             scrape_interval_minutes=payload.scrape_interval_minutes,
-            is_enabled=payload.is_enabled
+            is_enabled=payload.is_enabled,
         )
         self.db.add(source)
         await self.db.commit()
         await self.db.refresh(source)
         return source
 
-
     async def get_source(self, id: str) -> Source:
-        query = (
-            select(Source)
-            .where(Source.id == id)
-        )
+        query = select(Source).where(Source.id == id)
         result = await self.db.scalar(query)
-        
+
         if not result:
-            raise HTTPException(
-                status_code=404,
-                detail="The Source is not found"
-            )
+            raise HTTPException(status_code=404, detail="The Source is not found")
 
         return result
-    
-

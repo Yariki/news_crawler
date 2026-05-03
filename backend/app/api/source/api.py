@@ -5,8 +5,9 @@ from app.api.source.services.source_service import SourceService
 from app.db.base import PrimaryIdMixin
 from app.db.session import get_db
 from app.schemas.job import CrawlJobRead
-from app.schemas.source import SourceCreateUpdate, SourceRead
+from app.schemas.source import SourceCreateUpdate, SourceRead, SourceRunResponse
 from app.services.crawlers.html_crawler import HtmlCrawlService
+from app.services.scheduler import run_scheduled_job
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
@@ -56,16 +57,7 @@ async def create_source(data: SourceCreateUpdate, db: AsyncSession = Depends(get
         "scrape_interval_minutes": result.scrape_interval_minutes,
     }
 
-@router.put("/{source_id}/run", status_code=200, response_model=CrawlJobRead)
+@router.post("/{source_id}/run", status_code=200, response_model=SourceRunResponse)
 async def run_source(source_id: str, db: AsyncSession = Depends(get_db)):
-    job = await HtmlCrawlService(db).crawl(source_id)
-    return {
-        "id": job.id,
-        "source_id": job.source_id,
-        "status": job.status,
-        "error_message": job.error_message,
-        "started_at": job.started_at,
-        "finished_at": job.finished_at,
-        "articles_found": job.articles_found,
-        "articles_created": job.articles_created,
-    }
+    result = await run_scheduled_job(source_id)
+    return {"id": source_id, "status": "running" if result else "failed"}

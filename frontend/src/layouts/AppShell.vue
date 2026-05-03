@@ -7,8 +7,8 @@
             </template>
         </v-app-bar>
 
-        <v-navigation-drawer location="right" rail="false" permanent width="280">
-            <v-list nav density="comfortable">
+        <v-navigation-drawer location="right" width="280">
+            <v-list nav density="default">
                 <v-list-subheader>Navigation</v-list-subheader>
                 <v-list-item
                     v-for="item in navItems"
@@ -45,14 +45,17 @@
         <v-main class="bg-background">
             <router-view/>
         </v-main>
+        <v-snackbar-queue v-model="messagesStore.queue"></v-snackbar-queue>
     </v-layout>
 </template>
 
 <script setup lang="ts">
 import {onMounted} from 'vue'
 import {useAppStore} from '../stores/app'
+import {useMessages} from "../stores/messages";
 
 const store = useAppStore()
+const messagesStore = useMessages();
 
 const navItems = [
     {title: 'Dashboard', to: '/', icon: 'mdi-view-dashboard-outline'},

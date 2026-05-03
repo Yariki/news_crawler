@@ -24,3 +24,7 @@ class SourceRead(BaseModel):
     scrape_interval_minutes: int
 
     model_config = {"from_attributes": True}
+
+class SourceRunResponse(BaseModel):
+    id: str
+    status: str

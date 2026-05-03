@@ -10,6 +10,7 @@ from app.dto.scraped_article import ScrapedArticle
 from app.utils.bot_challenge_detector import looks_like_bot_challenge
 from app.utils.html_utils import extract_rss_content_html, html_to_text, get_content
 
+
 class RssScraper:
     """Scraper for fetching articles from RSS feeds."""
 
@@ -31,19 +32,25 @@ class RssScraper:
         feeds: list[RssFeed] = []
 
         for item in response_feeds.entries:
-            rss_html = extract_rss_content_html(item,)
+            rss_html = extract_rss_content_html(
+                item,
+            )
             rss_text = html_to_text(rss_html) if rss_html else None
-            
+
             feed = RssFeed(
                 id=item.get("id", ""),
                 url=item.get("link", ""),
                 title=item.get("title", ""),
                 author=item.get("author", None),
-                published=item.get("published_parsed", None),
+                published=(
+                    datetime(*item.published_parsed[:6])
+                    if item.get("published_parsed")
+                    else None
+                ),
                 summary=item.get("summary", None),
                 content_html=rss_html,
                 content_text=rss_text,
-                tags=[tag.get("label", "") for tag in item.get("tags", [])],
+                tags=[self._get_tag(tag) for tag in item.get("tags", [])],
                 checksum=None,
             )
             feeds.append(feed)
@@ -75,7 +82,7 @@ class RssScraper:
             url=feed.url,
             title=feed.title,
             author=feed.author,
-            language=None,
+            language="",
             published_at=feed.published,
             content_html=content_html,
             content_text=content_text,
@@ -86,9 +93,16 @@ class RssScraper:
                 "url": feed.url,
                 "title": feed.title,
                 "author": feed.author,
-                "published": datetime(*feed.published[:6]).isoformat() if feed.published else None,
+                "published": (feed.published.isoformat() if feed.published else None),
                 "summary": feed.summary,
                 "tags": feed.tags,
             },
             checksum=hashlib.sha256(content_text.encode("utf-8")).hexdigest(),
         )
+
+    def _get_tag(self, tag) -> str:
+        text = ""
+        text = tag.get("label", "")
+        if not text and tag.get("term"):
+            text = tag["term"]
+        return text.strip()

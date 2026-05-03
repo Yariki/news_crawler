@@ -13,7 +13,9 @@
                                       item-title="label" class="mb-2"/>
                             <v-select v-model="store.sourceForm.source_type" :items="SourceTypes" item-value="value"
                                       item-title="label" label="Source type" class="mb-2"/>
+                            <!-- now we only depend on SourceType, Later we could get it back -->
                             <v-select
+                                v-if="false"
                                 v-model="store.sourceForm.crawler_key"
                                 :items="store.crawlerTypes"
                                 item-title="title"
@@ -39,7 +41,7 @@
                             </v-chip>
                         </template>
                         <template #item.actions="{ item }">
-                            <v-btn size="small" color="primary" @click="store.runSource(item.id)">Run now</v-btn>
+                            <v-btn size="x-small" color="primary" icon="mdi-play" @click="store.runSource(item.id)" />
                         </template>
                     </v-data-table>
                 </v-card>
@@ -58,7 +60,6 @@ const store = useAppStore()
 const sourceHeaders = [
     {title: 'Name', key: 'name'},
     {title: 'URL', key: 'base_url'},
-    {title: 'Crawler', key: 'crawler_key'},
     {title: 'Interval', key: 'scrape_interval_minutes'},
     {title: 'Enabled', key: 'is_enabled'},
     {title: 'Actions', key: 'actions', sortable: false},

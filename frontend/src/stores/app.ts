@@ -112,5 +112,15 @@ export const useAppStore = defineStore('app', {
             }
             this.ws = ws
         },
+        async refreshJobs() {
+            this.loading = true;
+            try{
+                const jobs = await api.get('/dashboard/jobs');
+            }catch(e){
+                console.error(e);
+            }finally {
+                this.loading = false;
+            }
+        },
     },
 })

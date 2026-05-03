@@ -1,3 +1,5 @@
+import hashlib
+
 from app.services.keyword_detector import detect_keywords
 from app.services.crawlers.base_crawler import BaseCrawler
 from app.scrapers.rss.rss_scraper import RssScraper
@@ -23,7 +25,7 @@ class RssCrawlService(BaseCrawler):
         super().__init__(db)
 
     async def crawl(self, source_id: str) -> CrawlJob | None:
-        """ Runs the crawling process for a given RSS source. This includes discovering article URLs, fetching article data, detecting keywords, and storing results in the database and search index."""
+        """Runs the crawling process for a given RSS source. This includes discovering article URLs, fetching article data, detecting keywords, and storing results in the database and search index."""
         source = await self.db.get(Source, source_id)
         if not source:
             raise ValueError("Source not found")
@@ -34,14 +36,16 @@ class RssCrawlService(BaseCrawler):
         await self.db.refresh(job)
 
         try:
-            scraper = RssScraper(source.url)
+            scraper = RssScraper(source.base_url)
             urls = await scraper.discover_rss_urls()
             job.articles_found = len(urls)
             active_keywords = await self._get_keywords()
             created = 0
 
             for url in urls:
-                exists = await self.db.scalar(select(Article).where(Article.url == url))
+                exists = await self.db.scalar(
+                    select(Article).where(Article.url == url.url)
+                )
                 if exists:
                     continue
 
@@ -50,33 +54,40 @@ class RssCrawlService(BaseCrawler):
                     continue
 
                 matched_words = detect_keywords(
-                    article_data.content_text, active_keywords)
+                    article_data.content_text, active_keywords
+                )
                 article = Article(
                     source_id=source_id,
-                    external_id=article_data.id,
-                    url=url,
+                    external_id=hashlib.sha256(
+                        article_data.external_id.encode()
+                    ).hexdigest(),
+                    url=url.url,
                     title=article_data.title,
                     author=article_data.author,
                     published_at=article_data.published_at,
+                    fetched_at=datetime.now(timezone.utc),
                     content_html=article_data.content_html,
                     content_text=article_data.content_text,
                     summary=article_data.summary,
                     language=article_data.language,
-                    tags_csv=",".join(
-                        article_data.tags_csv) if article_data.tags_csv else None,
+                    tags_csv=(
+                        ",".join(article_data.tags) if article_data.tags else None
+                    ),
                     raw_payload_json=article_data.raw_payload_json,
                     checksum=article_data.checksum,
                     is_alert=bool(matched_words),
-                    matched_keywords_csv=",".join(
-                        matched_words) if matched_words else None,
+                    matched_keywords_csv=(
+                        ",".join(matched_words) if matched_words else None
+                    ),
                 )
 
                 self.db.add(article)
                 await self.db.flush()
 
                 for keyword in matched_words:
-                    self.db.add(KeywordHit(article_id=article.id,
-                                keyword=keyword.strip()))
+                    self.db.add(
+                        KeywordHit(article_id=article.id, keyword=keyword.strip())
+                    )
 
                 await self.db.commit()
                 await self.db.refresh(article)
@@ -91,7 +102,9 @@ class RssCrawlService(BaseCrawler):
 
         except httpx.HTTPStatusError as ex:
             job.status = Status.FAILED
-            job.error_message = f"HTTP error {ex.response.status_code}: {ex.request.url}"
+            job.error_message = (
+                f"HTTP error {ex.response.status_code}: {ex.request.url}"
+            )
             logger.error("HTTP error crawling source %s: %s", source_id, ex)
         except httpx.RequestError as ex:
             job.status = Status.FAILED
@@ -100,8 +113,7 @@ class RssCrawlService(BaseCrawler):
         except SQLAlchemyError as ex:
             job.status = Status.FAILED
             job.error_message = f"Database error: {ex}"
-            logger.error(
-                "Database error crawling source %s: %s", source_id, ex)
+            logger.error("Database error crawling source %s: %s", source_id, ex)
         except Exception as ex:
             job.status = Status.FAILED
             job.error_message = f"Unexpected error: {ex}"

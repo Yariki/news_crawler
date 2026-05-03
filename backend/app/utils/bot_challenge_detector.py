@@ -10,6 +10,6 @@ CHALLENGE_MARKERS = (
 )
 
 
-def looks_like_bot_challenge(self, html: str) -> bool:
+def looks_like_bot_challenge(html: str) -> bool:
     text = html.lower()
-    return any(marker in text for marker in self.CHALLENGE_MARKERS)
+    return any(marker in text for marker in CHALLENGE_MARKERS)

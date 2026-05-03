@@ -16,3 +16,5 @@ class CrawlJobRead(BaseModel):
     error_message: str | None
 
     model_config = {"from_attributes": True}
+
+

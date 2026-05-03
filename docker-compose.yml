@@ -23,6 +23,17 @@ services:
     volumes:
       - es_data:/usr/share/elasticsearch/data
 
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    ports:
+      - "5601:5601"
+    restart: unless-stopped
+    
   backend:
     build:
       context: ./backend

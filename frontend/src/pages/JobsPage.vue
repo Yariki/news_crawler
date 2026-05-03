@@ -1,8 +1,17 @@
 <template>
     <v-container fluid class="pa-6">
         <div class="text-h4 mb-4">Jobs</div>
+
         <v-card rounded="xl">
-            <v-card-title>Scheduled and recent crawler jobs</v-card-title>
+            <v-card-title class="d-flex align-center">
+                <span>
+                    Scheduled and recent crawler jobs
+                </span>
+                <v-spacer></v-spacer>
+                <div>
+                    <v-btn class="me-2" variant="outlined" icon="mdi-refresh" @click="refresh()"></v-btn>
+                </div>
+            </v-card-title>
             <v-data-table :headers="jobHeaders" :items="store.jobsWithSource" density="comfortable">
                 <template #item.status="{ item }">
                     <v-chip :color="statusColor(item.status)" size="small">{{ item.status }}</v-chip>
@@ -18,9 +27,11 @@
 </template>
 
 <script setup lang="ts">
-import {useAppStore} from '../stores/app'
+import {useAppStore} from '../stores/app';
+import {useMessages} from "../stores/messages";
 
-const store = useAppStore()
+const store = useAppStore();
+const messagesStore = useMessages();
 
 const jobHeaders = [
     {title: 'Job', key: 'id'},
@@ -34,4 +45,10 @@ const jobHeaders = [
 ]
 
 const statusColor = (status: string) => ({completed: 'success', failed: 'error', running: 'info'}[status] || 'default')
+
+const refresh = async () => {
+    await store.refreshJobs();
+    messagesStore.addMessage('Refreshed.');
+}
+
 </script>
