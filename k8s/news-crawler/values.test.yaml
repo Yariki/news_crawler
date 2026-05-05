@@ -1,0 +1,83 @@
+# Test / staging environment overrides.
+# Usage: helm upgrade --install news-crawler ./k8s/news-crawler -f ./k8s/news-crawler/values.yaml -f ./k8s/news-crawler/values.test.yaml
+#
+# Purpose: a shared test / staging namespace on a real cluster.
+# Mirrors production topology but with smaller resource footprint.
+# Persistence is enabled so integration-test runs survive pod restarts.
+# Docs endpoints are enabled so testers can explore the API.
+
+backend:
+  replicaCount: 1
+  image:
+    pullPolicy: Always
+  config:
+    appMode: dev                # keeps /docs and /openapi.json available for QA
+    corsOrigins: "https://news-monitor.test.example.com"
+    defaultKeywords: war,attack,missile,drone,война,атака,обстрел,удар,дрон
+  resources:
+    requests:
+      cpu: 150m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+frontend:
+  replicaCount: 1
+  image:
+    pullPolicy: Always
+  ingress:
+    enabled: true
+    className: nginx
+    host: news-monitor.test.example.com
+    tls:
+      enabled: true
+      secretName: news-monitor-test-tls
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+postgres:
+  enabled: true
+  database: news_monitor_test
+  username: news_user_test
+  # password: set via --set-string postgres.password=<secret> or in a separate sealed-secrets / external-secret manifest
+  password: change-me-test
+  persistence:
+    enabled: true
+    size: 4Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 400m
+      memory: 512Mi
+
+elasticsearch:
+  enabled: true
+  javaOpts: -Xms256m -Xmx256m
+  persistence:
+    enabled: true
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+
+kibana:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi

@@ -56,5 +56,5 @@
     "**/dist": true,
     "**/build": true,
     "**/news_crawler.egg-info": true
-  }
+  } 
 }

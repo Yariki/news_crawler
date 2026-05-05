@@ -1,0 +1,49 @@
+{{- if .Values.kibana.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "news-crawler.kibana.fullname" . }}
+  labels:
+    {{- include "news-crawler.labels" . | nindent 4 }}
+    app.kubernetes.io/component: kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "news-crawler.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: kibana
+  template:
+    metadata:
+      labels:
+        {{- include "news-crawler.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: kibana
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: kibana
+          image: {{ printf "%s:%s" .Values.kibana.image.repository .Values.kibana.image.tag | quote }}
+          imagePullPolicy: {{ .Values.kibana.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 5601
+          env:
+            - name: ELASTICSEARCH_HOSTS
+              value: {{ printf "[\"%s\"]" (include "news-crawler.elasticsearch.url" .) | quote }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 45
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.kibana.resources | nindent 12 }}
+{{- end }}

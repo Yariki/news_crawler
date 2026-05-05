@@ -1,0 +1,88 @@
+# Production environment overrides.
+# Usage: helm upgrade --install news-crawler ./k8s/news-crawler -f ./k8s/news-crawler/values.yaml -f ./k8s/news-crawler/values.prod.yaml
+#
+# Required values that MUST be supplied externally (via --set-string or CI secrets):
+#   backend.image.repository
+#   backend.image.tag
+#   frontend.image.repository
+#   frontend.image.tag
+#   frontend.ingress.host
+#   backend.config.corsOrigins
+#   postgres.password  (or backend.secret.databaseUrl if using external DB)
+#
+# Do NOT commit real passwords or secrets to this file.
+# Use sealed-secrets, Azure Key Vault CSI, or --set-string from CI secrets for sensitive values.
+
+backend:
+  replicaCount: 1              # keep at 1 — APScheduler runs inside the API process
+  image:
+    pullPolicy: IfNotPresent
+  config:
+    appMode: prod              # disables /docs, /redoc, /openapi.json
+    corsOrigins: "https://news-monitor.example.com"   # override via CI
+    defaultKeywords: war,attack,missile,drone,война,атака,обстрел,удар,дрон
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+frontend:
+  replicaCount: 2
+  image:
+    pullPolicy: IfNotPresent
+  ingress:
+    enabled: true
+    className: nginx
+    host: news-monitor.example.com     # override via CI
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      # Uncomment the following lines if using cert-manager for TLS:
+      # cert-manager.io/cluster-issuer: letsencrypt-prod
+    tls:
+      enabled: true
+      secretName: news-monitor-prod-tls
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+postgres:
+  enabled: true
+  database: news_monitor
+  username: news_user
+  # password: injected by CI — never committed here
+  password: change-me
+  persistence:
+    enabled: true
+    size: 20Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 800m
+      memory: 1Gi
+
+elasticsearch:
+  enabled: true
+  javaOpts: -Xms1g -Xmx1g
+  persistence:
+    enabled: true
+    size: 30Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 1500m
+      memory: 2Gi
+
+kibana:
+  enabled: false              # production: leave disabled unless operators require it

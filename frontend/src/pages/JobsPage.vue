@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import type { JobStatus } from '../models/types';
 import {useAppStore} from '../stores/app';
 import {useMessages} from "../stores/messages";
 
@@ -44,7 +45,14 @@ const jobHeaders = [
     {title: 'Actions', key: 'actions', sortable: false},
 ]
 
-const statusColor = (status: string) => ({completed: 'success', failed: 'error', running: 'info'}[status] || 'default')
+const statusColor = (status: JobStatus) => ({
+    completed: 'success',
+    failed: 'error',
+    running: 'info',
+    waiting: 'warning',
+    canceled: 'default',
+    cancelled: 'default',
+}[status.toLowerCase()] || 'default')
 
 const refresh = async () => {
     await store.refreshJobs();

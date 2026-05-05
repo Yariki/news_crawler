@@ -45,6 +45,8 @@ export enum SourseType {
 
 }
 
+export type JobStatus = 'RUNNING' | 'COMPLETED' | 'FAILED' | 'WAITING' | 'CANCELED' | 'CANCELLED' | string
+
 export enum Status {
     Running = 1,
     Completed = 2,
@@ -52,6 +54,7 @@ export enum Status {
     Waiting = 4,
     Cancelled = 5,
 }
+
 
 export interface SourceItem {
     id: string
@@ -74,7 +77,7 @@ export interface KeywordItem {
 export interface JobItem {
     id: string
     source_id: string
-    status: Status
+    status: JobStatus
     started_at: string
     finished_at: string | null
     articles_found: number

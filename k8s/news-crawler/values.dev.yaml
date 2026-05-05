@@ -1,0 +1,78 @@
+# Development environment overrides.
+# Usage: helm upgrade --install news-crawler ./k8s/news-crawler -f ./k8s/news-crawler/values.yaml -f ./k8s/news-crawler/values.dev.yaml
+#
+# Purpose: a lightweight local-cluster deployment (e.g. minikube / kind / Rancher Desktop).
+# Persistence is disabled so the cluster can be torn down cleanly.
+# Resource limits are intentionally minimal.
+
+backend:
+  replicaCount: 1
+  image:
+    pullPolicy: Always          # always pull to pick up freshly built images
+  config:
+    appMode: dev                # enables /docs, /redoc, /openapi.json
+    corsOrigins: "http://localhost:3000,http://localhost:5173,http://news-monitor.dev"
+    defaultKeywords: war,attack,missile,drone,война,атака,обстрел,удар,дрон
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+frontend:
+  replicaCount: 1
+  image:
+    pullPolicy: Always
+  ingress:
+    enabled: true
+    className: nginx
+    host: news-monitor.dev
+    tls:
+      enabled: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+postgres:
+  enabled: true
+  database: news_monitor_dev
+  username: news_user_dev
+  password: dev-password     # overridden by CI secret POSTGRES_PASSWORD in the dev GitHub Environment
+  persistence:
+    enabled: false              # emptyDir; data is lost when the pod restarts
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+elasticsearch:
+  enabled: true
+  javaOpts: -Xms256m -Xmx256m  # reduced heap for local development
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+
+kibana:
+  enabled: true                 # useful in dev for inspecting indexed articles
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi

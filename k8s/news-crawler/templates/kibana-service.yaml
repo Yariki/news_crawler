@@ -1,0 +1,18 @@
+{{- if .Values.kibana.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "news-crawler.kibana.fullname" . }}
+  labels:
+    {{- include "news-crawler.labels" . | nindent 4 }}
+    app.kubernetes.io/component: kibana
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "news-crawler.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: kibana
+  ports:
+    - name: http
+      port: {{ .Values.kibana.service.port }}
+      targetPort: http
+{{- end }}

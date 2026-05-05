@@ -50,6 +50,34 @@ npm install
 npm run dev
 ```
 
+## Kubernetes and AKS
+
+Helm chart: `k8s/news-crawler`
+
+The chart deploys:
+
+- frontend
+- backend
+- PostgreSQL
+- Elasticsearch
+- optional Kibana
+
+Important deployment note:
+
+- keep `backend.replicaCount=1` unless you split the scheduler out of the API process, because APScheduler starts inside the backend application lifecycle and would run once per replica
+
+Render locally:
+
+```bash
+helm template news-crawler ./k8s/news-crawler
+```
+
+AKS workflow:
+
+- GitHub Actions workflow: `.github/workflows/deploy-aks.yml`
+- required repository variable placeholders: `AZURE_RESOURCE_GROUP`, `AZURE_AKS_CLUSTER_NAME`, `AZURE_CONTAINER_REGISTRY`, `AKS_INGRESS_HOST`
+- required repository secret placeholders: `AZURE_CREDENTIALS`, `POSTGRES_PASSWORD`
+
 ## Notes about the scraper
 
 This initial version uses straightforward HTML parsing:

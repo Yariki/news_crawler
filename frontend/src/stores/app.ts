@@ -1,5 +1,5 @@
 import {defineStore} from 'pinia'
-import {api} from '../services/api'
+import {api, getAlertsWebSocketUrl} from '../services/api'
 import {
     CrawlerTypeItem,
     CreateSourcePayload,
@@ -63,7 +63,7 @@ export const useAppStore = defineStore('app', {
                 this.loading = false
             }
         },
-        async runSource(sourceId: number) {
+        async runSource(sourceId: string) {
             await api.post(`/sources/${sourceId}/run`)
             await this.refreshAll()
         },
@@ -100,7 +100,7 @@ export const useAppStore = defineStore('app', {
         },
         connectAlerts() {
             if (this.ws) return
-            const ws = new WebSocket('ws://localhost:8000/api/ws/alerts')
+            const ws = new WebSocket(getAlertsWebSocketUrl())
             ws.onopen = () => {
                 ws.send('ping')
                 setInterval(() => ws.readyState === WebSocket.OPEN && ws.send('ping'), 15000)
