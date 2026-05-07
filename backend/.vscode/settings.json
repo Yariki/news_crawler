@@ -22,24 +22,27 @@
     "tab.activeForeground": "#e7e7e7"
   },
   "peacock.color": "#18298d",
-  "tabsColor.byDirectory": {
-    "news_crawler/backend/app/scrapers": {
+  "tabsColor.byFileType": {
+    "py": {
       "backgroundColor": "#b2fc68",
       "fontColor": "black"
     },
-    "news_crawler/backend/app/services": {
+    "json": {
       "backgroundColor": "#fcd568",
       "fontColor": "black"
     },
-    "news_crawler/backend/app/api": {
+    "ini": {
       "backgroundColor": "#6899fc",
       "fontColor": "black"
     },
     "default": {
       "backgroundColor": "#7f8584",
       "fontColor": "white"
-    }
-
+    },
+    "env": {
+      "backgroundColor": "#5262b3",
+      "fontColor": "white"
+    },
   },
   "python.testing.pytestArgs": [
     "tests"
