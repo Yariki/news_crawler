@@ -16,7 +16,9 @@ class Settings(BaseSettings):
     cors_origins: str = Field(default="http://localhost:5173", alias="CORS_ORIGINS")
     default_keywords: str = Field(alias="DEFAULT_KEYWORDS")
     app_mode: str = Field(default="prod", alias="APP_MODE")
-
+    crawl_delay: int = Field(default=5, alias="CRAWL_DELAY")
+    request_rate: int = Field(default=10, alias="REQUEST_RATE")
+    
     @property
     def cors_origins_list(self) -> list[str]:
         return [item.strip() for item in self.cors_origins.split(",") if item.strip()]
