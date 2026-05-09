@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 
 from app.services.keyword_detector import detect_keywords
@@ -13,6 +14,8 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.services.robots import RobotsService
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +33,10 @@ class RssCrawlService(BaseCrawler):
         if not source:
             raise ValueError("Source not found")
 
+        robots_service = RobotsService(source.base_url, self.db)
+        await robots_service.fetch_robot()
+        crawl_delay = robots_service.crawl_delay("*")
+        
         job = CrawlJob(source_id=source_id, status=Status.RUNNING)
         self.db.add(job)
         await self.db.commit()
@@ -41,7 +48,7 @@ class RssCrawlService(BaseCrawler):
             job.articles_found = len(urls)
             active_keywords = await self._get_keywords()
             created = 0
-
+            
             for url in urls:
                 exists = await self.db.scalar(
                     select(Article).where(Article.url == url.url)
@@ -96,6 +103,10 @@ class RssCrawlService(BaseCrawler):
                 await self._index_article(article, source, matched_words)
                 if matched_words:
                     await self._send_notification(article, matched_words)
+                
+                if crawl_delay:
+                    logger.debug(f"Sleeping for {crawl_delay} seconds to respect crawl delay")
+                    await asyncio.sleep(crawl_delay)
 
             job.articles_created = created
             job.status = Status.COMPLETED

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 from app.services.keyword_detector import detect_keywords
 from app.services.crawlers.base_crawler import BaseCrawler
 from app.scrapers.default import DefaultScraper
@@ -9,12 +10,15 @@ from app.models.crawl_job import CrawlJob
 from app.models.article import Article
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+import time
 
 from datetime import datetime, timezone
 import logging
 
 import httpx
 from sqlalchemy.exc import SQLAlchemyError
+
+from app.services.robots import RobotsService
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +34,9 @@ class HtmlCrawlService (BaseCrawler):
         source = await self.db.get(Source, source_id)
         if not source:
             raise ValueError(f"Source {source_id} not found")
+        
+        robots_service = RobotsService(source.base_url, self.db)
+        await robots_service.fetch_robot()
 
         job = CrawlJob(source_id=source.id, status=Status.RUNNING)
         self.db.add(job)
@@ -42,10 +49,16 @@ class HtmlCrawlService (BaseCrawler):
             job.articles_found = len(urls)
             active_keywords = await self._get_keywords()
             created = 0
+            crawl_delay = robots_service.crawl_delay("*")
 
             for url in urls:
                 existing = await self.db.scalar(select(Article).where(Article.url == url))
                 if existing:
+                    continue
+                
+                is_allowed = robots_service.can_fetch("*", url)
+                if not is_allowed:
+                    logger.info(f"Skipping URL {url} due to robots.txt restrictions")
                     continue
 
                 scraped = await scraper.fetch_article(url)
@@ -87,6 +100,10 @@ class HtmlCrawlService (BaseCrawler):
                 if matched_keywords:
                     await self._send_notification(article, matched_keywords)
 
+                if crawl_delay:
+                    logger.debug(f"Sleeping for {crawl_delay} seconds to respect crawl delay")
+                    await asyncio.sleep(crawl_delay)
+
             job.articles_created = created
             job.status = Status.COMPLETED
             job.finished_at = datetime.now(timezone.utc)
@@ -114,7 +131,7 @@ class HtmlCrawlService (BaseCrawler):
             job.finished_at = datetime.now(timezone.utc)
             await self.db.commit()
             await self.db.refresh(job)
-
+            
         return job
 
     def _get_crawler_class(self):

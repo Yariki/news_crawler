@@ -1,6 +1,9 @@
+from urllib.parse import urlsplit
+
 from bs4 import BeautifulSoup
 
 ARTICLE_CHARACTERS_NUMBER = 40
+
 
 def extract_rss_content_html(item: dict) -> str | None:
     """Extract rich HTML body from RSS/Atom entry if available."""
@@ -16,10 +19,12 @@ def extract_rss_content_html(item: dict) -> str | None:
 
     return None
 
+
 def html_to_text(html: str) -> str:
     soup = BeautifulSoup(html, "lxml")
     text = soup.get_text(" ", strip=True)
     return " ".join(text.split())
+
 
 def get_content(soup: BeautifulSoup) -> tuple[str | None, str]:
     for container_selector in ["article", "main", "body"]:
@@ -36,3 +41,16 @@ def get_content(soup: BeautifulSoup) -> tuple[str | None, str]:
             return html, text
 
     return None, soup.get_text(" ", strip=True)
+
+
+def get_url(url: str):
+    parsed = urlsplit(url)
+    scheme = parsed.scheme.lower()
+    host = parsed.hostname.lower() if parsed.hostname else ""
+
+    if parsed.port:
+        netloc = f"{host}:{parsed.port}"
+    else:
+        netloc = host
+
+    return f"{scheme}://{netloc}"
