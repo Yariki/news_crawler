@@ -7,7 +7,7 @@
             </template>
         </v-app-bar>
 
-        <v-navigation-drawer location="right" width="280">
+        <v-navigation-drawer location="left" width="280">
             <v-list nav density="default">
                 <v-list-subheader>Navigation</v-list-subheader>
                 <v-list-item

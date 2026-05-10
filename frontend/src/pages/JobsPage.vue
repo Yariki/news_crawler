@@ -52,7 +52,7 @@ const statusColor = (status: JobStatus) => ({
     waiting: 'warning',
     canceled: 'default',
     cancelled: 'default',
-}[status.toLowerCase()] || 'default')
+}[status ?? status.toLowerCase()] || 'default')
 
 const refresh = async () => {
     await store.refreshJobs();

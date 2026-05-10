@@ -15,12 +15,18 @@ from app.services.notifications import notification_hub
 from app.api.keywords.api import router as keywords_router
 from app.api.source.api import router as source_router
 from app.api.dashboard.api import router as dashboard_router
+from app.api.messages.api import router as messages_router
+
+from app.core.config import settings
 
 router = APIRouter(prefix="/api")
 
 router.include_router(keywords_router)
 router.include_router(source_router)
 router.include_router(dashboard_router)
+
+if settings.app_mode == 'dev':
+    router.include_router(messages_router)
 
 @router.get("/health")
 async def health() -> dict:
