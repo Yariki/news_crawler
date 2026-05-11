@@ -122,7 +122,7 @@ def upgrade() -> None:
         INSERT INTO users (email, password_hash, is_active)
         VALUES (
             'admin@news-crawler.local',
-            'pbkdf2_sha256$310000$newsmonitorseed$MBMWdU5_ONGrL7DLuwOauOK8deZCNdxIIPF6UOPAD-s=',
+            'pbkdf2_sha256$310000$newsmonitorseed$MBMWdU5_ONGrL7DLuwOauOK8deZCNdxIIPF6UOPAD-s',
             true
         )
         ON CONFLICT (email) DO NOTHING

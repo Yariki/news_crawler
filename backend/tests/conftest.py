@@ -62,7 +62,7 @@ async def client(db_session):
     if user is None:
         user = User(
             email="admin@news-crawler.local",
-            password_hash="pbkdf2_sha256$310000$newsmonitorseed$MBMWdU5_ONGrL7DLuwOauOK8deZCNdxIIPF6UOPAD-s=",
+            password_hash="pbkdf2_sha256$310000$newsmonitorseed$MBMWdU5_ONGrL7DLuwOauOK8deZCNdxIIPF6UOPAD-s",
             is_active=True,
         )
         db_session.add(user)
