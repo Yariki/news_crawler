@@ -34,7 +34,7 @@ class BaseCrawler(ABC):
             {
                 "article_id": article.id,
                 "source_id": source.id,
-                "owner_id": source.owner_id,
+                "owner_id": str(source.owner_id),
                 "source_name": source.name,
                 "title": article.title,
                 "content_text": article.content_text,

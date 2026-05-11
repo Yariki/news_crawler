@@ -64,7 +64,6 @@ async def create_source(
 
 @router.post("/{source_id}/run", status_code=200, response_model=SourceRunResponse)
 async def run_source(source_id: str, db: AsyncSession = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
-    _ = db
     await SourceService(db).get_source(source_id, current_user.id)
     result = await run_scheduled_job(source_id)
     return {"id": source_id, "status": "running" if result else "failed"}

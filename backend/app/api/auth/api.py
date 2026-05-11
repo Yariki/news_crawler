@@ -5,7 +5,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from app.api.dependencies.auth import CurrentUser, auth_rate_limit, get_current_user
+from app.api.dependencies.auth import CurrentUser, auth_rate_limit, get_current_user, require_roles
 from app.db.session import get_db
 from app.models.audit_log import AuditLog
 from app.schemas.auth import AuthEventRead, LoginRequest, RefreshRequest, TokenResponse
@@ -63,7 +63,7 @@ async def me(db: AsyncSession = Depends(get_db), current_user: CurrentUser = Dep
 @router.get("/monitoring")
 async def auth_monitoring(
     db: AsyncSession = Depends(get_db),
-    _: CurrentUser = Depends(get_current_user),
+    _: CurrentUser = Depends(require_roles(["admin"])),
 ):
     recent = await db.scalars(select(AuditLog).order_by(desc(AuditLog.created_at)).limit(20))
     events = [

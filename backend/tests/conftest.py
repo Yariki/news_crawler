@@ -18,6 +18,7 @@ from app.models.role import Role
 from app.models.role_permission import RolePermission
 from app.models.user import User
 from app.models.user_role import UserRole
+from app.core.security import hash_password
 from app.main import app
 
 
@@ -62,7 +63,7 @@ async def client(db_session):
     if user is None:
         user = User(
             email="admin@news-crawler.local",
-            password_hash="pbkdf2_sha256$310000$newsmonitorseed$MBMWdU5_ONGrL7DLuwOauOK8deZCNdxIIPF6UOPAD-s",
+            password_hash=hash_password("ChangeMe123!", salt="newsmonitorseed"),
             is_active=True,
         )
         db_session.add(user)

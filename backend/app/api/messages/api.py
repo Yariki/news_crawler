@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from ...schemas.messages import Message
-from ...services.notifications import notification_hub
+from app.schemas.messages import Message
+from app.services.notifications import notification_hub
 
 
 router = APIRouter(prefix="/messages", tags=["messages (Dev only)"])

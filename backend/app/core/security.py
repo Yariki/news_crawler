@@ -12,6 +12,8 @@ from fastapi import HTTPException, status
 
 from app.core.config import settings
 
+PBKDF2_ITERATIONS = 310_000  # aligns with modern OWASP guidance for PBKDF2-HMAC-SHA256 hardening
+
 
 def _b64url_encode(value: bytes) -> str:
     return base64.urlsafe_b64encode(value).rstrip(b"=").decode("utf-8")
@@ -22,7 +24,7 @@ def _b64url_decode(value: str) -> bytes:
     return base64.urlsafe_b64decode(value + padding)
 
 
-def hash_password(password: str, *, salt: str | None = None, iterations: int = 310_000) -> str:
+def hash_password(password: str, *, salt: str | None = None, iterations: int = PBKDF2_ITERATIONS) -> str:
     salt_value = salt or secrets.token_urlsafe(16)
     digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt_value.encode("utf-8"), iterations)
     encoded = _b64url_encode(digest)

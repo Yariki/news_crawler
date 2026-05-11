@@ -50,6 +50,6 @@ def require_roles(required_roles: list[str]):
     async def _dependency(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
         if any(role in current_user.roles for role in required_roles):
             return current_user
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient roles")
 
     return _dependency

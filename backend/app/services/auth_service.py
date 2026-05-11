@@ -61,7 +61,10 @@ class AuthService:
         if token is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
 
-        if token.revoked_at is not None or token.expires_at <= datetime.now(timezone.utc):
+        if token.expires_at <= datetime.now(timezone.utc):
+            await self._revoke_family(token.family_id)
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired")
+        if token.revoked_at is not None:
             await self._revoke_family(token.family_id)
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token revoked")
 
@@ -210,10 +213,8 @@ class AdminService:
             raise HTTPException(status_code=409, detail="Role is still assigned")
 
     async def assign_role(self, user_id: UUID, role_id: UUID) -> None:
-        user = await self.get_user(user_id)
-        _ = user
-        role = await self.get_role(role_id)
-        _ = role
+        await self.get_user(user_id)
+        await self.get_role(role_id)
         existing = await self.db.scalar(select(UserRole).where(UserRole.user_id == user_id, UserRole.role_id == role_id))
         if existing:
             return
