@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     app_mode: str = Field(default="prod", alias="APP_MODE")
     crawl_delay: int = Field(default=5, alias="CRAWL_DELAY")
     request_rate: int = Field(default=10, alias="REQUEST_RATE")
+    jwt_secret: str = Field(default="dev-jwt-secret-change-me", alias="JWT_SECRET")
+    access_token_expire_minutes: int = Field(default=30, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
+    refresh_token_expire_days: int = Field(default=7, alias="REFRESH_TOKEN_EXPIRE_DAYS")
+    auth_rate_limit_per_minute: int = Field(default=20, alias="AUTH_RATE_LIMIT_PER_MINUTE")
     
     @property
     def cors_origins_list(self) -> list[str]:

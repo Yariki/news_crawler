@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dashboard.services.dashbord_service import DashboardService
 from app.db.session import get_db
 from app.schemas.dashboard import DashboardStats
-from app.schemas.source import SourceRead
+from app.api.dependencies.auth import CurrentUser, get_current_user
 
 router = APIRouter(
     prefix="/dashboard",
@@ -13,8 +13,8 @@ router = APIRouter(
 
 
 @router.get("/jobs")
-async def get_jobs(db: AsyncSession = Depends(get_db)):
-    result = await DashboardService(db).list_jobs()
+async def get_jobs(db: AsyncSession = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
+    result = await DashboardService(db).list_jobs(current_user.id)
     return [
         {
             "id": _.id,
@@ -31,8 +31,8 @@ async def get_jobs(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/stats", status_code=200, response_model=DashboardStats)
-async def get_stats(db: AsyncSession = Depends(get_db)):
-    result = await DashboardService(db).dashboard_stats()
+async def get_stats(db: AsyncSession = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
+    result = await DashboardService(db).dashboard_stats(current_user.id)
     return DashboardStats(
         sources_total=result["sources_total"],
         sources_enabled=result["sources_enabled"],

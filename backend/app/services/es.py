@@ -22,6 +22,7 @@ class ElasticService:
                 "properties": {
                     "article_id": {"type": "text"},
                     "source_id": {"type": "text"},
+                    "owner_id": {"type": "keyword"},
                     "source_name": {"type": "keyword"},
                     "title": {"type": "text"},
                     "content_text": {"type": "text"},
@@ -48,16 +49,21 @@ class ElasticService:
             document=payload,
         )
 
-    async def search(self, query: str) -> dict:
-        return await asyncio.to_thread(
-            self.client.search,
-            index=INDEX_NAME,
-            query={
+    async def search(self, query: str, owner_id: str | None = None) -> dict:
+        must_query = [
+            {
                 "multi_match": {
                     "query": query,
                     "fields": ["title^3", "content_text"],
                 }
-            },
+            }
+        ]
+        if owner_id:
+            must_query.append({"term": {"owner_id": owner_id}})
+        return await asyncio.to_thread(
+            self.client.search,
+            index=INDEX_NAME,
+            query={"bool": {"must": must_query}},
             size=50,
         )
 

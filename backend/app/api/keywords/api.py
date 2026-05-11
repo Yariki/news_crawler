@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import status as HttpStatus
 
 from app.api.keywords.services.keyword_service import KeywordService
-from app.api.source.services.source_service import SourceService
+from app.api.dependencies.auth import CurrentUser, get_current_user
 from app.db.session import get_db
 from app.schemas.keyword import MonitoredKeywordCreate, MonitoredKeywordRead, MonitoredKeywordUpdate
 
@@ -15,8 +15,8 @@ router = APIRouter(
 
 
 @router.get("")
-async def get_keywords(db: AsyncSession = Depends(get_db)):
-    words = await KeywordService(db).list_keywords()
+async def get_keywords(db: AsyncSession = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
+    words = await KeywordService(db).list_keywords(current_user.id)
     return [
         {
             "id": _.id,
@@ -27,14 +27,14 @@ async def get_keywords(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/active")
-async def get_active_keywords(db: AsyncSession = Depends(get_db)):
-    keywords = await KeywordService(db).get_active_keywords()
+async def get_active_keywords(db: AsyncSession = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
+    keywords = await KeywordService(db).get_active_keywords(current_user.id)
     return keywords
 
 
 @router.get("/{keyword_id}")
-async def get_keyword(keyword_id: UUID4, db: AsyncSession = Depends(get_db)):
-    word = await KeywordService(db).get_keyword(keyword_id)
+async def get_keyword(keyword_id: UUID4, db: AsyncSession = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
+    word = await KeywordService(db).get_keyword(keyword_id, current_user.id)
     return {
         "id": word.id,
         "keyword": word.keyword,
@@ -44,9 +44,9 @@ async def get_keyword(keyword_id: UUID4, db: AsyncSession = Depends(get_db)):
 
 @router.post("", status_code=HttpStatus.HTTP_201_CREATED)
 async def create_keyword(
-    request: MonitoredKeywordCreate, db: AsyncSession = Depends(get_db)
+    request: MonitoredKeywordCreate, db: AsyncSession = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)
 ):
-    word = await KeywordService(db).create_keyword(request.keyword)
+    word = await KeywordService(db).create_keyword(request.keyword, current_user.id)
     return {
         "id": word.id,
         "keyword": word.keyword,
@@ -57,9 +57,10 @@ async def create_keyword(
 async def update_keyword(
     keyword_id: UUID4, 
     request: MonitoredKeywordUpdate, 
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
-    word = await KeywordService(db).update_keyword(keyword_id, request)
+    word = await KeywordService(db).update_keyword(keyword_id, current_user.id, request)
     return {
         "id": word.id,
         "keyword": word.keyword,

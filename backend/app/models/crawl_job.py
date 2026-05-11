@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UUID, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import PrimaryIdMixin
@@ -13,7 +13,8 @@ class CrawlJob(PrimaryIdMixin):
     """CrawlJob model representing a single crawl execution for a source."""
     __tablename__ = "crawl_jobs"
 
-    source_id: Mapped[int] = mapped_column(ForeignKey("sources.id", ondelete="CASCADE"), nullable=False)
+    source_id: Mapped[UUID] = mapped_column(ForeignKey("sources.id", ondelete="CASCADE"), nullable=False)
+    owner_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     status: Mapped[Status] = mapped_column(Integer, nullable=False, default=Status.WAITING.value)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

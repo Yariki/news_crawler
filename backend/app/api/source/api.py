@@ -8,13 +8,14 @@ from app.schemas.job import CrawlJobRead
 from app.schemas.source import SourceCreateUpdate, SourceRead, SourceRunResponse
 from app.services.crawlers.html_crawler import HtmlCrawlService
 from app.services.scheduler import run_scheduled_job
+from app.api.dependencies.auth import CurrentUser, get_current_user
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
 
 @router.get("", status_code=200, response_model=list[SourceRead])
-async def get_source_list(db: AsyncSession = Depends(get_db)):
-    result = await SourceService(db).list_sources()
+async def get_source_list(db: AsyncSession = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
+    result = await SourceService(db).list_sources(current_user.id)
     return [
         {
             "id": str(_.id),
@@ -30,8 +31,8 @@ async def get_source_list(db: AsyncSession = Depends(get_db)):
     ]
 
 @router.get("/{source_id}", status_code=200, response_model=SourceRead)
-async def get_source(source_id: str, db: AsyncSession = Depends(get_db)):
-    result = await SourceService(db).get_source(source_id)
+async def get_source(source_id: str, db: AsyncSession = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
+    result = await SourceService(db).get_source(source_id, current_user.id)
     return {
         "id": str(result.id),
         "name": result.name,
@@ -44,8 +45,12 @@ async def get_source(source_id: str, db: AsyncSession = Depends(get_db)):
     }
 
 @router.post("", status_code=201, response_model=SourceRead)
-async def create_source(data: SourceCreateUpdate, db: AsyncSession = Depends(get_db)):
-    result = await SourceService(db).create_source(data)
+async def create_source(
+    data: SourceCreateUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    result = await SourceService(db).create_source(data, current_user.id)
     return {
         "id": str(result.id),
         "name": result.name,
@@ -58,6 +63,8 @@ async def create_source(data: SourceCreateUpdate, db: AsyncSession = Depends(get
     }
 
 @router.post("/{source_id}/run", status_code=200, response_model=SourceRunResponse)
-async def run_source(source_id: str, db: AsyncSession = Depends(get_db)):
+async def run_source(source_id: str, db: AsyncSession = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
+    _ = db
+    await SourceService(db).get_source(source_id, current_user.id)
     result = await run_scheduled_job(source_id)
     return {"id": source_id, "status": "running" if result else "failed"}

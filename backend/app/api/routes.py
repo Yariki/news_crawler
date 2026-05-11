@@ -15,17 +15,22 @@ from app.services.notifications import notification_hub
 from app.api.keywords.api import router as keywords_router
 from app.api.source.api import router as source_router
 from app.api.dashboard.api import router as dashboard_router
-from app.api.messages.api import router as messages_router
+from app.api.auth.api import router as auth_router
+from app.api.admin.api import router as admin_router
 
 from app.core.config import settings
+from app.api.dependencies.auth import CurrentUser, get_current_user
 
 router = APIRouter(prefix="/api")
 
+router.include_router(auth_router)
+router.include_router(admin_router)
 router.include_router(keywords_router)
 router.include_router(source_router)
 router.include_router(dashboard_router)
 
 if settings.app_mode == 'dev':
+    from app.api.messages.api import router as messages_router
     router.include_router(messages_router)
 
 @router.get("/health")
@@ -38,14 +43,23 @@ async def health() -> dict:
 #     return CrawlService.CRAWLER_TYPES
 
 @router.get("/articles/recent", response_model=list[ArticleRead])
-async def get_recent_articles(limit: int = 20, db: AsyncSession = Depends(get_db)):
-    items = await db.scalars(select(Article).order_by(desc(Article.published_at), desc(Article.id)).limit(limit))
+async def get_recent_articles(
+    limit: int = 20,
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    items = await db.scalars(
+        select(Article)
+        .where(Article.owner_id == current_user.id)
+        .order_by(desc(Article.published_at), desc(Article.id))
+        .limit(limit)
+    )
     return list(items.all())
 
 @router.get("/search", response_model=list[SearchHit])
-async def search_articles(q: str, db: AsyncSession = Depends(get_db)):
+async def search_articles(q: str, db: AsyncSession = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     _ = db
-    response = await elastic_service.search(q)
+    response = await elastic_service.search(q, owner_id=str(current_user.id))
     hits: list[SearchHit] = []
     for hit in response["hits"]["hits"]:
         src = hit["_source"]
@@ -72,6 +86,4 @@ async def alerts_ws(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         notification_hub.disconnect(websocket)
-
-
 

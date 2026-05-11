@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
@@ -16,9 +17,10 @@ class BaseCrawler(ABC):
         """Abstract method to be implemented by specific crawler types. This method should contain the logic for crawling a source, including discovering article URLs, fetching article data, detecting keywords, and storing results in the database and search index."""
         pass
 
-    async def _get_keywords(self) -> list[str]:
+    async def _get_keywords(self, owner_id: UUID) -> list[str]:
         result = await self.db.scalars(
             select(MonitoredKeyword.keyword)
+            .where(MonitoredKeyword.owner_id == owner_id)
             .where(MonitoredKeyword.is_enabled.is_(True))
             .order_by(MonitoredKeyword.keyword)
         )
@@ -32,6 +34,7 @@ class BaseCrawler(ABC):
             {
                 "article_id": article.id,
                 "source_id": source.id,
+                "owner_id": source.owner_id,
                 "source_name": source.name,
                 "title": article.title,
                 "content_text": article.content_text,

@@ -37,7 +37,7 @@ class RssCrawlService(BaseCrawler):
         await robots_service.fetch_robot()
         crawl_delay = robots_service.crawl_delay("*")
         
-        job = CrawlJob(source_id=source_id, status=Status.RUNNING)
+        job = CrawlJob(source_id=source_id, owner_id=source.owner_id, status=Status.RUNNING)
         self.db.add(job)
         await self.db.commit()
         await self.db.refresh(job)
@@ -46,7 +46,7 @@ class RssCrawlService(BaseCrawler):
             scraper = RssScraper(source.base_url)
             urls = await scraper.discover_rss_urls()
             job.articles_found = len(urls)
-            active_keywords = await self._get_keywords()
+            active_keywords = await self._get_keywords(source.owner_id)
             created = 0
             
             for url in urls:
@@ -65,6 +65,7 @@ class RssCrawlService(BaseCrawler):
                 )
                 article = Article(
                     source_id=source_id,
+                    owner_id=source.owner_id,
                     external_id=hashlib.sha256(
                         article_data.external_id.encode()
                     ).hexdigest(),

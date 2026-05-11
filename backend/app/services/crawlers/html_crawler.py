@@ -38,7 +38,7 @@ class HtmlCrawlService (BaseCrawler):
         robots_service = RobotsService(source.base_url, self.db)
         await robots_service.fetch_robot()
 
-        job = CrawlJob(source_id=source.id, status=Status.RUNNING)
+        job = CrawlJob(source_id=source.id, owner_id=source.owner_id, status=Status.RUNNING)
         self.db.add(job)
         await self.db.commit()
         await self.db.refresh(job)
@@ -47,7 +47,7 @@ class HtmlCrawlService (BaseCrawler):
             scraper = self._build_scraper(source)
             urls = await scraper.discover_article_urls()
             job.articles_found = len(urls)
-            active_keywords = await self._get_keywords()
+            active_keywords = await self._get_keywords(source.owner_id)
             created = 0
             crawl_delay = robots_service.crawl_delay("*")
 
@@ -69,6 +69,7 @@ class HtmlCrawlService (BaseCrawler):
                     scraped.content_text, active_keywords)
                 article = Article(
                     source_id=source.id,
+                    owner_id=source.owner_id,
                     external_id=scraped.external_id,
                     url=scraped.url,
                     title=scraped.title,
