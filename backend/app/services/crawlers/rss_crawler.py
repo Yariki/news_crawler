@@ -37,7 +37,7 @@ class RssCrawlService(BaseCrawler):
         await robots_service.fetch_robot()
         crawl_delay = robots_service.crawl_delay("*")
         
-        job = CrawlJob(source_id=source_id, status=Status.RUNNING)
+        job = CrawlJob(source_id=source_id, status=Status.RUNNING, owner_id=source.owner_id)
         self.db.add(job)
         await self.db.commit()
         await self.db.refresh(job)
@@ -86,6 +86,7 @@ class RssCrawlService(BaseCrawler):
                     matched_keywords_csv=(
                         ",".join(matched_words) if matched_words else None
                     ),
+                    owner_id=source.owner_id,
                 )
 
                 self.db.add(article)

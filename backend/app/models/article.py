@@ -28,6 +28,7 @@ class Article(PrimaryIdMixin):
     checksum: Mapped[str] = mapped_column(String(64), nullable=False)
     is_alert: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     matched_keywords_csv: Mapped[str | None] = mapped_column(Text, nullable=True)
+    owner_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
 
     source = relationship("Source", back_populates="articles")
     keyword_hits = relationship("KeywordHit", back_populates="article", cascade="all, delete-orphan")

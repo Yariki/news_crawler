@@ -16,11 +16,15 @@ from app.api.keywords.api import router as keywords_router
 from app.api.source.api import router as source_router
 from app.api.dashboard.api import router as dashboard_router
 from app.api.messages.api import router as messages_router
+from app.api.auth.api import router as auth_router
+from app.api.users.api import router as users_router
 
 from app.core.config import settings
 
 router = APIRouter(prefix="/api")
 
+router.include_router(auth_router)
+router.include_router(users_router)
 router.include_router(keywords_router)
 router.include_router(source_router)
 router.include_router(dashboard_router)
@@ -72,6 +76,4 @@ async def alerts_ws(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         notification_hub.disconnect(websocket)
-
-
 

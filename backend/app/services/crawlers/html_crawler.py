@@ -38,7 +38,7 @@ class HtmlCrawlService (BaseCrawler):
         robots_service = RobotsService(source.base_url, self.db)
         await robots_service.fetch_robot()
 
-        job = CrawlJob(source_id=source.id, status=Status.RUNNING)
+        job = CrawlJob(source_id=source.id, status=Status.RUNNING, owner_id=source.owner_id)
         self.db.add(job)
         await self.db.commit()
         await self.db.refresh(job)
@@ -84,6 +84,7 @@ class HtmlCrawlService (BaseCrawler):
                     is_alert=bool(matched_keywords),
                     matched_keywords_csv=",".join(
                         matched_keywords) if matched_keywords else None,
+                    owner_id=source.owner_id,
                 )
                 self.db.add(article)
                 await self.db.flush()

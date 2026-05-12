@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     app_mode: str = Field(default="prod", alias="APP_MODE")
     crawl_delay: int = Field(default=5, alias="CRAWL_DELAY")
     request_rate: int = Field(default=10, alias="REQUEST_RATE")
+    access_token_ttl_seconds: int = Field(default=3600, alias="ACCESS_TOKEN_TTL_SECONDS")
+    refresh_token_ttl_seconds: int = Field(default=604800, alias="REFRESH_TOKEN_TTL_SECONDS")
+    password_reset_token_ttl_seconds: int = Field(default=3600, alias="PASSWORD_RESET_TOKEN_TTL_SECONDS")
     
     @property
     def cors_origins_list(self) -> list[str]:
