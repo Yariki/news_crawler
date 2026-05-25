@@ -22,6 +22,7 @@ class Source(PrimaryIdMixin):
     scrape_interval_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=1440)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    last_message_id: Mapped[str] = mapped_column(String(255), nullable=True)
 
     articles = relationship("Article", back_populates="source", cascade="all, delete-orphan")
     jobs = relationship("CrawlJob", back_populates="source", cascade="all, delete-orphan")
