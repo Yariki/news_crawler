@@ -5,7 +5,7 @@ from pydantic import BaseModel, HttpUrl, UUID4
 
 class SourceCreateUpdate(BaseModel):
     name: str
-    base_url: HttpUrl
+    base_url: HttpUrl | str
     language: str
     source_type: int
     crawler_key: str

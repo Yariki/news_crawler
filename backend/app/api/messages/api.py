@@ -1,6 +1,4 @@
 
-from tkinter import Message
-
 from fastapi import APIRouter
 from ...schemas.messages import Message
 from ...services.notifications import notification_hub

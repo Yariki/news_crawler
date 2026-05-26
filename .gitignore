@@ -146,3 +146,7 @@ docker-compose.override.yml
 /backend/.venv/
 /frontend/node_modules/
 alembic/versions/*.pyc
+*.session
+
+frontend/.vscode/chromium-debug-profile/*
+frontend/.vscode/firefox-debug-profile/*

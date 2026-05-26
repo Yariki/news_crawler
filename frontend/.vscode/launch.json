@@ -1,0 +1,57 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node-terminal",
+            "request": "launch",
+            "name": "Start Vite Dev Server",
+            "command": "npm run dev"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chromium (http://localhost:5173)",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}",
+            "runtimeExecutable": "/snap/bin/chromium",
+            "runtimeArgs": [
+                "--remote-debugging-port=9222",
+                "--user-data-dir=${workspaceFolder}/.vscode/chromium-debug-profile",
+                "--no-first-run",
+                "--no-default-browser-check"
+            ],
+            "timeout": 60000
+        },
+        {
+            "type": "firefox",
+            "request": "launch",
+            "name": "Launch Firefox (http://localhost:5173)",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}",
+            "reAttach": true,
+            "firefoxExecutable": "/usr/bin/firefox",
+            "profile": "${workspaceFolder}/.vscode/firefox-debug-profile",
+            "keepProfileChanges": true,
+            "timeout": 60000
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Debug Frontend (Chromium)",
+            "configurations": [
+                "Start Vite Dev Server",
+                "Launch Chromium (http://localhost:5173)"
+            ]
+        },
+        {
+            "name": "Debug Frontend (Firefox)",
+            "configurations": [
+                "Start Vite Dev Server",
+                "Launch Firefox (http://localhost:5173)"
+            ]
+        }
+    ]
+}

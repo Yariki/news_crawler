@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     app_mode: str = Field(default="prod", alias="APP_MODE")
     crawl_delay: int = Field(default=5, alias="CRAWL_DELAY")
     request_rate: int = Field(default=10, alias="REQUEST_RATE")
+    telegram_api_id: str = Field(default="", alias="TELEGRAM_API_ID")
+    telegram_api_hash: str = Field(default="", alias="TELEGRAM_API_HASH")
     
     @property
     def cors_origins_list(self) -> list[str]:

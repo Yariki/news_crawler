@@ -56,6 +56,10 @@ class ElasticService:
                 "multi_match": {
                     "query": query,
                     "fields": ["title^3", "content_text"],
+                    "fuzziness": "AUTO",
+                    "prefix_length": 1,
+                    "max_expansions": 50,
+                    "fuzzy_transpositions": True,
                 }
             },
             size=50,

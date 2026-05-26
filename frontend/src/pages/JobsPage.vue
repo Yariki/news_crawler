@@ -45,14 +45,18 @@ const jobHeaders = [
     {title: 'Actions', key: 'actions', sortable: false},
 ]
 
-const statusColor = (status: JobStatus) => ({
-    completed: 'success',
-    failed: 'error',
-    running: 'info',
-    waiting: 'warning',
-    canceled: 'default',
-    cancelled: 'default',
-}[status ?? status.toLowerCase()] || 'default')
+const statusColor = (status: JobStatus | string | null | undefined) => {
+    const normalizedStatus = (status ?? '').toString().toLowerCase();
+
+    return ({
+        completed: 'success',
+        failed: 'error',
+        running: 'info',
+        waiting: 'warning',
+        canceled: 'default',
+        cancelled: 'default',
+    }[normalizedStatus] || 'default');
+}
 
 const refresh = async () => {
     await store.refreshJobs();
