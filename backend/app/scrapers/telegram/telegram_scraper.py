@@ -41,7 +41,7 @@ class TelegramScrapper:
         
         messages = None
         if self._last_message_id:
-            messages = await self._client.get_messages(self._entity, min_id=self._last_message_id)
+            messages = await self._client.get_messages(self._entity, min_id=int(self._last_message_id))
         else:
             messages = await self._client.get_messages(self._entity, limit=100)  # Fetch the latest 100 messages if no last_message_id is provided  
         

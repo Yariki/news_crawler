@@ -1,4 +1,5 @@
 from logging.config import fileConfig
+import os
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -11,6 +12,11 @@ import app.models  # noqa: F401 - import side effects register models with Base.
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# Prefer runtime DATABASE_URL (e.g., Docker compose service host) over static ini default.
+database_url = os.getenv("DATABASE_URL")
+if database_url:
+    config.set_main_option("sqlalchemy.url", database_url.replace("+asyncpg", "+psycopg"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

@@ -11,6 +11,7 @@ from app.models.source import Source
 from app.models.source_type import SourceType
 from app.services.crawlers.html_crawler import HtmlCrawlService
 from app.services.crawlers.rss_crawler import RssCrawlService
+from app.services.crawlers.telegram_crawler import TelegramCrawlerService
 
 scheduler = AsyncIOScheduler(timezone="UTC")
 
@@ -21,15 +22,21 @@ async def _run_source_job(source_id: str) -> None:
         await service.crawl(source_id)
 
 
-async def _run_rss_job(source_id: int) -> None:
+async def _run_rss_job(source_id: str) -> None:
     async with AsyncSessionLocal() as db:
         service = RssCrawlService(db)
         await service.crawl(source_id)
 
+async def _run_telegram_job(source_id: str) -> None:
+    # Placeholder for Telegram crawling logic
+    async with AsyncSessionLocal() as db:
+        service = TelegramCrawlerService(db)
+        await service.crawl(source_id)
 
 switcher = {
     SourceType.NEWS_SITE: _run_source_job,
     SourceType.RSS: _run_rss_job,
+    SourceType.TELEGRAM_CHANNEL: _run_telegram_job,
 }
 
 

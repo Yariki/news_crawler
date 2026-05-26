@@ -30,7 +30,7 @@ class BaseCrawler(ABC):
         from app.services.es import elastic_service
         await elastic_service.index_article(
             {
-                "article_id": article.id,
+                "article_id": str(article.id),
                 "source_id": source.id,
                 "source_name": source.name,
                 "title": article.title,

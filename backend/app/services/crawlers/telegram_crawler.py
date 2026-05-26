@@ -1,9 +1,11 @@
 
 from datetime import datetime, timezone
 
+
 import httpx
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.models.status import Status
 from app.services.keyword_detector import detect_keywords
@@ -16,7 +18,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class TelegramCrawler(BaseCrawler):
+class TelegramCrawlerService(BaseCrawler):
     """TelegramCrawler is responsible for orchestrating the crawling process for a specific Telegram channel. It uses the TelegramScrapper to fetch messages, detects keywords, and stores relevant articles in the database."""
     
     def __init__(self, db: AsyncSession):
@@ -50,11 +52,18 @@ class TelegramCrawler(BaseCrawler):
             active_keywords = await self._get_keywords()
             
             for article_data in scraped_articles:
+                
+                exists = await self.db.scalar(
+                    select(Article).where(Article.url == article_data.url)
+                )
+                if exists:
+                    continue
+                
                 matched_keywords = detect_keywords(article_data.content_text, active_keywords)
                 
                 article = Article(
                     source_id=source_id,
-                    external_id=article_data.id,
+                    external_id=article_data.external_id,
                     url=article_data.url,
                     title=article_data.title,
                     author=article_data.author,
@@ -63,7 +72,7 @@ class TelegramCrawler(BaseCrawler):
                     content_html=article_data.content_html,
                     content_text=article_data.content_text,
                     summary=article_data.summary,
-                    language=article_data.language,
+                    language=article_data.language or source.language,
                     tags_csv=(
                         ",".join(article_data.tags) if article_data.tags else None
                     ),
