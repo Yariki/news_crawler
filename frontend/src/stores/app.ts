@@ -82,7 +82,7 @@ export const useAppStore = defineStore('app', {
                 this.searchHits = []
                 return
             }
-            const response = await api.get('/search', {params: {q: this.searchQuery}})
+            const response = await api.get('/articles/search', {params: {q: this.searchQuery}})
             this.searchHits = response.data
         },
         async createSource() {
@@ -92,7 +92,7 @@ export const useAppStore = defineStore('app', {
                 base_url: '',
                 language: 'ru',
                 source_type: 1,
-                crawler_key: this.crawlerTypes[0]?.key || 'themoscowtimes_ru',
+                crawler_key: this.crawlerTypes[0]?.key || '',
                 scrape_interval_minutes: 1440,
                 is_enabled: true,
             }
