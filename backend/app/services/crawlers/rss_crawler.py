@@ -44,19 +44,18 @@ class RssCrawlService(BaseCrawler):
 
         try:
             scraper = RssScraper(source.base_url)
-            urls = await scraper.discover_rss_urls()
-            job.articles_found = len(urls)
+            feeds = await scraper.discover_rss_urls()
+            job.articles_found = len(feeds)
             active_keywords = await self._get_keywords()
             created = 0
-            
-            for url in urls:
-                exists = await self.db.scalar(
-                    select(Article).where(Article.url == url.url)
-                )
-                if exists:
+            urls = [feed.url for feed in feeds if feed.url]
+            existing_urls = set(await self.db.scalars(select(Article.url).where(Article.url.in_(urls))))
+
+            for feed in feeds:
+                if feed.url in existing_urls:
                     continue
 
-                article_data = await scraper.fetch_article(url)
+                article_data = await scraper.fetch_article(feed)
                 if not article_data:
                     continue
 
@@ -68,7 +67,7 @@ class RssCrawlService(BaseCrawler):
                     external_id=hashlib.sha256(
                         article_data.external_id.encode()
                     ).hexdigest(),
-                    url=url.url,
+                    url=feed.url,
                     title=article_data.title,
                     author=article_data.author,
                     published_at=article_data.published_at,

@@ -41,7 +41,15 @@ class RobotRepository:
             robot.updated_at = robot_site.last_checked
             await self.db.commit()
 
-    async def get_robot_by_url(self, url: str) -> RobotSite | None:
+
+    async def get_robot_by_url(self, url: str) -> Robot | None:
+        """Retrieves a robot record from the database based on the provided URL. If a record is found, it returns the Robot object; otherwise, it returns None."""
+        result = await self.db.execute(
+            select(Robot).where(Robot.url == url)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_robot_site_by_url(self, url: str) -> RobotSite | None:
         """Retrieves a robot record from the database based on the provided URL and returns it as a RobotSite object. If no record is found, returns None."""
         result = await self.db.execute(
             select(Robot).where(Robot.url == url)

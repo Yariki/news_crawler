@@ -26,7 +26,7 @@ class RobotsService:
         self.protego = None
 
     async def fetch_robot(self):
-        robot_site = await self.repo.get_robot_by_url(self.url)
+        robot_site = await self.repo.get_robot_site_by_url(self.url)
         if not robot_site:
             await self._load_robot()
         else:
@@ -71,6 +71,15 @@ class RobotsService:
         
         robots_content = response.read().decode("utf-8")
         self.protego = Protego.parse(robots_content)
+        robot = await self.repo.get_robot_by_url(self.url)
+        if robot:
+            robot.robots_content = robots_content
+            robot.crawl_delay_seconds = self.crawl_delay("*")
+            robot.requests_per_minute = self.request_rate("*")
+            robot.updated_at = datetime.now(timezone.utc)
+            await self.db.commit()
+            return
+
         robot = Robot(
             url=self.url,
             robots_content=robots_content,

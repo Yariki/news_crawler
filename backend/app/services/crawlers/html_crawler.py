@@ -51,9 +51,10 @@ class HtmlCrawlService (BaseCrawler):
             created = 0
             crawl_delay = robots_service.crawl_delay("*")
 
+            existing_urls = set(await self.db.scalars(select(Article.url).where(Article.url.in_(urls))))
+
             for url in urls:
-                existing = await self.db.scalar(select(Article).where(Article.url == url))
-                if existing:
+                if url in existing_urls:
                     continue
                 
                 is_allowed = robots_service.can_fetch("*", url)

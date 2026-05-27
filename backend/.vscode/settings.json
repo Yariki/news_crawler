@@ -20,8 +20,12 @@
     "tab.hoverBackground": "#d1d1d1",
     "tab.activeBackground": "#060e38",
     "tab.activeForeground": "#e7e7e7"
-},
+  },
   "peacock.color": "#18298d",
+  "tabsColor.activeTab": {
+    "backgroundColor": "red",
+    "fontColor": "default"
+  },
   "tabsColor.byFileType": {
     "py": {
       "backgroundColor": "#b2fc68",
