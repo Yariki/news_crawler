@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
 import httpx
@@ -81,7 +81,7 @@ class RobotsService:
         await self.db.commit()
 
     async def _check_and_update_robot(self, robot_site: Robot) -> None:
-        period = datetime.now(datetime.timezone.utc) - robot_site.updated_at
+        period = datetime.now(timezone.utc) - robot_site.updated_at
         period_in_days = period.total_seconds() / (24 * 3600)
         if period_in_days >= 7:
             await self._load_robot()
