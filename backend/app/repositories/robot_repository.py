@@ -9,13 +9,14 @@ from app.dto.robot_site import RobotSite
 from app.models.robots import Robot
 
 class RobotRepository:
+    """Repository class responsible for managing Robot records in the database. It provides methods to add new robots, update existing robots, and retrieve robot information based on URL. This class abstracts away the database interactions related to the Robot model, allowing other parts of the application to work with RobotSite DTOs without needing to know about the underlying database structure."""
 
     def __init__(self, db: AsyncSession):
         self.db = db
 
     
     async def add_robot(self, robot_site: RobotSite) -> None:
-        
+        """Adds a new robot record to the database based on the provided RobotSite object."""
         robot = Robot(
             url=robot_site.url,
             robots_content=robot_site.content,
@@ -28,6 +29,7 @@ class RobotRepository:
         await self.db.commit()
 
     async def update_robot(self, robot_site: RobotSite) -> None:
+        """Updates an existing robot record in the database with new data from the provided RobotSite object."""
         result = await self.db.execute(
             select(Robot).where(Robot.url == robot_site.url)
         )
@@ -40,6 +42,7 @@ class RobotRepository:
             await self.db.commit()
 
     async def get_robot_by_url(self, url: str) -> RobotSite | None:
+        """Retrieves a robot record from the database based on the provided URL and returns it as a RobotSite object. If no record is found, returns None."""
         result = await self.db.execute(
             select(Robot).where(Robot.url == url)
         )
@@ -49,8 +52,9 @@ class RobotRepository:
         
         return RobotSite(
             url=robot.url,
-            content=robot.robots_content,
+            content=robot.robots_content if robot.robots_content else "", 
             crawl_delay=robot.crawl_delay_seconds,
             request_rate=robot.requests_per_minute,
-            last_checked=robot.updated_at
+            last_checked=robot.updated_at,
+            can_fetch=True
         )

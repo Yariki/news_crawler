@@ -47,10 +47,10 @@ class BaseCrawler(ABC):
         from app.services.notifications import notification_hub
         await notification_hub.broadcast(
             "keywords_alert", {
-                "article_id": article.id,
+                "article_id": str(article.id),
                 "title": article.title,
                 "url": article.url,
                 "matched_keywords": matched_words,
-                "published_at": article.published_at,
+                "published_at": str(article.published_at),
             }
         )

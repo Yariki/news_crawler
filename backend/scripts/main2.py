@@ -29,25 +29,30 @@ BASE_URL = "https://ria.ru/"
 # rss_url2= "http://www.nytimes.com/services/xml/rss/nyt/World.xml"
 # rss_url3 = "http://texty.org.ua/mod/news/?view=rss"
 #
-# async def main_rss_read():
-#     scraper = RssScraper(rss_url3)
-#
-#     feeds = await scraper.discover_rss_urls()
-#     for feed in feeds:
-#         article: ScrapedArticle = await scraper.fetch_article(feed)
-#         if article:
-#             print(f"{article.external_id} {article.title}")
-#             print("-" * 100)
-#
+async def main_rss_read():
+    
+    from app.db.session import AsyncSessionLocal
+    from app.services.crawlers.rss_crawler import RssCrawlService
+    
+    source_id = "3c45b287-6183-44a2-8a40-90bcc26e1d2a"
+
+    async with AsyncSessionLocal() as db:
+        service = RssCrawlService(db)
+        await service.crawl(source_id)
+
 # asyncio.run(main_rss_read())
 
 
-# async def mail_crawl():
-#     source_id = "a2bc2d89-65a9-4b37-9780-517dda5bb8f0"
+async def mail_crawl():
+    
+    from app.db.session import AsyncSessionLocal
+    from app.services.crawlers.html_crawler import HtmlCrawlService
+    
+    source_id = "4452b48c-454b-4376-b901-888ef11f100d"
 
-#     async with AsyncSessionLocal() as db:
-#         service = HtmlCrawlService(db)
-#         await service.crawl(source_id)
+    async with AsyncSessionLocal() as db:
+        service = HtmlCrawlService(db)
+        await service.crawl(source_id)
 
 async def main_telegram_scrapper():
     from app.core.config import settings
@@ -65,4 +70,4 @@ async def main_telegram_scrapper():
 
 
 if __name__ == "__main__":
-    asyncio.run(main_telegram_scrapper())
+    asyncio.run(main_rss_read())

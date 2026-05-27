@@ -36,7 +36,7 @@ class RobotsService:
     def can_fetch(self, user_agent: str, url: str) -> bool:
         if not self.protego:
             return True
-        return self.protego.can_fetch(user_agent, url)
+        return self.protego.can_fetch(url, user_agent)
 
     def crawl_delay(self, user_agent: str) -> int | None:
         if not self.protego:
@@ -88,8 +88,8 @@ class RobotsService:
         self.db.add(robot)
         await self.db.commit()
 
-    async def _check_and_update_robot(self, robot_site: Robot) -> None:
-        period = datetime.now(timezone.utc) - robot_site.updated_at
+    async def _check_and_update_robot(self, robot_site: RobotSite) -> None:
+        period = datetime.now(timezone.utc) - robot_site.last_checked
         period_in_days = period.total_seconds() / (24 * 3600)
         if period_in_days >= 7:
             await self._load_robot()
