@@ -11,22 +11,29 @@ from dateutil import parser as date_parser
 
 from app.core.const import ARTICLE_LINK_RE, LINK_RE, PATTERNS
 from app.dto.scraped_article import ScrapedArticle
+import logging
+
+
+
+logger = logging.getLogger(__name__)
+
 
 
 class BaseScraper(ABC):
     """Base class for all scrapers. Defines the interface and common utilities."""
     def __init__(self, url):
         self.base_url = url
-        self.client = httpx.AsyncClient(
-            timeout=30.0,
-            follow_redirects=True,
-            headers={
-                "User-Agent": "Mozilla/5.0 (compatible; NewsMonitorBot/0.1)"},
-        )
-
+        
     async def discover_article_urls(self) -> list[str]:
         """Fetches the base URL and extracts article URLs using a regex pattern."""
-        response = await self.client.get(self.base_url)
+        response = None
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0 (compatible; NewsMonitorBot/0.1)"}) as client:
+            response = await client.get(self.base_url)
+        
+        if not response:
+            logger.warning(f"Failed to fetch base URL: {self.base_url}")
+            return []
+        
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "lxml")
 
@@ -46,7 +53,14 @@ class BaseScraper(ABC):
 
     async def fetch_article(self, url: str) -> ScrapedArticle | None:
         """Fetches the article URL and extracts structured data. This method should be overridden by subclasses for site-specific parsing logic."""
-        response = await self.client.get(url)
+        response = None
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0 (compatible; NewsMonitorBot/0.1)"}) as client:
+            response = await client.get(url)
+        
+        if not response:
+            logger.warning(f"Failed to fetch article from {url}")
+            return None
+
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError:

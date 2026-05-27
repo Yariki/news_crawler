@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import logging
 from urllib.parse import urlsplit
 
 import httpx
@@ -11,6 +12,8 @@ from app.dto.robot_site import RobotSite
 from app.models.robots import Robot
 from app.repositories.robot_repository import RobotRepository
 from app.utils.html_utils import get_url
+
+logger = logging.getLogger(__name__)
 
 
 class RobotsService:
@@ -54,13 +57,18 @@ class RobotsService:
         )
 
     async def _load_robot(self) -> None:
-        client = httpx.AsyncClient(
-            timeout=30.0,
+        response = None
+        async with  httpx.AsyncClient(
+            timeout= 30.0,
             follow_redirects=True,
             headers={"User-Agent": "Mozilla/5.0 (compatible; NewsMonitorBot/0.1)"},
-        )
-        response = await client.get(self.url)
+        ) as client:
+            response = await client.get(self.url)
 
+        if not response:
+            logger.warning(f"Failed to fetch robots.txt from {self.url}")
+            return
+        
         robots_content = response.read().decode("utf-8")
         self.protego = Protego.parse(robots_content)
         robot = Robot(
