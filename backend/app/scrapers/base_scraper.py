@@ -44,7 +44,7 @@ class BaseScraper(ABC):
             if not href:
                 continue
             full_url = urljoin(self.base_url, href)
-            print(f"Discovered URL: {full_url}; {any(pattern.search(full_url) for pattern in PATTERNS)}")
+            logger.warning(f"Discovered URL: {full_url}; {any(pattern.search(full_url) for pattern in PATTERNS)}")
             if any(pattern.search(full_url) for pattern in PATTERNS) and full_url not in seen:
                 seen.add(full_url)
                 found.append(full_url)

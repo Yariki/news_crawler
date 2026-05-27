@@ -12,6 +12,9 @@ from app.models.source_type import SourceType
 from app.services.crawlers.html_crawler import HtmlCrawlService
 from app.services.crawlers.rss_crawler import RssCrawlService
 from app.services.crawlers.telegram_crawler import TelegramCrawlerService
+import logging
+
+logger = logging.getLogger(__name__)
 
 scheduler = AsyncIOScheduler(timezone="UTC")
 
@@ -70,5 +73,5 @@ async def run_scheduled_job(source_id: str) -> bool:
             job.modify(next_run_time=datetime.now(timezone.utc))
             return True
     except Exception as e:
-        print(f"Error running scheduled job for source {source_id}: {e}")
+        logger.error(f"Error running scheduled job for source {source_id}: {e}")
     return False
