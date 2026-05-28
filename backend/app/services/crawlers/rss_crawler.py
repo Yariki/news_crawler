@@ -1,21 +1,7 @@
-import asyncio
-import hashlib
-
-from app.services.keyword_detector import detect_keywords
+from app.models import CrawlJob
 from app.services.crawlers.base_crawler import BaseCrawler
-from app.scrapers.rss.rss_scraper import RssScraper
-from app.models.status import Status
-from app.models import CrawlJob, Source, Article, KeywordHit
 import logging
-from datetime import datetime, timezone
-
-import httpx
-from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
-
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.services.robots import RobotsService
 
 logger = logging.getLogger(__name__)
 
@@ -28,109 +14,5 @@ class RssCrawlService(BaseCrawler):
         super().__init__(db)
 
     async def crawl(self, source_id: str) -> CrawlJob | None:
-        """Runs the crawling process for a given RSS source. This includes discovering article URLs, fetching article data, detecting keywords, and storing results in the database and search index."""
-        source = await self.db.get(Source, source_id)
-        if not source:
-            raise ValueError("Source not found")
+        return await super().crawl(source_id)
 
-        robots_service = RobotsService(source.base_url, self.db)
-        await robots_service.fetch_robot()
-        crawl_delay = robots_service.crawl_delay("*")
-        
-        job = CrawlJob(source_id=source_id, status=Status.RUNNING)
-        self.db.add(job)
-        await self.db.commit()
-        await self.db.refresh(job)
-
-        try:
-            scraper = RssScraper(source.base_url)
-            feeds = await scraper.discover_rss_urls()
-            job.articles_found = len(feeds)
-            active_keywords = await self._get_keywords()
-            created = 0
-            urls = [feed.url for feed in feeds if feed.url]
-            existing_urls = set(await self.db.scalars(select(Article.url).where(Article.url.in_(urls))))
-
-            for feed in feeds:
-                if feed.url in existing_urls:
-                    continue
-
-                article_data = await scraper.fetch_article(feed)
-                if not article_data:
-                    continue
-
-                matched_words = detect_keywords(
-                    article_data.content_text, active_keywords
-                )
-                article = Article(
-                    source_id=source_id,
-                    external_id=hashlib.sha256(
-                        article_data.external_id.encode()
-                    ).hexdigest(),
-                    url=feed.url,
-                    title=article_data.title,
-                    author=article_data.author,
-                    published_at=article_data.published_at,
-                    fetched_at=datetime.now(timezone.utc),
-                    content_html=article_data.content_html,
-                    content_text=article_data.content_text,
-                    summary=article_data.summary,
-                    language=article_data.language,
-                    tags_csv=(
-                        ",".join(article_data.tags) if article_data.tags else None
-                    ),
-                    raw_payload_json=article_data.raw_payload_json,
-                    checksum=article_data.checksum,
-                    is_alert=bool(matched_words),
-                    matched_keywords_csv=(
-                        ",".join(matched_words) if matched_words else None
-                    ),
-                )
-
-                self.db.add(article)
-                await self.db.flush()
-
-                for keyword in matched_words:
-                    self.db.add(
-                        KeywordHit(article_id=article.id, keyword=keyword.strip())
-                    )
-
-                await self.db.commit()
-                await self.db.refresh(article)
-                created += 1
-
-                await self._index_article(article, source, matched_words)
-                if matched_words:
-                    await self._send_notification(article, matched_words)
-                
-                if crawl_delay:
-                    logger.debug(f"Sleeping for {crawl_delay} seconds to respect crawl delay")
-                    await asyncio.sleep(crawl_delay)
-
-            job.articles_created = created
-            job.status = Status.COMPLETED
-
-        except httpx.HTTPStatusError as ex:
-            job.status = Status.FAILED
-            job.error_message = (
-                f"HTTP error {ex.response.status_code}: {ex.request.url}"
-            )
-            logger.error("HTTP error crawling source %s: %s", source_id, ex)
-        except httpx.RequestError as ex:
-            job.status = Status.FAILED
-            job.error_message = f"Network error: {ex}"
-            logger.error("Network error crawling source %s: %s", source_id, ex)
-        except SQLAlchemyError as ex:
-            job.status = Status.FAILED
-            job.error_message = f"Database error: {ex}"
-            logger.error("Database error crawling source %s: %s", source_id, ex)
-        except Exception as ex:
-            job.status = Status.FAILED
-            job.error_message = f"Unexpected error: {ex}"
-            logger.exception("Unexpected error crawling source %s", source_id)
-        finally:
-            job.finished_at = datetime.now(timezone.utc)
-            await self.db.commit()
-            await self.db.refresh(job)
-
-        return job

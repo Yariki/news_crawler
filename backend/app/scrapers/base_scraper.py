@@ -11,6 +11,7 @@ from dateutil import parser as date_parser
 
 from app.core.const import ARTICLE_LINK_RE, LINK_RE, PATTERNS
 from app.dto.scraped_article import ScrapedArticle
+from app.dto.url_feed import UrlFeed
 import logging
 
 
@@ -24,7 +25,7 @@ class BaseScraper(ABC):
     def __init__(self, url):
         self.base_url = url
         
-    async def discover_article_urls(self) -> list[str]:
+    async def discover_urls(self) -> list[UrlFeed]:
         """Fetches the base URL and extracts article URLs using a regex pattern."""
         response = None
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0 (compatible; NewsMonitorBot/0.1)"}) as client:
@@ -37,7 +38,7 @@ class BaseScraper(ABC):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "lxml")
 
-        found: list[str] = []
+        found: list[UrlFeed] = []
         seen: set[str] = set()
         for anchor in soup.select("a[href]"):
             href = anchor.get("href", "").strip()
@@ -47,18 +48,29 @@ class BaseScraper(ABC):
             logger.warning(f"Discovered URL: {full_url}; {any(pattern.search(full_url) for pattern in PATTERNS)}")
             if any(pattern.search(full_url) for pattern in PATTERNS) and full_url not in seen:
                 seen.add(full_url)
-                found.append(full_url)
+                found.append(UrlFeed(
+                    id=full_url,
+                    url=full_url,
+                    title="",
+                    author=None,
+                    published=None,
+                    summary=None,
+                    content_html=None,
+                    content_text=None,
+                    tags=[],
+                    checksum=None,
+                ))
 
         return found
 
-    async def fetch_article(self, url: str) -> ScrapedArticle | None:
+    async def fetch_article(self, feed: UrlFeed) -> ScrapedArticle | None:
         """Fetches the article URL and extracts structured data. This method should be overridden by subclasses for site-specific parsing logic."""
         response = None
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0 (compatible; NewsMonitorBot/0.1)"}) as client:
-            response = await client.get(url)
+            response = await client.get(feed.url)
         
         if not response:
-            logger.warning(f"Failed to fetch article from {url}")
+            logger.warning(f"Failed to fetch article from {feed.url}")
             return None
 
         try:
@@ -74,7 +86,7 @@ class BaseScraper(ABC):
         content_html, content_text = self._get_content(soup)
         summary = self._build_summary(content_text)
         tags = self._get_tags(soup)
-        external_id = self._extract_external_id(url)
+        external_id = self._extract_external_id(feed.url)
         checksum = hashlib.sha256(content_text.encode("utf-8")).hexdigest()
 
         if not title or not content_text:
@@ -83,7 +95,7 @@ class BaseScraper(ABC):
 
         return ScrapedArticle(
             external_id=external_id,
-            url=url,
+            url=feed.url,
             title=title,
             author=author,
             published_at=published_at,
@@ -94,7 +106,7 @@ class BaseScraper(ABC):
             tags=tags,
             raw_payload_json={
                 "scraped_at": datetime.now(timezone.utc).isoformat(),
-                "url": url,
+                "url": feed.url,
                 "title": title,
                 "author": author,
                 "published_at": published_at.isoformat() if published_at else None,

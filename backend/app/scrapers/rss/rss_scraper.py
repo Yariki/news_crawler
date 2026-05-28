@@ -5,17 +5,18 @@ import feedparser
 import httpx
 from bs4 import BeautifulSoup
 
-from app.dto.rss_feed import RssFeed
+from app.dto.url_feed import UrlFeed
 from app.dto.scraped_article import ScrapedArticle
+from app.scrapers.base_scraper import BaseScraper
 from app.utils.bot_challenge_detector import looks_like_bot_challenge
 from app.utils.html_utils import extract_rss_content_html, html_to_text, get_content
 
 
-class RssScraper:
+class RssScraper(BaseScraper):
     """Scraper for fetching articles from RSS feeds."""
 
-    def __init__(self, rss_url: str):
-        self.rss_url = rss_url
+    def __init__(self, url: str):
+        super().__init__(url)
         self.client = httpx.AsyncClient(
             timeout=30.0,
             follow_redirects=True,
@@ -26,10 +27,10 @@ class RssScraper:
             },
         )
 
-    async def discover_rss_urls(self) -> list[RssFeed]:
+    async def discover_urls(self) -> list[UrlFeed]:
         """Fetches the RSS feed URL and extracts feed items."""
-        response_feeds = feedparser.parse(self.rss_url)
-        feeds: list[RssFeed] = []
+        response_feeds = feedparser.parse(self.base_url)
+        feeds: list[UrlFeed] = []
 
         for item in response_feeds.entries:
             rss_html = extract_rss_content_html(
@@ -37,7 +38,7 @@ class RssScraper:
             )
             rss_text = html_to_text(rss_html) if rss_html else None
 
-            feed = RssFeed(
+            feed = UrlFeed(
                 id=item.get("id", ""),
                 url=item.get("link", ""),
                 title=item.get("title", ""),
@@ -57,7 +58,7 @@ class RssScraper:
 
         return feeds
 
-    async def fetch_article(self, feed: RssFeed) -> ScrapedArticle | None:
+    async def fetch_article(self, feed: UrlFeed) -> ScrapedArticle | None:
         """Build article from RSS content first, then fallback to article URL."""
         content_html = None
         content_text = None
@@ -78,7 +79,9 @@ class RssScraper:
             return None
 
         return ScrapedArticle(
-            external_id=feed.id,
+            external_id=hashlib.sha256(
+                        feed.id.encode()
+                    ).hexdigest(),
             url=feed.url,
             title=feed.title,
             author=feed.author,

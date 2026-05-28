@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 @dataclass
-class RssFeed:
+class UrlFeed:
     """
     Data Transfer Object (DTO) representing an RSS feed item.
     """
