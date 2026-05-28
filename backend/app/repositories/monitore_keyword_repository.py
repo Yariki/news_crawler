@@ -9,8 +9,7 @@ from app.schemas.keyword import MonitoredKeywordUpdate
 from app.services.keyword_detector import normalize_keyword
 
 
-class KeywordService:
-
+class MonitoreKeywordRepository:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 

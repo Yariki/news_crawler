@@ -10,6 +10,10 @@ from app.core.config import settings
 from app.models import MonitoredKeyword, CrawlJob, Source, Article, KeywordHit
 from app.models.source_type import SourceType
 from app.models.status import Status
+from app.repositories.article_repository import ArticleRepository
+from app.repositories.crawljob_repository import CrawlJobRepository
+from app.repositories.keyword_hit_repository import KeywordHitRepository
+from app.repositories.source_repository import SourceRepository
 from app.scrapers.base_scraper import BaseScraper
 from app.scrapers.default import DefaultScraper
 from app.scrapers.rss.rss_scraper import RssScraper
@@ -30,14 +34,9 @@ SCRAPPERS = {
 }
 
 class BaseCrawler(ABC):
-
+    """BaseCrawler is an abstract class that defines the structure and common functionality for different types of crawlers. It provides methods for crawling sources, detecting keywords, indexing articles, and sending notifications. Specific crawler implementations should inherit from this class and implement the crawl method with the logic specific to their source type."""
     def __init__(self, db: AsyncSession):
         self.db = db
-
-    @abstractmethod
-    async def crawl(self, source_id: str) -> CrawlJob | None:
-        """Abstract method to be implemented by specific crawler types. This method should contain the logic for crawling a source, including discovering article URLs, fetching article data, detecting keywords, and storing results in the database and search index."""
-        pass
 
     async def _get_keywords(self) -> list[str]:
         result = await self.db.scalars(
@@ -93,7 +92,7 @@ class BaseCrawler(ABC):
 
     async def crawl(self, source_id: str) -> CrawlJob:
         """Runs the crawling process for a given RSS source. This includes discovering article URLs, fetching article data, detecting keywords, and storing results in the database and search index."""
-        source = await self.db.get(Source, source_id)
+        source = await SourceRepository(self.db).get_source_by_id(source_id)
         if not source:
             raise ValueError("Source not found")
 
@@ -101,10 +100,10 @@ class BaseCrawler(ABC):
         await robots_service.fetch_robot()
         crawl_delay = robots_service.crawl_delay("*")
 
-        job = CrawlJob(source_id=source_id, status=Status.RUNNING)
-        self.db.add(job)
-        await self.db.commit()
-        await self.db.refresh(job)
+        keyword_rp = KeywordHitRepository(self.db)
+        article_rp = ArticleRepository(self.db)
+        crawl_rp = CrawlJobRepository(self.db)
+        job = await crawl_rp.create_crawl_job(source_id, Status.RUNNING)
 
         try:
             scraper = self._build_scraper(source)
@@ -113,7 +112,7 @@ class BaseCrawler(ABC):
             active_keywords = await self._get_keywords()
             created = 0
             urls = [feed.url for feed in feeds if feed.url]
-            existing_urls = set(await self.db.scalars(select(Article.url).where(Article.url.in_(urls))))
+            existing_urls = set(await article_rp.get_articles_urls(urls))
 
             for feed in feeds:
                 if feed.url in existing_urls:
@@ -149,16 +148,11 @@ class BaseCrawler(ABC):
                     ),
                 )
 
-                self.db.add(article)
-                await self.db.flush()
+                await article_rp.add_article(article)
 
                 for keyword in matched_words:
-                    self.db.add(
-                        KeywordHit(article_id=article.id, keyword=keyword.strip())
-                    )
+                    await keyword_rp.create_keyword_hit(KeywordHit(article_id=article.id, keyword=keyword.strip()))
 
-                await self.db.commit()
-                await self.db.refresh(article)
                 created += 1
 
                 await self._index_article(article, source, matched_words)
@@ -192,7 +186,6 @@ class BaseCrawler(ABC):
             logger.exception("Unexpected error crawling source %s", source_id)
         finally:
             job.finished_at = datetime.now(timezone.utc)
-            await self.db.commit()
-            await self.db.refresh(job)
+            await crawl_rp.update_crawl_job(job)
 
         return job

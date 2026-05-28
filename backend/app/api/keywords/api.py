@@ -3,10 +3,10 @@ from pydantic import UUID4
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import status as HttpStatus
 
-from app.api.keywords.services.keyword_service import KeywordService
-from app.api.source.services.source_service import SourceService
+from app.repositories.monitore_keyword_repository import MonitoreKeywordRepository
+
 from app.db.session import get_db
-from app.schemas.keyword import MonitoredKeywordCreate, MonitoredKeywordRead, MonitoredKeywordUpdate
+from app.schemas.keyword import MonitoredKeywordCreate, MonitoredKeywordUpdate
 
 router = APIRouter(
     prefix="/keywords",
@@ -16,7 +16,7 @@ router = APIRouter(
 
 @router.get("")
 async def get_keywords(db: AsyncSession = Depends(get_db)):
-    words = await KeywordService(db).list_keywords()
+    words = await MonitoreKeywordRepository(db).list_keywords()
     return [
         {
             "id": _.id,
@@ -28,13 +28,13 @@ async def get_keywords(db: AsyncSession = Depends(get_db)):
 
 @router.get("/active")
 async def get_active_keywords(db: AsyncSession = Depends(get_db)):
-    keywords = await KeywordService(db).get_active_keywords()
+    keywords = await MonitoreKeywordRepository(db).get_active_keywords()
     return keywords
 
 
 @router.get("/{keyword_id}")
 async def get_keyword(keyword_id: UUID4, db: AsyncSession = Depends(get_db)):
-    word = await KeywordService(db).get_keyword(keyword_id)
+    word = await MonitoreKeywordRepository(db).get_keyword(keyword_id)
     return {
         "id": word.id,
         "keyword": word.keyword,
@@ -46,7 +46,7 @@ async def get_keyword(keyword_id: UUID4, db: AsyncSession = Depends(get_db)):
 async def create_keyword(
     request: MonitoredKeywordCreate, db: AsyncSession = Depends(get_db)
 ):
-    word = await KeywordService(db).create_keyword(request.keyword)
+    word = await MonitoreKeywordRepository(db).create_keyword(request.keyword)
     return {
         "id": word.id,
         "keyword": word.keyword,
@@ -59,7 +59,7 @@ async def update_keyword(
     request: MonitoredKeywordUpdate, 
     db: AsyncSession = Depends(get_db)
 ):
-    word = await KeywordService(db).update_keyword(keyword_id, request)
+    word = await MonitoreKeywordRepository(db).update_keyword(keyword_id, request)
     return {
         "id": word.id,
         "keyword": word.keyword,

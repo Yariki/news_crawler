@@ -12,7 +12,3 @@ class RssCrawlService(BaseCrawler):
     def __init__(self, db: AsyncSession):
         """Initializes the RssCrawlService with a database session."""
         super().__init__(db)
-
-    async def crawl(self, source_id: str) -> CrawlJob | None:
-        return await super().crawl(source_id)
-

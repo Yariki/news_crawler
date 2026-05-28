@@ -14,6 +14,3 @@ class HtmlCrawlService (BaseCrawler):
     def __init__(self, db: AsyncSession) -> None:
         """Initializes the HtmlCrawlService with a database session."""
         super().__init__(db)
-
-    async def crawl(self, source_id: str) -> CrawlJob | None:
-        return await super().crawl(source_id)

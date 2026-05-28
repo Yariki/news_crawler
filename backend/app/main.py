@@ -9,7 +9,13 @@ from app.api.routes import router
 from app.core.config import settings
 from app.services.es import elastic_service
 from app.services.scheduler import refresh_scheduler_jobs, scheduler
+import logging
 
+# Configure root logger
+logging.basicConfig(
+    level=logging.DEBUG if settings.app_mode != "prod" else logging.WARNING,  # Capture debug-level logs in non-prod environments
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
