@@ -8,7 +8,7 @@ from pydantic import UUID4, BaseModel
 class CrawlJobRead(BaseModel):
     id: UUID4
     source_id: UUID4
-    status: str
+    status: int
     started_at: datetime
     finished_at: datetime | None
     articles_found: int

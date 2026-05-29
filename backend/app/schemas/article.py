@@ -7,7 +7,7 @@ from pydantic import UUID4, BaseModel
 
 class ArticleRead(BaseModel):
     id: UUID4
-    source_id: str
+    source_id: UUID4
     url: str
     title: str
     author: str | None

@@ -25,7 +25,7 @@ class TelegramCrawlerService(BaseCrawler):
         """Initializes the TelegramCrawler with a database session."""
         super().__init__(db)
     
-    async def crawl(self, source_id: str) -> CrawlJob:
+    async def crawl(self, source_id: str, use_delay: bool = True) -> CrawlJob:
         """Executes the crawling process for a given Telegram source. This includes fetching messages from the Telegram channel, detecting keywords, and storing relevant articles in the database."""
         source = await self.db.get(Source, source_id)
         if not source:

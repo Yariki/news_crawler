@@ -6,7 +6,7 @@ from fastapi import status as HttpStatus
 from app.repositories.monitore_keyword_repository import MonitoreKeywordRepository
 
 from app.db.session import get_db
-from app.schemas.keyword import MonitoredKeywordCreate, MonitoredKeywordUpdate
+from app.schemas.keyword import MonitoredKeywordCreate, MonitoredKeywordRead, MonitoredKeywordUpdate
 
 router = APIRouter(
     prefix="/keywords",
@@ -14,54 +14,36 @@ router = APIRouter(
 )
 
 
-@router.get("")
+@router.get("", response_model=list[MonitoredKeywordRead])
 async def get_keywords(db: AsyncSession = Depends(get_db)):
     words = await MonitoreKeywordRepository(db).list_keywords()
-    return [
-        {
-            "id": _.id,
-            "keyword": _.keyword,
-            "is_enabled": _.is_enabled
-        } for _ in words
-    ]
+    return words
 
 
-@router.get("/active")
+@router.get("/active", response_model=list[str])
 async def get_active_keywords(db: AsyncSession = Depends(get_db)):
     keywords = await MonitoreKeywordRepository(db).get_active_keywords()
     return keywords
 
 
-@router.get("/{keyword_id}")
+@router.get("/{keyword_id}", response_model=MonitoredKeywordRead)
 async def get_keyword(keyword_id: UUID4, db: AsyncSession = Depends(get_db)):
     word = await MonitoreKeywordRepository(db).get_keyword(keyword_id)
-    return {
-        "id": word.id,
-        "keyword": word.keyword,
-        "is_enabled": word.is_enabled
-    }
+    return word 
 
 
-@router.post("", status_code=HttpStatus.HTTP_201_CREATED)
+@router.post("", status_code=HttpStatus.HTTP_201_CREATED, response_model=MonitoredKeywordRead)
 async def create_keyword(
     request: MonitoredKeywordCreate, db: AsyncSession = Depends(get_db)
 ):
     word = await MonitoreKeywordRepository(db).create_keyword(request.keyword)
-    return {
-        "id": word.id,
-        "keyword": word.keyword,
-        "is_enabled": word.is_enabled
-    }
+    return word
 
-@router.put("/{keyword_id}", status_code=HttpStatus.HTTP_200_OK)
+@router.put("/{keyword_id}", status_code=HttpStatus.HTTP_200_OK, response_model=MonitoredKeywordRead)
 async def update_keyword(
     keyword_id: UUID4, 
     request: MonitoredKeywordUpdate, 
     db: AsyncSession = Depends(get_db)
 ):
     word = await MonitoreKeywordRepository(db).update_keyword(keyword_id, request)
-    return {
-        "id": word.id,
-        "keyword": word.keyword,
-        "is_enabled": word.is_enabled
-    }
+    return word

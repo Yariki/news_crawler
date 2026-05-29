@@ -90,7 +90,7 @@ class BaseCrawler(ABC):
             raise ValueError(f"Invalid crawler class for source type {source.source_type}")
         return crawler_cls(source.base_url)
 
-    async def crawl(self, source_id: str) -> CrawlJob:
+    async def crawl(self, source_id: str, use_delay: bool = True) -> CrawlJob:
         """Runs the crawling process for a given RSS source. This includes discovering article URLs, fetching article data, detecting keywords, and storing results in the database and search index."""
         source = await SourceRepository(self.db).get_source_by_id(source_id)
         if not source:
@@ -159,7 +159,7 @@ class BaseCrawler(ABC):
                 if matched_words:
                     await self._send_notification(article, matched_words)
 
-                if crawl_delay:
+                if use_delay and crawl_delay:
                     logger.debug(f"Sleeping for {crawl_delay} seconds to respect crawl delay")
                     await asyncio.sleep(crawl_delay)
 
