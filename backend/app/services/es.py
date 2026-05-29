@@ -71,6 +71,3 @@ class ElasticService:
             return int(response["count"])
         except Exception:
             return None
-
-
-elastic_service = ElasticService()

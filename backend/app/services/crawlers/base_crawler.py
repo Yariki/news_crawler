@@ -18,9 +18,11 @@ from app.scrapers.base_scraper import BaseScraper
 from app.scrapers.default import DefaultScraper
 from app.scrapers.rss.rss_scraper import RssScraper
 from app.scrapers.telegram.telegram_scraper import TelegramScrapper
+from app.services.es import ElasticService
 from app.services.keyword_detector import normalize_keyword, detect_keywords
 import logging
 
+from app.services.notifications import NotificationHub
 from app.services.robots import RobotsService
 
 logger = logging.getLogger(__name__)
@@ -35,8 +37,10 @@ SCRAPPERS = {
 
 class BaseCrawler(ABC):
     """BaseCrawler is an abstract class that defines the structure and common functionality for different types of crawlers. It provides methods for crawling sources, detecting keywords, indexing articles, and sending notifications. Specific crawler implementations should inherit from this class and implement the crawl method with the logic specific to their source type."""
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, notification_hub: NotificationHub = None):
         self.db = db
+        self.notification_hub = notification_hub
+        self.elasticsearch_client = ElasticService()
 
     async def _get_keywords(self) -> list[str]:
         result = await self.db.scalars(
@@ -49,8 +53,10 @@ class BaseCrawler(ABC):
         return keywords or settings.default_keywords_list
 
     async def _index_article(self, article: Article, source: Source, matched_words: list[str]):
-        from app.services.es import elastic_service
-        await elastic_service.index_article(
+        if not self.elasticsearch_client:
+            logger.warning("Elasticsearch client not configured, skipping indexing for article %s", article.id)
+            return
+        await self.elasticsearch_client.index_article(
             {
                 "article_id": str(article.id),
                 "source_id": source.id,
@@ -66,8 +72,11 @@ class BaseCrawler(ABC):
         )
 
     async def _send_notification(self, article: Article, matched_words: list[str]):
-        from app.services.notifications import notification_hub
-        await notification_hub.broadcast(
+        if not self.notification_hub:
+            logger.warning("NotificationHub not configured, skipping notification for article %s", article.id)  
+            return
+
+        await self.notification_hub.broadcast(
             "keywords_alert", {
                 "article_id": str(article.id),
                 "title": article.title,

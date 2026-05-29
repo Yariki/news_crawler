@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.core.config import settings
-from app.services.es import elastic_service
+from app.services.es import ElasticService
 from app.services.scheduler import refresh_scheduler_jobs, scheduler
 import logging
 
@@ -20,7 +20,8 @@ logging.basicConfig(
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Lifespan function to initialize resources before the application starts."""
-    await elastic_service.ensure_index()
+    elasticsearch_client = ElasticService()
+    await elasticsearch_client.ensure_index()
     await refresh_scheduler_jobs()
     scheduler.start()
     try:

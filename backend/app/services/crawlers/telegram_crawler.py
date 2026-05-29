@@ -21,9 +21,9 @@ logger = logging.getLogger(__name__)
 class TelegramCrawlerService(BaseCrawler):
     """TelegramCrawler is responsible for orchestrating the crawling process for a specific Telegram channel. It uses the TelegramScrapper to fetch messages, detects keywords, and stores relevant articles in the database."""
     
-    def __init__(self, db: AsyncSession):
-        """Initializes the TelegramCrawler with a database session."""
-        super().__init__(db)
+    def __init__(self, db: AsyncSession, notification_hub):
+        """Initializes the TelegramCrawler with a database session and a NotificationHub instance."""
+        super().__init__(db, notification_hub)
     
     async def crawl(self, source_id: str, use_delay: bool = True) -> CrawlJob:
         """Executes the crawling process for a given Telegram source. This includes fetching messages from the Telegram channel, detecting keywords, and storing relevant articles in the database."""
@@ -93,7 +93,7 @@ class TelegramCrawlerService(BaseCrawler):
                         )
                         self.db.add(keyword_hit)
                     await self._send_notification(article, matched_keywords)
-                await self._index_article(article, source, matched_keywords)                
+                await self._index_article(article, source, matched_keywords)
                 
                 await self.db.commit()
                 await self.db.refresh(article)
