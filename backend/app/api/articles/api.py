@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.article import Article
 from app.schemas.article import ArticleRead, SearchHit
-from app.services.es import elastic_service
+from app.services.es import ElasticService
 
 from app.db.session import get_db
 
@@ -20,6 +20,7 @@ async def get_recent_articles(limit: int = 20, db: AsyncSession = Depends(get_db
 @router.get("/search", response_model=list[SearchHit])
 async def search_articles(q: str):
     """Endpoint to search for articles based on a query string."""
+    elastic_service = ElasticService()
     response = await elastic_service.search(q)
     hits: list[SearchHit] = []
     for hit in response["hits"]["hits"]:

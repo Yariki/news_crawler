@@ -2,7 +2,7 @@ from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import CrawlJob, Source, Article, MonitoredKeyword
-from app.services.es import elastic_service
+
 
 
 class DashboardService:
@@ -17,6 +17,8 @@ class DashboardService:
 
     async def dashboard_stats(self) -> dict:
         from sqlalchemy import func
+        from app.services.es import ElasticService
+        elastic_service = ElasticService()
         return {
             "sources_total": await self.db.scalar(select(func.count(Source.id))) or 0,
             "sources_enabled": await self.db.scalar(

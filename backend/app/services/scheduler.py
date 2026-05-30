@@ -1,4 +1,6 @@
-from __future__ import annotations
+from functools import partial
+from app.services.crawlers.base_crawler import BaseCrawler
+from app.services.notifications import NotificationHub
 from datetime import datetime, timedelta, timezone
 import logging
 
@@ -20,27 +22,20 @@ logger = logging.getLogger(__name__)
 scheduler = AsyncIOScheduler(timezone="UTC")
 
 
-async def _run_source_job(source_id: str) -> None:
+async def _run_job(
+    source_id: str,
+    crawler_cls: type[BaseCrawler],
+    notification_hub: NotificationHub
+) -> None:
     async with AsyncSessionLocal() as db:
-        service = HtmlCrawlService(db, notification_hub)  # Pass NotificationHub instance if needed
+        service = crawler_cls(db, notification_hub)
         await service.crawl(source_id)
 
-
-async def _run_rss_job(source_id: str) -> None:
-    async with AsyncSessionLocal() as db:
-        service = RssCrawlService(db, notification_hub)  # Pass NotificationHub instance if needed
-        await service.crawl(source_id)
-
-async def _run_telegram_job(source_id: str) -> None:
-    # Placeholder for Telegram crawling logic
-    async with AsyncSessionLocal() as db:
-        service = TelegramCrawlerService(db, notification_hub)  # Pass NotificationHub instance if needed
-        await service.crawl(source_id)
 
 switcher = {
-    SourceType.NEWS_SITE: _run_source_job,
-    SourceType.RSS: _run_rss_job,
-    SourceType.TELEGRAM_CHANNEL: _run_telegram_job,
+    SourceType.NEWS_SITE: partial(_run_job, crawler_cls=HtmlCrawlService, notification_hub=notification_hub),
+    SourceType.RSS: partial(_run_job, crawler_cls=RssCrawlService, notification_hub=notification_hub),
+    SourceType.TELEGRAM_CHANNEL: partial(_run_job, crawler_cls=TelegramCrawlerService, notification_hub=notification_hub),
 }
 
 
@@ -74,5 +69,6 @@ async def run_scheduled_job(source_id: str) -> bool:
             job.modify(next_run_time=datetime.now(timezone.utc))
             return True
     except Exception as e:
-        logger.error(f"Error running scheduled job for source {source_id}: {e}")
+        logger.error(
+            f"Error running scheduled job for source {source_id}: {e}")
     return False
