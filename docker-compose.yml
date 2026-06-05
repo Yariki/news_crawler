@@ -74,6 +74,24 @@ services:
       - backend
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    environment:
+      HOME: /tmp/rabbitmq
+      RABBITMQ_DATA_DIR: /tmp/rabbitmq
+      RABBITMQ_ERLANG_COOKIE: url-health-platform-cookie
+    tmpfs:
+      - /tmp/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+
 volumes:
   postgres_data:
   es_data:

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import select
 
 from app.models.source import Source
@@ -32,3 +34,16 @@ class SourceRepository:
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
+    
+
+    async def get_due_sources(self, now: datetime, limit: int) -> list[Source]:
+        """Retrieves a list of sources that are due for crawling based on their next_run_at field. It returns a list of Source objects that are ready to be crawled."""
+        query = (
+            select(Source)
+            .where(Source.is_enabled.is_(True))
+            .where(Source.next_run_at <= now)
+            .limit(limit)
+            .order_by(Source.next_run_at)
+        )
+        result = await self.db.scalars(query)
+        return list(result.all())

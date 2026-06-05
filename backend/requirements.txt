@@ -15,3 +15,5 @@ feedparser==6.0.10
 autopep8==2.3.2
 protego==0.6.0
 Telethon==1.43.2
+celery[rabbitmq]==5.3.0
+rabbitpy==3.0.1
