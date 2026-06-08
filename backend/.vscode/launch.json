@@ -32,5 +32,36 @@
                 "APP_MODE": "dev"
             }
         }
+        ,
+        {
+            "name": "Celery Worker",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "celery",
+            "args": [
+                "-A",
+                "app.schedule.celery_app",
+                "worker",
+                "--loglevel=info",
+                "--concurrency=1",
+                "-P",
+                "solo"
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "APP_MODE": "dev"
+            },
+            "justMyCode": false
+        },
+        {
+            "name": "Celery Beat",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "app.schedule.celery_beat",
+            "console": "integratedTerminal",
+            "env": {
+                "APP_MODE": "dev"
+            }
+        }
     ]
 }
