@@ -1,12 +1,8 @@
-from fastapi import APIRouter, Depends, Response
-from fastapi.responses import JSONResponse
-from pydantic import UUID4
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.source.services.source_service import SourceService
-from app.db.base import PrimaryIdMixin
 from app.db.session import get_db
 from app.schemas import job
-from app.schemas.job import CrawlJobRead
 from app.schemas.source import SourceCreateUpdate, SourceRead, SourceRunResponse
 from app.schedule.tasks.check_source import run_scheduled_job
 
@@ -28,10 +24,10 @@ async def create_source(data: SourceCreateUpdate, db: AsyncSession = Depends(get
     result = await SourceService(db).create_source(data)
     return result
 
-@router.post("/{source_id}/run", status_code=200, response_model=JSONResponse)
+@router.post("/{source_id}/run", status_code=200, response_model=SourceRunResponse)
 async def run_source(source_id: str, db: AsyncSession = Depends(get_db)):
     await run_scheduled_job.delay(source_id)
-    return JSONResponse(content={
-        "status": "ok",
-       "message": f"Source with id {source_id} has been dispatched for crawling."
-    })
+    return {
+        "id": source_id,
+        "status": f"Source with id {source_id} has been dispatched for crawling."
+    }
