@@ -1,7 +1,6 @@
 import asyncio
 
 from ..core.config import settings
-from ..utils.to_async import to_complete
 
 async def run_dispatch_sources() -> int:
     """Retrieves a list of sources that are due for crawling and dispatches them for processing. It returns a list of Source objects that were dispatched."""
@@ -17,7 +16,7 @@ async def run_dispatch_sources() -> int:
 
 def main() -> None:
     """Main function to run the dispatch_sources task in an infinite loop with a delay between each execution."""
-    to_complete(run_dispatch_sources())
+    asyncio.run(run_dispatch_sources())
 
 if __name__ == "__main__":
     main()

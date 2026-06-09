@@ -10,7 +10,7 @@ async def dispatch_sources(limit: int) -> int:
         service = SourceService(db)
         due_sources = await service.get_due_sources(limit=limit)
         for source in due_sources:
-            await run_scheduled_job.delay(source.id)
+            run_scheduled_job.delay(source.id)
         
         for source in due_sources:
             source.next_run_at = source.next_run_at + timedelta(minutes=source.scrape_interval_minutes)

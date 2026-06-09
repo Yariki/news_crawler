@@ -14,3 +14,4 @@ async def sleep(seconds: int) -> None:
 async def to_complete(func, *args, **kwargs):
     loop = asyncio.get_event_loop()
     return await loop.run_until_complete(func(*args, **kwargs))
+
