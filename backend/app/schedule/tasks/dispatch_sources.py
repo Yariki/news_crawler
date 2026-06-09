@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from ...api.source.services.source_service import SourceService
 from ...db.session import AsyncSessionLocal
-from ...services.scheduler import run_scheduled_job
+from ...schedule.tasks.check_source import run_scheduled_job
 
 async def dispatch_sources(limit: int) -> int:
     """Retrieves a list of sources that are due for crawling and dispatches them for processing. It returns a list of Source objects that were dispatched."""
