@@ -4,7 +4,7 @@ from ..core.config import settings
 celery_app = Celery(
     "celery_app",
       broker=settings.celery_broker_url, 
-      include=["app.schedule"]
+      include=["app.schedule.tasks.dispatch_sources", "app.schedule.tasks.check_source"]
 )
 
 celery_app.conf.task_default_queue = settings.celery_task_queue

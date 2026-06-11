@@ -1,67 +1,66 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Current File",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "env": {
-                "APP_MODE": "dev"
-            }
-        },
-        {
-            "name": "FastAPI",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "uvicorn",
-            "args": [
-                "app.main:app",
-                "--reload",
-                "--host",
-                "127.0.0.1",
-                "--port",
-                "8000"
-            ],
-            "jinja": true,
-            "env": {
-                "APP_MODE": "dev"
-            }
-        }
-        ,
-        {
-            "name": "Celery Worker",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "celery",
-            "args": [
-                "-A",
-                "app.schedule.celery_app",
-                "worker",
-                "--loglevel=info",
-                "--concurrency=1",
-                "-P",
-                "solo"
-            ],
-            "console": "integratedTerminal",
-            "env": {
-                "APP_MODE": "dev"
-            },
-            "justMyCode": false
-        },
-        {
-            "name": "Celery Beat",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "app.schedule.celery_beat",
-            "console": "integratedTerminal",
-            "env": {
-                "APP_MODE": "dev"
-            }
-        }
-    ]
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "env": {
+        "APP_MODE": "dev"
+      }
+    },
+    {
+      "name": "FastAPI",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "app.main:app",
+        "--reload",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
+      "jinja": true,
+      "env": {
+        "APP_MODE": "dev"
+      }
+    },
+    {
+      "name": "Celery Worker",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "celery",
+      "args": [
+        "-A",
+        "app.schedule.celery_app:celery_app",
+        "worker",
+        "--loglevel=info",
+        "--concurrency=1",
+        "-P",
+        "solo"
+      ],
+      "console": "integratedTerminal",
+      "env": {
+        "APP_MODE": "dev"
+      },
+      "justMyCode": false
+    },
+    {
+      "name": "Celery Beat",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "app.schedule.celery_beat",
+      "console": "integratedTerminal",
+      "env": {
+        "APP_MODE": "dev"
+      }
+    }
+  ]
 }

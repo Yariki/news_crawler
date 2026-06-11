@@ -26,7 +26,8 @@ async def create_source(data: SourceCreateUpdate, db: AsyncSession = Depends(get
 
 @router.post("/{source_id}/run", status_code=200, response_model=SourceRunResponse)
 async def run_source(source_id: str, db: AsyncSession = Depends(get_db)):
-    await run_scheduled_job.delay(source_id)
+    
+    run_scheduled_job.delay(source_id)
     return {
         "id": source_id,
         "status": f"Source with id {source_id} has been dispatched for crawling."

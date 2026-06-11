@@ -1,9 +1,11 @@
 
+import asyncio
 from functools import partial
 import logging
-
-from executing import Source
+from uuid import UUID
 from sqlalchemy import select
+
+from ...models.source import Source
 
 from ...db.session import AsyncSessionLocal
 from ...models.source_type import SourceType
@@ -33,10 +35,10 @@ switcher = {
     SourceType.TELEGRAM_CHANNEL: partial(_run_job, crawler_cls=TelegramCrawlerService, notification_hub=notification_hub),
 }
 
-@celery_app.task(name="schedule.tasks.run_scheduled_job")
-async def run_scheduled_job(source_id: str):
+async def _run_scheduled_job(source_id: UUID) -> None:
     try:
         async with AsyncSessionLocal() as db:
+            logger.info(f"Running scheduled job for source {source_id}")
             source = await db.scalar(select(Source).where(Source.id == source_id).where(Source.is_enabled.is_(True)))
             if not source:
                 logger.warning(f"Source with id {source_id} not found")
@@ -47,5 +49,20 @@ async def run_scheduled_job(source_id: str):
                 return False
 
             await handler(source_id=source_id)
+            logger.info(f"Completed scheduled job for source {source_id}/{source.name}")
     except Exception as e:
         logger.error(f"Error running scheduled job for source {source_id}: {e}")
+
+_worker_loop = None
+
+def _get_worker_loop():
+    global _worker_loop
+    if _worker_loop is None or _worker_loop.is_closed():
+        _worker_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(_worker_loop)
+    return _worker_loop
+
+@celery_app.task(name="schedule.tasks.run_scheduled_job")
+def run_scheduled_job(source_id: str) -> None:
+    loop = _get_worker_loop()
+    return loop.run_until_complete(_run_scheduled_job(UUID(source_id)))
