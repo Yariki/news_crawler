@@ -30,3 +30,7 @@ class CrawlJobRepository:
 
         await self.db.commit()
         await self.db.refresh(job)
+        
+    async def get_crawl_job_by_id(self, job_id: str) -> CrawlJob | None:
+        """Retrieves a crawl job record from the database by its ID. It returns the CrawlJob object if found, or None if no matching record exists."""
+        return await self.db.get(CrawlJob, job_id)

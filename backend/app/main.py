@@ -23,10 +23,7 @@ rabbitmq = RabbitMQClient()
 
 
 async def handle_message(message: dict) -> None:
-    """Handle incoming messages from RabbitMQ."""
     
-    logger.debug(f"Received message: {message}")
-
 
 async def rabbitmq_connect(_app: FastAPI):
     """Connect to RabbitMQ and declare necessary infrastructure."""

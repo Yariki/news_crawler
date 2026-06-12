@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
+from app.messaging.messages.base import MessageTypes
 from app.messaging.messages.job_finished import JobFinishedMessage
 from app.models import MonitoredKeyword, CrawlJob, Source, Article, KeywordHit
 from app.models.source_type import SourceType
@@ -194,6 +195,7 @@ class BaseCrawler(ABC):
                 job_id=job.id,
                 source_id=uuid.UUID(source_id),
                 id=uuid.uuid4(),
+                type=MessageTypes.JOB_UPDATE
             ))
 
         except httpx.HTTPStatusError as ex:
