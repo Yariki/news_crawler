@@ -1,13 +1,9 @@
 from fastapi import APIRouter, Depends
-from pydantic import UUID4
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.source.services.source_service import SourceService
-from app.db.base import PrimaryIdMixin
 from app.db.session import get_db
-from app.schemas.job import CrawlJobRead
 from app.schemas.source import SourceCreateUpdate, SourceRead, SourceRunResponse
-from app.services.crawlers.html_crawler import HtmlCrawlService
-from app.services.scheduler import run_scheduled_job
+from app.schedule.tasks.check_source import run_scheduled_job
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
@@ -29,5 +25,20 @@ async def create_source(data: SourceCreateUpdate, db: AsyncSession = Depends(get
 
 @router.post("/{source_id}/run", status_code=200, response_model=SourceRunResponse)
 async def run_source(source_id: str, db: AsyncSession = Depends(get_db)):
-    result = await run_scheduled_job(source_id)
-    return {"id": source_id, "status": "running" if result else "failed"}
+    
+    source = await SourceService(db).get_source(source_id)
+    if not source or not source.is_enabled:
+        return SourceRunResponse(
+            id=source_id,
+            status="error",
+            message=f"Source with id {source_id} is not found or is disabled."
+        )
+    
+    run_scheduled_job.delay(source_id)
+    return SourceRunResponse(
+        id=source_id,
+        status="ok",
+        message=f"Source with id {source_id} has been dispatched for crawling."
+    )
+    
+    

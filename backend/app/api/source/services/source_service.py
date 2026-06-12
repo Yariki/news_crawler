@@ -7,6 +7,7 @@ from fastapi.exceptions import HTTPException
 from app.models.source import Source
 from app.repositories.source_repository import SourceRepository
 from app.schemas.source import SourceCreateUpdate
+from app.utils.time import utc_now
 
 
 class SourceService:
@@ -21,6 +22,7 @@ class SourceService:
     async def create_source(self, payload: SourceCreateUpdate) -> Source:
         """Creates a new source record in the database based on the provided SourceCreateUpdate object. It returns the created Source object."""
         base_url = str(payload.base_url).rstrip("/")
+        now = utc_now()
         source = Source(
             name=payload.name,
             base_url=base_url,
@@ -29,6 +31,7 @@ class SourceService:
             crawler_key=payload.crawler_key,
             scrape_interval_minutes=payload.scrape_interval_minutes,
             is_enabled=payload.is_enabled,
+            next_run_at=now
         )
         return await self.rp.add_source(source)
 
@@ -38,3 +41,8 @@ class SourceService:
         if not source:
             raise HTTPException(status_code=404, detail="The Source is not found")
         return source
+
+    async def  get_due_sources(self, limit: int) -> list[Source]:
+        """Retrieves a list of sources that are due for crawling based on their next_run_at field. It returns a list of Source objects that are ready to be crawled."""
+        now = utc_now()
+        return await self.rp.get_due_sources(now, limit)

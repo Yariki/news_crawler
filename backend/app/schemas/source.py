@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from fastapi import 
+
 from pydantic import BaseModel, HttpUrl, UUID4
 
 
@@ -27,4 +29,5 @@ class SourceRead(BaseModel):
 
 class SourceRunResponse(BaseModel):
     id: str
-    status: str
+    status: str = "ok"  # "ok" | "error"
+    message: str

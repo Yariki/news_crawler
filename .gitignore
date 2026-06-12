@@ -141,6 +141,7 @@ docker-compose.override.yml
 # VS Code testing / temp
 ############################
 .history/
+.zed/
 
 
 /backend/.venv/

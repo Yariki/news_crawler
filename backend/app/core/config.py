@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     request_rate: int = Field(default=10, alias="REQUEST_RATE")
     telegram_api_id: str = Field(default="", alias="TELEGRAM_API_ID")
     telegram_api_hash: str = Field(default="", alias="TELEGRAM_API_HASH")
+    celery_broker_url: str = Field(default="amqp://guest:guest@localhost:5672/", alias="CELERY_BROKER_URL")
+    celery_task_queue: str = Field(default="scheduler.checks", alias="CELERY_TASK_QUEUE")
+    checker_timeout_seconds: float = Field(default=30.0, alias="CHECKER_TIMEOUT_SECONDS")
+    beat_tick_seconds: int = Field(default=10, alias="BEAT_TICK_SECONDS")
+    beat_batch_size: int = Field(default=50, alias="BEAT_BATCH_SIZE")
     
     @property
     def cors_origins_list(self) -> list[str]:
