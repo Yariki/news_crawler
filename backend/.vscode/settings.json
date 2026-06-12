@@ -65,4 +65,70 @@
         "**/news_crawler.egg-info": true
     },
     "docwriter.style": "Auto-detect"
+    "workbench.colorCustomizations": {
+        "activityBar.activeBackground": "#1f36b9",
+        "activityBar.background": "#1f36b9",
+        "activityBar.foreground": "#e7e7e7",
+        "activityBar.inactiveForeground": "#e7e7e799",
+        "activityBarBadge.background": "#1b0508",
+        "activityBarBadge.foreground": "#e7e7e7",
+        "commandCenter.border": "#e7e7e799",
+        "sash.hoverBorder": "#1f36b9",
+        "statusBar.background": "#18298d",
+        "statusBar.foreground": "#e7e7e7",
+        "statusBarItem.hoverBackground": "#1f36b9",
+        "statusBarItem.remoteBackground": "#18298d",
+        "statusBarItem.remoteForeground": "#e7e7e7",
+        "titleBar.activeBackground": "#18298d",
+        "titleBar.activeForeground": "#e7e7e7",
+        "titleBar.inactiveBackground": "#18298d99",
+        "titleBar.inactiveForeground": "#e7e7e799",
+        "tab.hoverBackground": "#d1d1d1",
+        "tab.activeBackground": "#060e38",
+        "tab.activeForeground": "#e7e7e7"
+    },
+    "peacock.color": "#18298d",
+    "tabsColor.activeTab": {
+        "backgroundColor": "red",
+        "fontColor": "default"
+    },
+    "tabsColor.byFileType": {
+        "py": {
+            "backgroundColor": "#b2fc68",
+            "fontColor": "black"
+        },
+        "json": {
+            "backgroundColor": "#fcd568",
+            "fontColor": "black"
+        },
+        "ini": {
+            "backgroundColor": "#6899fc",
+            "fontColor": "black"
+        },
+        "default": {
+            "backgroundColor": "#7f8584",
+            "fontColor": "white"
+        },
+        "env": {
+            "backgroundColor": "#5262b3",
+            "fontColor": "white"
+        },
+    },
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/__pycache__": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/news_crawler.egg-info": true
+    },
+    "docwriter.style": "Auto-detect"
 }

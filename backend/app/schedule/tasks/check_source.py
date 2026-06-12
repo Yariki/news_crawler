@@ -18,7 +18,7 @@ from ...services.crawlers.telegram_crawler import TelegramCrawlerService
 from ...services.notifications import NotificationHub
 from ...services.notifications import notification_hub
 
-from ..celery_app import celery_app
+from ..celery_app import celery_app, rabbitmq_client
 
 logger = logging.getLogger(__name__)
 
@@ -27,16 +27,17 @@ _worker_loop = None
 async def _run_job(
     source_id: str,
     crawler_cls: type[BaseCrawler],
-    notification_hub: NotificationHub
+    notification_hub: NotificationHub,
+    rabbitmq_client: RabbitMQClient
 ) -> None:
     async with AsyncSessionLocal() as db:
         service = crawler_cls(db, notification_hub)
         await service.crawl(source_id)
 
 switcher = {
-    SourceType.NEWS_SITE: partial(_run_job, crawler_cls=HtmlCrawlService, notification_hub=notification_hub),
-    SourceType.RSS: partial(_run_job, crawler_cls=RssCrawlService, notification_hub=notification_hub),
-    SourceType.TELEGRAM_CHANNEL: partial(_run_job, crawler_cls=TelegramCrawlerService, notification_hub=notification_hub),
+    SourceType.NEWS_SITE: partial(_run_job, crawler_cls=HtmlCrawlService, notification_hub=notification_hub, rabbitmq_client=rabbitmq_client),
+    SourceType.RSS: partial(_run_job, crawler_cls=RssCrawlService, notification_hub=notification_hub, rabbitmq_client=rabbitmq_client),
+    SourceType.TELEGRAM_CHANNEL: partial(_run_job, crawler_cls=TelegramCrawlerService, notification_hub=notification_hub, rabbitmq_client=rabbitmq_client),
 }
 
 async def _run_scheduled_job(source_id: UUID) -> None:

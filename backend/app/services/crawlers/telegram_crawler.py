@@ -8,6 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from app.messaging.messages.job_finished import JobFinishedMessage
 from app.models.status import Status
 from app.services.keyword_detector import detect_keywords
 
@@ -22,9 +23,9 @@ logger = logging.getLogger(__name__)
 class TelegramCrawlerService(BaseCrawler):
     """TelegramCrawler is responsible for orchestrating the crawling process for a specific Telegram channel. It uses the TelegramScrapper to fetch messages, detects keywords, and stores relevant articles in the database."""
     
-    def __init__(self, db: AsyncSession, notification_hub):
-        """Initializes the TelegramCrawler with a database session and a NotificationHub instance."""
-        super().__init__(db, notification_hub)
+    def __init__(self, db: AsyncSession, notification_hub, rabbitmq_client):
+        """Initializes the TelegramCrawler with a database session, a NotificationHub instance, and a RabbitMQ client."""
+        super().__init__(db, notification_hub, rabbitmq_client)
     
     async def crawl(self, source_id: str, use_delay: bool = True) -> CrawlJob:
         """Executes the crawling process for a given Telegram source. This includes fetching messages from the Telegram channel, detecting keywords, and storing relevant articles in the database."""
@@ -109,6 +110,12 @@ class TelegramCrawlerService(BaseCrawler):
             job.status = Status.COMPLETED
             job.articles_created = created
             job.finished_at = datetime.now(timezone.utc)
+            
+            await self._send_message(JobFinishedMessage(
+                job_id=job.id,
+                source_id=uuid.UUID(source_id),
+                id=uuid.uuid4(),
+            ))
             
         except httpx.RequestError as ex:
             job.status = Status.FAILED
