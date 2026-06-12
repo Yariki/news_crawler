@@ -28,18 +28,19 @@ async def handle_message(message: dict) -> None:
     logger.debug(f"Received message: {message}")
 
 
-async def rabbitmq_connect():
+async def rabbitmq_connect(_app: FastAPI):
     """Connect to RabbitMQ and declare necessary infrastructure."""
     await rabbitmq.connect()
     await rabbitmq.declare_infrastructure()
     await rabbitmq.consume(settings.job_update_queue_name, handle_message)
+    _app.state.rabbitmq = rabbitmq
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(_app: FastAPI):
     """Lifespan function to initialize resources before the application starts."""
     elasticsearch_client = ElasticService()
     await elasticsearch_client.ensure_index()
-    await rabbitmq_connect()
+    await rabbitmq_connect(_app)
     
     try:
         yield

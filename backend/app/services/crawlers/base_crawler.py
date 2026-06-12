@@ -1,12 +1,15 @@
 import asyncio
+from dataclasses import asdict
 from datetime import datetime, timezone
 from abc import ABC, abstractmethod
+import uuid
 
 import httpx
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
+from app.messaging.messages.job_finished import JobFinishedMessage
 from app.models import MonitoredKeyword, CrawlJob, Source, Article, KeywordHit
 from app.models.source_type import SourceType
 from app.models.status import Status
@@ -21,6 +24,7 @@ from app.scrapers.telegram.telegram_scraper import TelegramScrapper
 from app.services.es import ElasticService
 from app.services.keyword_detector import normalize_keyword, detect_keywords
 import logging
+from app.messaging.rabbitmq_client import RabbitMQClient
 
 from app.services.notifications import NotificationHub
 from app.services.robots import RobotsService
@@ -37,9 +41,10 @@ SCRAPPERS = {
 
 class BaseCrawler(ABC):
     """BaseCrawler is an abstract class that defines the structure and common functionality for different types of crawlers. It provides methods for crawling sources, detecting keywords, indexing articles, and sending notifications. Specific crawler implementations should inherit from this class and implement the crawl method with the logic specific to their source type."""
-    def __init__(self, db: AsyncSession, notification_hub: NotificationHub = None):
+    def __init__(self, db: AsyncSession, notification_hub: NotificationHub = None, rabbitmq_client: RabbitMQClient = None):
         self.db = db
         self.notification_hub = notification_hub
+        self.rabbitmq_client = rabbitmq_client
         self.elasticsearch_client = ElasticService()
 
     async def _get_keywords(self) -> list[str]:
@@ -84,6 +89,15 @@ class BaseCrawler(ABC):
                 "matched_keywords": matched_words,
                 "published_at": str(article.published_at),
             }
+        )
+        
+    async def _send_message(self, message: JobFinishedMessage):
+        if not self.rabbitmq_client or not self.rabbitmq_client.is_ready:
+            logger.warning("RabbitMQ client not configured or not ready, skipping message sending: %s", message)
+            return
+        await self.rabbitmq_client.publish(
+            routing_key=settings.job_update_routing_key,
+            message_body=asdict(message)
         )
 
     def __get_crawler_class(self, source_type: SourceType = SourceType.UNKNOWN):
@@ -174,6 +188,13 @@ class BaseCrawler(ABC):
 
             job.articles_created = created
             job.status = Status.COMPLETED
+            job.finished_at = datetime.now(timezone.utc)
+            
+            await self._send_message(JobFinishedMessage(
+                job_id=job.id,
+                source_id=uuid.UUID(source_id),
+                id=uuid.uuid4(),
+            ))
 
         except httpx.HTTPStatusError as ex:
             job.status = Status.FAILED
@@ -194,7 +215,7 @@ class BaseCrawler(ABC):
             job.error_message = f"Unexpected error: {ex}"
             logger.exception("Unexpected error crawling source %s", source_id)
         finally:
-            job.finished_at = datetime.now(timezone.utc)
+            
             await crawl_rp.update_crawl_job(job)
 
         return job
