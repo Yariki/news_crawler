@@ -43,7 +43,7 @@ async def main_rss_read():
 # asyncio.run(main_rss_read())
 
 
-async def mail_crawl():
+async def main_crawl():
     
     from app.db.session import AsyncSessionLocal
     from app.services.crawlers.html_crawler import HtmlCrawlService

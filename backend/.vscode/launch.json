@@ -56,7 +56,13 @@
       "name": "Celery Beat",
       "type": "debugpy",
       "request": "launch",
-      "module": "app.schedule.celery_beat",
+      "module": "celery",
+      "args": [
+        "-A",
+        "app.schedule.celery_beat",
+        "beat",
+        "--loglevel=info"
+      ],
       "console": "integratedTerminal",
       "env": {
         "APP_MODE": "dev"

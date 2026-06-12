@@ -20,6 +20,8 @@ from ..celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
+_worker_loop = None
+
 async def _run_job(
     source_id: str,
     crawler_cls: type[BaseCrawler],
@@ -42,18 +44,17 @@ async def _run_scheduled_job(source_id: UUID) -> None:
             source = await db.scalar(select(Source).where(Source.id == source_id).where(Source.is_enabled.is_(True)))
             if not source:
                 logger.warning(f"Source with id {source_id} not found")
-                return False
+                return
             handler = switcher.get(source.source_type)
             if not handler:
                 logger.warning(f"No handler for source type {source.source_type}")
-                return False
+                return
 
             await handler(source_id=source_id)
             logger.info(f"Completed scheduled job for source {source_id}/{source.name}")
-    except Exception as e:
-        logger.error(f"Error running scheduled job for source {source_id}: {e}")
-
-_worker_loop = None
+    except Exception:
+        logger.exception(f"Error running scheduled job for source {source_id}")
+        raise
 
 def _get_worker_loop():
     global _worker_loop

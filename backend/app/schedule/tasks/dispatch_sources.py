@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 async def dispatch_due_sources(limit: int) -> int:
-    """Retrieves a list of sources that are due for crawling and dispatches them for processing. It returns a list of Source objects that were dispatched."""
+    """Dispatches due sources for crawling and returns the number of sources dispatched."""
     async with AsyncSessionLocal() as db:
         service = SourceService(db)
         due_sources = await service.get_due_sources(limit=limit)
