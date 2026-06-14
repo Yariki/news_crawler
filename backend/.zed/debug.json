@@ -1,0 +1,59 @@
+// Project-local debug tasks
+//
+// For more documentation on how to configure debug tasks,
+// see: https://zed.dev/docs/debugger
+[
+  {
+    "label": "FastAPI: uvicorn with uv venv",
+    "adapter": "Debugpy",
+    "request": "launch",
+    "python": [
+      "$ZED_WORKTREE_ROOT/.venv/Scripts/python"
+    ],
+    "module": "uvicorn",
+    "args": [
+      "app.main:app",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "8000"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "env": {
+      "PYTHONPATH": "$ZED_WORKTREE_ROOT",
+      "APP_MODE": "dev"
+    },
+    "console": "integratedTerminal",
+    "justMyCode": true
+  },
+  {
+    "label": "Celery Worker",
+    "adapter": "Debugpy",
+    "request": "launch",
+    "module": "celery",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "args": [
+      "-A",
+      "app.schedule.celery_app",
+      "worker",
+      "--loglevel=info",
+      "--concurrency=1",
+      "-P",
+      "solo"
+    ],
+    "env": {
+      "APP_MODE": "dev"
+    },
+    "justMyCode": false
+  },
+  {
+    "label": "Celery Beat",
+    "adapter": "Debugpy",
+    "request": "launch",
+    "module": "app.schedule.celery_beat",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "env": {
+      "APP_MODE": "dev"
+    }
+  }
+]
