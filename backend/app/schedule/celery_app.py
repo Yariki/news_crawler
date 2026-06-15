@@ -25,4 +25,4 @@ celery_app.conf.task_routes = {
     "schedule.tasks.run_scheduled_job": {"queue": settings.celery_task_queue},
 }
 
-logging.info("Celery app configured.")
+logging.info("Celery app configured and ready to run...")
