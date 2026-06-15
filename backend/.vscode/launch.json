@@ -8,6 +8,7 @@
       "name": "Current File",
       "type": "debugpy",
       "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
       "program": "${file}",
       "console": "integratedTerminal",
       "env": {
@@ -18,6 +19,7 @@
       "name": "FastAPI",
       "type": "debugpy",
       "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
       "module": "uvicorn",
       "args": [
         "app.main:app",
@@ -36,6 +38,7 @@
       "name": "Celery Worker",
       "type": "debugpy",
       "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
       "module": "celery",
       "args": [
         "-A",
@@ -56,6 +59,7 @@
       "name": "Celery Beat",
       "type": "debugpy",
       "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
       "module": "celery",
       "args": [
         "-A",

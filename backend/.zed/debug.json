@@ -30,6 +30,9 @@
     "label": "Celery Worker",
     "adapter": "Debugpy",
     "request": "launch",
+    "python": [
+      "$ZED_WORKTREE_ROOT/.venv/Scripts/python"
+    ],
     "module": "celery",
     "cwd": "$ZED_WORKTREE_ROOT",
     "args": [
@@ -49,6 +52,9 @@
   {
     "label": "Celery Beat",
     "adapter": "Debugpy",
+    "python": [
+      "$ZED_WORKTREE_ROOT/.venv/Scripts/python"
+    ],
     "request": "launch",
     "module": "app.schedule.celery_beat",
     "cwd": "$ZED_WORKTREE_ROOT",
