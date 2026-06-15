@@ -33,3 +33,4 @@ async def _connect_rabbitmq():
     await rabbitmq_client.declare_infrastructure()
 
 asyncio.get_event_loop().run_until_complete(_connect_rabbitmq())
+logging.info("Celery app configured and ready to run...")

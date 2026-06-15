@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from fastapi import 
-
 from pydantic import BaseModel, HttpUrl, UUID4
 
 
@@ -26,6 +24,7 @@ class SourceRead(BaseModel):
     scrape_interval_minutes: int
 
     model_config = {"from_attributes": True}
+
 
 class SourceRunResponse(BaseModel):
     id: str
