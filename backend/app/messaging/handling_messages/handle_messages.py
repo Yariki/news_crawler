@@ -1,13 +1,13 @@
 import logging
 
 from ...messaging.messages.base import MessageTypes
-from .job_update import handle_job_update
+from .handle_template import handle_template
 
 logger = logging.getLogger(__name__)
 
 
 HANDLERS = {
-    MessageTypes.JOB_UPDATE: handle_job_update,
+    MessageTypes.JOB_UPDATE: handle_template,
 }
 
 async def handle_message(message: dict) -> None:

@@ -4,6 +4,7 @@ from app.api.source.services.source_service import SourceService
 from app.db.session import get_db
 from app.schemas.source import SourceCreateUpdate, SourceRead, SourceRunResponse
 from app.schedule.tasks.check_source import run_scheduled_job
+from ...core.config import settings
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
@@ -34,6 +35,9 @@ async def run_source(source_id: str, db: AsyncSession = Depends(get_db)):
             message=f"Source with id {source_id} is not found or is disabled."
         )
     
+    from app.schedule.celery_app import celery_app
+    celery_app.send_task("schedule.tasks.run_scheduled_job", args=[str(source_id)], queue=settings.celery_task_queue)
+
     run_scheduled_job.delay(source_id)
     return SourceRunResponse(
         id=source_id,

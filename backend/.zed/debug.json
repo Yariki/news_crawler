@@ -8,7 +8,7 @@
     "adapter": "Debugpy",
     "request": "launch",
     "python": [
-      "$ZED_WORKTREE_ROOT/.venv/Scripts/python"
+      "$ZED_WORKTREE_ROOT/.venv/bin/python"
     ],
     "module": "uvicorn",
     "args": [
@@ -31,7 +31,7 @@
     "adapter": "Debugpy",
     "request": "launch",
     "python": [
-      "$ZED_WORKTREE_ROOT/.venv/Scripts/python"
+      "$ZED_WORKTREE_ROOT/.venv/bin/python"
     ],
     "module": "celery",
     "cwd": "$ZED_WORKTREE_ROOT",
@@ -53,7 +53,7 @@
     "label": "Celery Beat",
     "adapter": "Debugpy",
     "python": [
-      "$ZED_WORKTREE_ROOT/.venv/Scripts/python"
+      "$ZED_WORKTREE_ROOT/.venv/bin/python"
     ],
     "request": "launch",
     "module": "app.schedule.celery_beat",

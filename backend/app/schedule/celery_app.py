@@ -12,8 +12,6 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
-rabbitmq_client = RabbitMQClient()
-
 celery_app = Celery(
     "celery_app",
     broker=settings.celery_broker_url, 
@@ -27,10 +25,4 @@ celery_app.conf.task_routes = {
     "schedule.tasks.run_scheduled_job": {"queue": settings.celery_task_queue},
 }
 
-
-async def _connect_rabbitmq():
-    await rabbitmq_client.connect()
-    await rabbitmq_client.declare_infrastructure()
-
-asyncio.get_event_loop().run_until_complete(_connect_rabbitmq())
-logging.info("Celery app configured and ready to run...")
+logging.info("Celery app configured.")
