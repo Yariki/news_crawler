@@ -26,7 +26,6 @@ from app.scrapers.telegram.telegram_scraper import TelegramScrapper
 from app.services.es import ElasticService
 from app.services.keyword_detector import normalize_keyword, detect_keywords
 import logging
-from app.messaging.rabbitmq_client import RabbitMQClient
 
 from app.services.notifications import NotificationHub
 from app.services.robots import RobotsService
@@ -43,10 +42,9 @@ SCRAPPERS = {
 
 class BaseCrawler(ABC):
     """BaseCrawler is an abstract class that defines the structure and common functionality for different types of crawlers. It provides methods for crawling sources, detecting keywords, indexing articles, and sending notifications. Specific crawler implementations should inherit from this class and implement the crawl method with the logic specific to their source type."""
-    def __init__(self, db: AsyncSession, notification_hub: NotificationHub = None, rabbitmq_client: RabbitMQClient = None):
+    def __init__(self, db: AsyncSession, notification_hub: NotificationHub = None):
         self.db = db
         self.notification_hub = notification_hub
-        self.rabbitmq_client = rabbitmq_client
         self.elasticsearch_client = ElasticService()
 
     async def _get_keywords(self) -> list[str]:
@@ -92,8 +90,8 @@ class BaseCrawler(ABC):
                 "published_at": str(article.published_at),
             }
         )
+
         
-    
     async def _send_job_finished(self, job: CrawlJob):
         if not self.notification_hub:
             logger.warning("NotificationHub not configured, skipping job finished notification for job %s", job.id)
@@ -109,26 +107,7 @@ class BaseCrawler(ABC):
                 "error_message": job.error_message,
                 "started_at": str(job.started_at),
                 "finished_at": str(job.finished_at) if job.finished_at else None,
-            }
-        )
-
-    async def _send_job_finished(self, job: CrawlJob):
-        if not self.notification_hub:
-            logger.warning("NotificationHub not configured, skipping job finished notification for job %s", job.id)
-            return
-
-        await self.notification_hub.broadcast(
-            "job_finished", {
-                "job_id": str(job.id),
-                "source_id": str(job.source_id),
-                "status": job.status.value,
-                "articles_found": job.articles_found,
-                "articles_created": job.articles_created,
-                "error_message": job.error_message,
-                "started_at": str(job.started_at),
-                "finished_at": str(job.finished_at) if job.finished_at else None,
-            }
-        )
+            })
 
     def __get_crawler_class(self, source_type: SourceType = SourceType.UNKNOWN):
 
@@ -238,7 +217,7 @@ class BaseCrawler(ABC):
             job.error_message = f"Unexpected error: {ex}"
             logger.exception("Unexpected error crawling source %s", source_id)
         finally:
-            
+
             await crawl_rp.update_crawl_job(job)
 
         return job
