@@ -4,6 +4,11 @@ from celery import Celery
 
 from ..messaging.rabbitmq_client import RabbitMQClient
 from ..core.config import settings
+import logging
+
+
+logging.basicConfig(level=logging.DEBUG if settings.app_mode == "dev" else logging.INFO,
+                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 import logging
 
