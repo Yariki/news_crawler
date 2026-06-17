@@ -1,12 +1,17 @@
 import asyncio
+from dataclasses import asdict
+from dataclasses import asdict
 from datetime import datetime, timezone
 from abc import ABC, abstractmethod
+import uuid
+import uuid
 
 import httpx
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
+from app.messaging.messages.base import MessageTypes
 from app.models import MonitoredKeyword, CrawlJob, Source, Article, KeywordHit
 from app.models.source_type import SourceType
 from app.models.status import Status
@@ -73,7 +78,7 @@ class BaseCrawler(ABC):
 
     async def _send_notification(self, article: Article, matched_words: list[str]):
         if not self.notification_hub:
-            logger.warning("NotificationHub not configured, skipping notification for article %s", article.id)  
+            logger.warning("NotificationHub not configured, skipping notification for article %s", article.id)
             return
 
         await self.notification_hub.broadcast(
@@ -85,6 +90,24 @@ class BaseCrawler(ABC):
                 "published_at": str(article.published_at),
             }
         )
+
+        
+    async def _send_job_finished(self, job: CrawlJob):
+        if not self.notification_hub:
+            logger.warning("NotificationHub not configured, skipping job finished notification for job %s", job.id)
+            return
+
+        await self.notification_hub.broadcast(
+            "job_finished", {
+                "job_id": str(job.id),
+                "source_id": str(job.source_id),
+                "status": job.status.value,
+                "articles_found": job.articles_found,
+                "articles_created": job.articles_created,
+                "error_message": job.error_message,
+                "started_at": str(job.started_at),
+                "finished_at": str(job.finished_at) if job.finished_at else None,
+            })
 
     def __get_crawler_class(self, source_type: SourceType = SourceType.UNKNOWN):
 
@@ -174,7 +197,7 @@ class BaseCrawler(ABC):
 
             job.articles_created = created
             job.status = Status.COMPLETED
-
+            job.finished_at = datetime.now(timezone.utc)
         except httpx.HTTPStatusError as ex:
             job.status = Status.FAILED
             job.error_message = (
@@ -194,7 +217,7 @@ class BaseCrawler(ABC):
             job.error_message = f"Unexpected error: {ex}"
             logger.exception("Unexpected error crawling source %s", source_id)
         finally:
-            job.finished_at = datetime.now(timezone.utc)
+
             await crawl_rp.update_crawl_job(job)
 
         return job

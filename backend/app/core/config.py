@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     beat_tick_seconds: int = Field(default=10, alias="BEAT_TICK_SECONDS")
     beat_batch_size: int = Field(default=50, alias="BEAT_BATCH_SIZE")
     
+    news_monitor_exchange_name: str = Field(default="news_monitor_updates", alias="NEWS_MONITOR_EXCHANGE_NAME")
+    job_update_queue_name: str = Field(default="jobs_updates_queue", alias="JOB_UPDATE_QUEUE_NAME")
+    job_update_routing_key: str = Field(default="jobs.update", alias="JOB_UPDATE_ROUTING_KEY")
+    
+    dlx_name: str = Field(default="news_monitor_dlx", alias="DLX_NAME")
+    dlq_name: str = Field(default="news_monitor_dlq", alias="DLQ_NAME")
+    dl_routing_key: str = Field(default="news_monitor.dlq", alias="DL_ROUTING_KEY")
+    
     @property
     def cors_origins_list(self) -> list[str]:
         return [item.strip() for item in self.cors_origins.split(",") if item.strip()]

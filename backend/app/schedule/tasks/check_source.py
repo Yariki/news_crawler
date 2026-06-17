@@ -5,6 +5,8 @@ import logging
 from uuid import UUID
 from sqlalchemy import select
 
+from ...messaging.rabbitmq_client import RabbitMQClient
+
 from ...models.source import Source
 
 from ...db.session import AsyncSessionLocal

@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.core.config import settings
+from app.messaging.rabbitmq_client import RabbitMQClient
 from app.services.es import ElasticService
 import logging
 
@@ -16,15 +17,35 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
+logger = logging.getLogger(__name__)
+
+rabbitmq = RabbitMQClient()
+
+
+async def handle_message(message: dict) -> None:
+    """Handle incoming messages from RabbitMQ."""
+    
+    logger.debug(f"Received message: {message}")
+
+
+async def rabbitmq_connect(_app: FastAPI):
+    """Connect to RabbitMQ and declare necessary infrastructure."""
+    await rabbitmq.connect()
+    await rabbitmq.declare_infrastructure()
+    await rabbitmq.consume(settings.job_update_queue_name, handle_message)
+    _app.state.rabbitmq = rabbitmq
+
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(_app: FastAPI):
     """Lifespan function to initialize resources before the application starts."""
     elasticsearch_client = ElasticService()
     await elasticsearch_client.ensure_index()
+    await rabbitmq_connect(_app)
+    
     try:
         yield
     finally:
-        pass
+        await rabbitmq.close()
 
 
 app = FastAPI(
