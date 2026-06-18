@@ -91,7 +91,6 @@ class BaseCrawler(ABC):
             }
         )
 
-        
     async def _send_job_finished(self, job: CrawlJob):
         if not self.notification_hub:
             logger.warning("NotificationHub not configured, skipping job finished notification for job %s", job.id)
@@ -101,7 +100,7 @@ class BaseCrawler(ABC):
             "job_finished", {
                 "job_id": str(job.id),
                 "source_id": str(job.source_id),
-                "status": job.status.value,
+                "status": job.status,
                 "articles_found": job.articles_found,
                 "articles_created": job.articles_created,
                 "error_message": job.error_message,
@@ -217,7 +216,7 @@ class BaseCrawler(ABC):
             job.error_message = f"Unexpected error: {ex}"
             logger.exception("Unexpected error crawling source %s", source_id)
         finally:
-
             await crawl_rp.update_crawl_job(job)
+            await self._send_job_finished(job)
 
         return job

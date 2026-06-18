@@ -24,7 +24,7 @@ rabbitmq = RabbitMQClient()
 
 async def handle_message(message: dict) -> None:
     """Handle incoming messages from RabbitMQ."""
-    
+
     logger.debug(f"Received message: {message}")
 
 
@@ -41,7 +41,7 @@ async def lifespan(_app: FastAPI):
     elasticsearch_client = ElasticService()
     await elasticsearch_client.ensure_index()
     await rabbitmq_connect(_app)
-    
+
     try:
         yield
     finally:
