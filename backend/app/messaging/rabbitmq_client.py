@@ -24,11 +24,9 @@ class RabbitMQClient:
         self._channel: AbstractRobustChannel | None = None
         self._exchange: AbstractRobustExchange | None = None
         self._exchange_name = settings.news_monitor_exchange_name
-        self._job_update_queue_name = settings.job_update_queue_name
-        self._job_update_routing_key = settings.job_update_routing_key
+        self._crawling_update_queue_name = settings.crawling_update_queue_name
         self._dlx_name = settings.dlx_name
         self._dlq_name = settings.dlq_name
-        self._dl_routing_key = settings.dl_routing_key
         self._queue_cache: dict[str, Tuple[ConsumerTag, AbstractQueue]] = {}
 
     async def _stop_all_consumers(self):
@@ -44,7 +42,7 @@ class RabbitMQClient:
         """Establish a connection to RabbitMQ and create a channel."""
         try:
             self._connection = await aio_pika \
-                .connect_robust(settings.celery_broker_url)
+                .connect_robust(settings.rabbitmq_url)
             self._channel = await self._connection.channel()
             await self._channel.set_qos(prefetch_count=1)
         except Exception as e:
@@ -72,7 +70,7 @@ class RabbitMQClient:
         
         # Declare the job updates queue and bind it to the exchange
         job_update_queue = await self._channel.declare_queue(
-            self._job_update_queue_name, durable=True,
+            self._crawling_update_queue_name, durable=True,
             arguments={
                 "x-dead-letter-exchange": self._dlx_name,
                 "x-dead-letter-routing-key": self._dl_routing_key,

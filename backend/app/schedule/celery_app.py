@@ -19,7 +19,7 @@ logging.basicConfig(
 
 celery_app = Celery(
     "celery_app",
-    broker=settings.celery_broker_url, 
+    broker=settings.rabbitmq_url,
     include=["app.schedule.tasks.dispatch_sources", "app.schedule.tasks.check_source"]
 )
 
