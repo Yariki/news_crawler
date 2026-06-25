@@ -136,3 +136,42 @@ export interface ArticleItem {
     is_alert: boolean
     matched_keywords_csv: string | null
 }
+
+
+export interface KeywordsMatchMessage { 
+    id: string;
+    message_type: 'KEYWORDS_MATCH' | 'JOB_UPDATE';
+
+    article_id: string; 
+
+    matched_keywords: string[]; 
+
+    title: string;
+    
+    url: string;
+    published_at: string | null;
+
+    source_name?: string;
+
+}
+
+
+export interface JobUpdateMessage {
+    id: string;
+    message_type: 'KEYWORDS_MATCH' | 'JOB_UPDATE';
+
+    job_id: string;
+
+    status: JobStatus;
+
+    articles_found: number;
+    articles_created: number;
+
+    error_message: string | null;
+
+    started_at: string;
+
+    finished_at: string | null;
+}
+
+

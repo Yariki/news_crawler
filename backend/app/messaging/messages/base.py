@@ -27,3 +27,7 @@ def convert_dict_to_message(message: dict, cls: Type[BaseMessage]) -> BaseMessag
     set_field = {field.name for field in fields(cls)}
     filtered_message = {key: value for key, value in message.items() if key in set_field}
     return cls(**filtered_message)
+
+def to_dict(message: BaseMessage) -> dict:
+    """Convert a message to a dictionary."""
+    return {field.name: getattr(message, field.name) for field in fields(message)}

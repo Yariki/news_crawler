@@ -7,7 +7,9 @@ import {
     JobItem,
     KeywordItem,
     SearchHit,
-    SourceItem
+    SourceItem,
+    JobUpdateMessage,
+    KeywordsMatchMessage,
 } from "../models/types";
 
 
@@ -106,11 +108,32 @@ export const useAppStore = defineStore('app', {
                 setInterval(() => ws.readyState === WebSocket.OPEN && ws.send('ping'), 15000)
             }
             ws.onmessage = (event) => {
-                const message = JSON.parse(event.data)
-                this.alerts.unshift(message.payload)
-                this.alerts = this.alerts.slice(0, 20)
+                //TODO: implement processing messages  from the server.
+                // There are two types of messages: "alert" and "job_update". For now, we only process "alert" messages.
+                const message_type = JSON.parse(event.data).message_type
+                if (message_type === 'KEYWORDS_MATCH') {
+                    this.processAlertMessage(JSON.parse(event.data))
+                } else if (message_type === 'JOB_UPDATE') {
+                    this.processJobUpdateMessage(JSON.parse(event.data))
+                }
             }
             this.ws = ws
+        },
+        processAlertMessage(message: KeywordsMatchMessage) {
+            this.alerts.unshift(message)
+            this.alerts = this.alerts.slice(0, 20)
+        },
+        processJobUpdateMessage(message: JobUpdateMessage) { 
+            const job = this.jobs.find((job) => job.id === message.job_id)
+            if (!job) {
+                return;
+            }
+            job.status = message.status;
+            job.articles_created = message.articles_created;
+            job.articles_found = message.articles_found;
+            job.error_message = message.status === 'FAILED' ? message.error_message : null;
+            job.started_at = message.started_at;
+            job.finished_at = message.finished_at;
         },
         async refreshJobs() {
             this.loading = true;

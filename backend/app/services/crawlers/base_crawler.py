@@ -102,8 +102,7 @@ class BaseCrawler(ABC):
             return
 
         job_update_message = JobUpdateMessage(
-            job_id=str(job.id),
-            source_id=str(job.source_id),
+            job_id=str(job.id)            
             status=job.status,
             articles_found=articles_found if articles_found is not None else job.articles_found,
             articles_created=articles_created if articles_created is not None else job.articles_created,
@@ -111,10 +110,7 @@ class BaseCrawler(ABC):
             started_at=str(job.started_at),
             finished_at=str(job.finished_at) if job.finished_at else None,
         )
-
         await self._rabbitmq_client.publish(job_update_message)
-
-
 
     def __get_crawler_class(self, source_type: SourceType = SourceType.UNKNOWN):
 
