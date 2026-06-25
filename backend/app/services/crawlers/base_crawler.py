@@ -102,7 +102,7 @@ class BaseCrawler(ABC):
             return
 
         job_update_message = JobUpdateMessage(
-            job_id=str(job.id)            
+            job_id=str(job.id),
             status=job.status,
             articles_found=articles_found if articles_found is not None else job.articles_found,
             articles_created=articles_created if articles_created is not None else job.articles_created,
