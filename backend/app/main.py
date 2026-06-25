@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.core.config import settings
-from app.messaging.rabbitmq_client import RabbitMQClient
+from app.messaging.rabbitmq_client import RabbitMQClient, get_rabbitmq_client
 from app.services.es import ElasticService
 import logging
 
@@ -19,7 +19,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-rabbitmq = RabbitMQClient()
+rabbitmq: RabbitMQClient | None = None
 
 
 async def handle_message(message: dict) -> None:
@@ -30,8 +30,8 @@ async def handle_message(message: dict) -> None:
 
 async def rabbitmq_connect(_app: FastAPI):
     """Connect to RabbitMQ and declare necessary infrastructure."""
-    await rabbitmq.connect()
-    await rabbitmq.declare_infrastructure()
+    global rabbitmq
+    rabbitmq = await get_rabbitmq_client()
     await rabbitmq.consume(settings.job_update_queue_name, handle_message)
     _app.state.rabbitmq = rabbitmq
 
@@ -45,7 +45,8 @@ async def lifespan(_app: FastAPI):
     try:
         yield
     finally:
-        await rabbitmq.close()
+        if rabbitmq:
+            await rabbitmq.close()
 
 
 app = FastAPI(

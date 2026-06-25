@@ -11,6 +11,6 @@ logger = logging.getLogger(__name__)
 class HtmlCrawlService (BaseCrawler):
     """Service class responsible for crawling HTML page sources. It implements the crawl method defined in the BaseCrawler abstract class, which includes discovering article URLs from the HTML page, fetching article data, detecting keywords, and storing results in the database and search index."""
 
-    def __init__(self, db: AsyncSession, notification_hub):
-        """Initializes the HtmlCrawlService with a database session and a NotificationHub instance."""
-        super().__init__(db, notification_hub)
+    def __init__(self, db: AsyncSession):
+        """Initializes the HtmlCrawlService with a database session."""
+        super().__init__(db)

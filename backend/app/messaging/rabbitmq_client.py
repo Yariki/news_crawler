@@ -61,7 +61,7 @@ class RabbitMQClient:
         dlq = await self._channel.declare_queue(
             self._dlq_name, durable=True
         )
-        await dlq.bind(dlx, routing_key=self._dl_routing_key)
+        await dlq.bind(dlx, routing_key=self._dlq_name)
         
         # Declare the main exchange
         self._exchange = await self._channel.declare_exchange(
@@ -73,10 +73,10 @@ class RabbitMQClient:
             self._crawling_update_queue_name, durable=True,
             arguments={
                 "x-dead-letter-exchange": self._dlx_name,
-                "x-dead-letter-routing-key": self._dl_routing_key,
+                "x-dead-letter-routing-key": self._dlq_name
             }
         )
-        await job_update_queue.bind(self._exchange, routing_key=self._job_update_routing_key)
+        await job_update_queue.bind(self._exchange, routing_key=self._crawling_update_queue_name)
         
     @property
     def is_ready(self) -> bool:
@@ -93,11 +93,13 @@ class RabbitMQClient:
         self._channel = None
         self._exchange = None
     
-    async def publish(self, routing_key: str, message_body: dict[str, Any]):
+    async def publish(self, message_body: dict[str, Any], routing_key: str | None = None): 
         """Publish a message to the exchange with the specified routing key."""
         if not self.is_ready:
             raise RuntimeError("RabbitMQ client is not connected or exchange is not declared.")
         
+        routing_key = routing_key or self._crawling_update_queue_name
+
         message = Message(
             body=json.dumps(message_body).encode(),
             content_type="application/json",
@@ -105,7 +107,6 @@ class RabbitMQClient:
         )
         
         await self._exchange.publish(message, routing_key=routing_key)
-        
         
     async def consume(self, queue_name: str, callback: Callable[[dict], Awaitable[None]]):
         """Consume messages from the specified queue and process them using the provided callback."""
@@ -133,3 +134,14 @@ class RabbitMQClient:
             del self._queue_cache[queue_name]
             logger.info("Stopped consuming messages from queue: %s", queue_name)
         
+
+get_rabbitmq_client: RabbitMQClient | None = None
+
+async def get_rabbitmq_client() -> RabbitMQClient:
+    """Get a singleton instance of RabbitMQClient, ensuring it's connected and ready."""
+    global get_rabbitmq_client
+    if get_rabbitmq_client is None:
+        get_rabbitmq_client = RabbitMQClient()
+        await get_rabbitmq_client.connect()
+        await get_rabbitmq_client.declare_infrastructure()
+    return get_rabbitmq_client

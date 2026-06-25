@@ -12,6 +12,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.messaging.messages.base import MessageTypes
+from app.messaging.messages.job_update import JobUpdateMessage
+from app.messaging.messages.keywords_match import KeywordsMatchMessage
 from app.models import MonitoredKeyword, CrawlJob, Source, Article, KeywordHit
 from app.models.source_type import SourceType
 from app.models.status import Status
@@ -25,13 +27,14 @@ from app.scrapers.rss.rss_scraper import RssScraper
 from app.scrapers.telegram.telegram_scraper import TelegramScrapper
 from app.services.es import ElasticService
 from app.services.keyword_detector import normalize_keyword, detect_keywords
+from app.messaging.rabbitmq_client import RabbitMQClient
 import logging
 
-from app.services.notifications import NotificationHub
 from app.services.robots import RobotsService
 
-logger = logging.getLogger(__name__)
+from app.messaging.rabbitmq_client import RabbitMQClient
 
+logger = logging.getLogger(__name__)
 
 
 SCRAPPERS = {
@@ -42,13 +45,13 @@ SCRAPPERS = {
 
 class BaseCrawler(ABC):
     """BaseCrawler is an abstract class that defines the structure and common functionality for different types of crawlers. It provides methods for crawling sources, detecting keywords, indexing articles, and sending notifications. Specific crawler implementations should inherit from this class and implement the crawl method with the logic specific to their source type."""
-    def __init__(self, db: AsyncSession, notification_hub: NotificationHub = None):
-        self.db = db
-        self.notification_hub = notification_hub
-        self.elasticsearch_client = ElasticService()
+    def __init__(self, db: AsyncSession, rabbitmq_client: RabbitMQClient | None = None):
+        self._db = db
+        self._elasticsearch_client = ElasticService()
+        self._rabbitmq_client = rabbitmq_client
 
     async def _get_keywords(self) -> list[str]:
-        result = await self.db.scalars(
+        result = await self._db.scalars(
             select(MonitoredKeyword.keyword)
             .where(MonitoredKeyword.is_enabled.is_(True))
             .order_by(MonitoredKeyword.keyword)
@@ -58,10 +61,10 @@ class BaseCrawler(ABC):
         return keywords or settings.default_keywords_list
 
     async def _index_article(self, article: Article, source: Source, matched_words: list[str]):
-        if not self.elasticsearch_client:
+        if not self._elasticsearch_client:
             logger.warning("Elasticsearch client not configured, skipping indexing for article %s", article.id)
             return
-        await self.elasticsearch_client.index_article(
+        await self._elasticsearch_client.index_article(
             {
                 "article_id": str(article.id),
                 "source_id": source.id,
@@ -77,36 +80,41 @@ class BaseCrawler(ABC):
         )
 
     async def _send_notification(self, article: Article, matched_words: list[str]):
-        if not self.notification_hub:
-            logger.warning("NotificationHub not configured, skipping notification for article %s", article.id)
+        # TODO: send notification to RabbitMQ aout Artcile with matched words.
+
+        if not self._rabbitmq_client:
+            logger.warning("RabbitMQ client not configured, skipping notification for article %s", article.id)
+            return
+        
+        keywords_match_message = KeywordsMatchMessage(
+            article_id=str(article.id),
+            title=article.title,
+            url=article.url,
+            matched_keywords=matched_words,
+            published_at=str(article.published_at) if article.published_at else None,
+        )
+        await self._rabbitmq_client.publish(keywords_match_message)
+
+
+    async def _send_job_update(self, job: CrawlJob, articles_found: int | None = None, articles_created: int | None = None):
+        if not self._rabbitmq_client:
+            logger.warning("RabbitMQ client not configured, skipping job finished notification for job %s", job.id)
             return
 
-        await self.notification_hub.broadcast(
-            "keywords_alert", {
-                "article_id": str(article.id),
-                "title": article.title,
-                "url": article.url,
-                "matched_keywords": matched_words,
-                "published_at": str(article.published_at),
-            }
+        job_update_message = JobUpdateMessage(
+            job_id=str(job.id),
+            source_id=str(job.source_id),
+            status=job.status,
+            articles_found=articles_found if articles_found is not None else job.articles_found,
+            articles_created=articles_created if articles_created is not None else job.articles_created,
+            error_message=job.error_message,
+            started_at=str(job.started_at),
+            finished_at=str(job.finished_at) if job.finished_at else None,
         )
 
-    async def _send_job_finished(self, job: CrawlJob):
-        if not self.notification_hub:
-            logger.warning("NotificationHub not configured, skipping job finished notification for job %s", job.id)
-            return
+        await self._rabbitmq_client.publish(job_update_message)
 
-        await self.notification_hub.broadcast(
-            "job_finished", {
-                "job_id": str(job.id),
-                "source_id": str(job.source_id),
-                "status": job.status,
-                "articles_found": job.articles_found,
-                "articles_created": job.articles_created,
-                "error_message": job.error_message,
-                "started_at": str(job.started_at),
-                "finished_at": str(job.finished_at) if job.finished_at else None,
-            })
+
 
     def __get_crawler_class(self, source_type: SourceType = SourceType.UNKNOWN):
 
@@ -123,18 +131,20 @@ class BaseCrawler(ABC):
 
     async def crawl(self, source_id: str, use_delay: bool = True) -> CrawlJob:
         """Runs the crawling process for a given RSS source. This includes discovering article URLs, fetching article data, detecting keywords, and storing results in the database and search index."""
-        source = await SourceRepository(self.db).get_source_by_id(source_id)
+        source = await SourceRepository(self._db).get_source_by_id(source_id)
         if not source:
             raise ValueError("Source not found")
 
-        robots_service = RobotsService(source.base_url, self.db)
+        robots_service = RobotsService(source.base_url, self._db)
         await robots_service.fetch_robot()
         crawl_delay = robots_service.crawl_delay("*")
 
-        keyword_rp = KeywordHitRepository(self.db)
-        article_rp = ArticleRepository(self.db)
-        crawl_rp = CrawlJobRepository(self.db)
+        keyword_rp = KeywordHitRepository(self._db)
+        article_rp = ArticleRepository(self._db)
+        crawl_rp = CrawlJobRepository(self._db)
         job = await crawl_rp.create_crawl_job(source_id, Status.RUNNING)
+
+        await self._send_job_update(job, articles_found=0, articles_created=0)  # Initial job update
 
         try:
             scraper = self._build_scraper(source)
@@ -186,9 +196,9 @@ class BaseCrawler(ABC):
 
                 created += 1
 
-                await self._index_article(article, source, matched_words)
-                if matched_words:
-                    await self._send_notification(article, matched_words)
+                await self._index_article_and_send_notification(source, matched_words, article)
+
+                await self._update_job_info(crawl_rp, job, created)
 
                 if use_delay and crawl_delay:
                     logger.debug(f"Sleeping for {crawl_delay} seconds to respect crawl delay")
@@ -217,6 +227,18 @@ class BaseCrawler(ABC):
             logger.exception("Unexpected error crawling source %s", source_id)
         finally:
             await crawl_rp.update_crawl_job(job)
-            await self._send_job_finished(job)
+            await self._send_job_update(job)
 
         return job
+
+    async def _update_job_info(self, crawl_rp, job, created):
+        if created % 5 != 0: # Update job info every 5 articles to reduce database writes
+            return
+        job.articles_created = created
+        await crawl_rp.update_crawl_job(job)
+        await self._send_job_update(job, articles_found=job.articles_found, articles_created=created)
+
+    async def _index_article_and_send_notification(self, source, matched_words, article):
+        await self._index_article(article, source, matched_words)
+        if matched_words:
+            await self._send_notification(article, matched_words)

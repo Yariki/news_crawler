@@ -8,6 +8,7 @@ from uuid import UUID
 class MessageTypes(str,Enum):
     """Enum for message types."""
     JOB_UPDATE = "JOB_UPDATE"
+    KEYWORDS_MATCH = "KEYWORDS_MATCH"
 
 
 @dataclass
@@ -15,6 +16,10 @@ class BaseMessage:
     """Base class for messages."""
     id: UUID
     type: MessageTypes
+
+    def __init__(self, type: MessageTypes):
+        self.id = UUID(int=UUID.bytes_le.__hash__(self))
+        self.type = type
 
 
 def convert_dict_to_message(message: dict, cls: Type[BaseMessage]) -> BaseMessage:

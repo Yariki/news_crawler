@@ -28,14 +28,14 @@ class TelegramCrawlerService(BaseCrawler):
 
     async def crawl(self, source_id: str, use_delay: bool = True) -> CrawlJob:
         """Executes the crawling process for a given Telegram source. This includes fetching messages from the Telegram channel, detecting keywords, and storing relevant articles in the database."""
-        source = await self.db.get(Source, source_id)
+        source = await self._db.get(Source, source_id)
         if not source:
             raise ValueError("Source not found")
 
         job = CrawlJob(source_id=source_id, status=Status.RUNNING)
-        self.db.add(job)
-        await self.db.commit()
-        await self.db.refresh(job)
+        self._db.add(job)
+        await self._db.commit()
+        await self._db.refresh(job)
 
         scraper = TelegramScrapper(
             api_id=settings.telegram_api_id,
@@ -54,7 +54,7 @@ class TelegramCrawlerService(BaseCrawler):
 
             for article_data in scraped_articles:
 
-                exists = await self.db.scalar(
+                exists = await self._db.scalar(
                     select(Article).where(Article.url == article_data.url)
                 )
                 if exists:
@@ -84,27 +84,27 @@ class TelegramCrawlerService(BaseCrawler):
                         ",".join(matched_keywords) if matched_keywords else None
                     ),
                 )
-                self.db.add(article)
-                await self.db.flush()  # Flush to get the article ID for keyword hits
+                self._db.add(article)
+                await self._db.flush()  # Flush to get the article ID for keyword hits
                 if matched_keywords:
                     for keyword in matched_keywords:
                         keyword_hit = KeywordHit(
                             article_id=article.id,
                             keyword=keyword
                         )
-                        self.db.add(keyword_hit)
+                        self._db.add(keyword_hit)
                     await self._send_notification(article, matched_keywords)
                 await self._index_article(article, source, matched_keywords)
 
-                await self.db.commit()
-                await self.db.refresh(article)
+                await self._db.commit()
+                await self._db.refresh(article)
                 created += 1
 
 
             # Update the last_message_id for incremental scraping
             if new_last_message_id and new_last_message_id != source.last_message_id:
                 source.last_message_id = new_last_message_id
-                await self.db.commit()
+                await self._db.commit()
 
             job.status = Status.COMPLETED
             job.articles_created = created
@@ -124,7 +124,7 @@ class TelegramCrawlerService(BaseCrawler):
             logger.exception("Unexpected error crawling source %s", source_id)
         finally:
             await scraper.stop()
-            await self.db.commit()
-            await self._send_job_finished(job)
+            await self._db.commit()
+            await self._send_job_update(job)
 
         return job
