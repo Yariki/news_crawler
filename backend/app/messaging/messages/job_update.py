@@ -1,10 +1,9 @@
-
-
+from dataclasses import dataclass
 from uuid import UUID
 
 from app.messaging.messages.base import BaseMessage, MessageTypes
 
-
+@dataclass
 class JobUpdateMessage(BaseMessage):
     """Message class for job update messages."""
     job_id: UUID

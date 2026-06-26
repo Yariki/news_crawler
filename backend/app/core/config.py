@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     crawling_update_queue_name: str = Field(default="crawling_update", alias="CRAWLING_UPDATE_QUEUE_NAME")
 
     dlx_name: str = Field(default="news_monitor_dlx", alias="DLX_NAME")
-    dlq_name: str = Field(default="news_monitor_dlq", alias="DLQ_NAME")
+    dlq_name: str = Field(default="news_monitor_dlx_queue", alias="DLQ_NAME")
 
     @property
     def cors_origins_list(self) -> list[str]:

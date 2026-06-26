@@ -101,7 +101,7 @@ class RabbitMQClient:
         routing_key = routing_key or self._crawling_update_queue_name
 
         message = Message(
-            body=json.dumps(message_body).encode(),
+            body=json.dumps(message_body, default=str).encode(),
             content_type="application/json",
             delivery_mode=DeliveryMode.PERSISTENT
         )
@@ -135,13 +135,13 @@ class RabbitMQClient:
             logger.info("Stopped consuming messages from queue: %s", queue_name)
         
 
-get_rabbitmq_client: RabbitMQClient | None = None
+_rabbitmq_client: RabbitMQClient | None = None
 
 async def get_rabbitmq_client() -> RabbitMQClient:
     """Get a singleton instance of RabbitMQClient, ensuring it's connected and ready."""
-    global get_rabbitmq_client
-    if get_rabbitmq_client is None:
-        get_rabbitmq_client = RabbitMQClient()
-        await get_rabbitmq_client.connect()
-        await get_rabbitmq_client.declare_infrastructure()
-    return get_rabbitmq_client
+    global _rabbitmq_client
+    if _rabbitmq_client is None:
+        _rabbitmq_client = RabbitMQClient()
+        await _rabbitmq_client.connect()
+        await _rabbitmq_client.declare_infrastructure()
+    return _rabbitmq_client

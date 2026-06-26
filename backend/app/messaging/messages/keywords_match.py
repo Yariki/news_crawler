@@ -1,5 +1,8 @@
+from dataclasses import dataclass
+
 from ...messaging.messages.base import BaseMessage, MessageTypes
 
+@dataclass
 class KeywordsMatchMessage(BaseMessage):
     """Message class for keywords match events."""
     article_id: str

@@ -110,11 +110,12 @@ export const useAppStore = defineStore('app', {
             ws.onmessage = (event) => {
                 //TODO: implement processing messages  from the server.
                 // There are two types of messages: "alert" and "job_update". For now, we only process "alert" messages.
-                const message_type = JSON.parse(event.data).message_type
+                const message = JSON.parse(event.data)
+                const message_type = message.type
                 if (message_type === 'KEYWORDS_MATCH') {
-                    this.processAlertMessage(JSON.parse(event.data))
+                    this.processAlertMessage(message.payload)
                 } else if (message_type === 'JOB_UPDATE') {
-                    this.processJobUpdateMessage(JSON.parse(event.data))
+                    this.processJobUpdateMessage(message.payload)
                 }
             }
             this.ws = ws

@@ -77,7 +77,7 @@ export interface KeywordItem {
 export interface JobItem {
     id: string
     source_id: string
-    status: JobStatus
+    status: Status
     started_at: string
     finished_at: string | null
     articles_found: number

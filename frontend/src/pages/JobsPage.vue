@@ -14,7 +14,7 @@
             </v-card-title>
             <v-data-table :headers="jobHeaders" :items="store.jobsWithSource" density="comfortable">
                 <template #item.status="{ item }">
-                    <v-chip :color="statusColor(item.status)" size="small">{{ item.status }}</v-chip>
+                    <v-chip :color="statusColor(item.status)" size="small">{{ getStatus(item.status) }}</v-chip>
                 </template>
                 <template #item.actions="{ item }">
                     <v-btn size="small" color="primary" variant="flat" @click="store.runSource(item.source_id)">Run
@@ -28,8 +28,10 @@
 
 <script setup lang="ts">
 import type { JobStatus } from '../models/types';
+import { Statuses } from '../models/types';
 import {useAppStore} from '../stores/app';
-import {useMessages} from "../stores/messages";
+import { useMessages } from "../stores/messages";
+
 
 const store = useAppStore();
 const messagesStore = useMessages();
@@ -45,8 +47,9 @@ const jobHeaders = [
     {title: 'Actions', key: 'actions', sortable: false},
 ]
 
-const statusColor = (status: JobStatus | string | null | undefined) => {
+const statusColor = (status: string | null | undefined) => {
     const normalizedStatus = (status ?? '').toString().toLowerCase();
+    const displayStatus = getStatus(normalizedStatus)?.toLowerCase();
 
     return ({
         completed: 'success',
@@ -55,7 +58,13 @@ const statusColor = (status: JobStatus | string | null | undefined) => {
         waiting: 'warning',
         canceled: 'default',
         cancelled: 'default',
-    }[normalizedStatus] || 'default');
+    }[displayStatus] || 'default');
+}
+
+const getStatus = (status: string): string => {
+    const id = +status;
+    const st =  Statuses.find(s => s.value === id);
+    return st ? st.label : status;
 }
 
 const refresh = async () => {
