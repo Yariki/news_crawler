@@ -12,6 +12,7 @@ from ...models.source import Source
 from ...db.session import AsyncSessionLocal
 from ...models.source_type import SourceType
 from ...services.crawlers.base_crawler import BaseCrawler
+from ...services.crawlers.fake_crawler import FakeCrawlerService
 from ...services.crawlers.html_crawler import HtmlCrawlService
 from ...services.crawlers.rss_crawler import RssCrawlService
 from ...services.crawlers.telegram_crawler import TelegramCrawlerService
@@ -36,6 +37,7 @@ switcher = {
     SourceType.NEWS_SITE: partial(_run_job, crawler_cls=HtmlCrawlService),
     SourceType.RSS: partial(_run_job, crawler_cls=RssCrawlService),
     SourceType.TELEGRAM_CHANNEL: partial(_run_job, crawler_cls=TelegramCrawlerService),
+    SourceType.UNKNOWN: partial(_run_job, crawler_cls=FakeCrawlerService)
 }
 
 async def _run_scheduled_job(source_id: UUID) -> None:

@@ -41,7 +41,7 @@ export const useAppStore = defineStore('app', {
             language: 'ru',
             source_type: 1,
             crawler_key: '',
-            scrape_interval_minutes: 1440,
+            scrape_interval_minutes: 60,
             is_enabled: true,
         } as CreateSourcePayload,
         ws: null as WebSocket | null,
@@ -138,7 +138,7 @@ export const useAppStore = defineStore('app', {
             if (!job) {
                 this.jobs.push({
                     id: message.job_id,
-                    source_id:"", // TODO: we need to find a way to get the source_id from the message or from the server
+                    source_id: message.source_id,
                     status: message.status,
                     articles_created: message.articles_created,
                     articles_found: message.articles_found,
@@ -169,6 +169,7 @@ export const useAppStore = defineStore('app', {
             this.loading = true;
             try{
                 const jobs = await api.get('/dashboard/jobs');
+                this.jobs = jobs && jobs.data ? jobs.data : [];
             }catch(e){
                 console.error(e);
             }finally {

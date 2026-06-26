@@ -37,6 +37,8 @@ class TelegramCrawlerService(BaseCrawler):
         await self._db.commit()
         await self._db.refresh(job)
 
+        await self._send_job_update(job, Status.RUNNING)
+
         scraper = TelegramScrapper(
             api_id=settings.telegram_api_id,
             api_hash=settings.telegram_api_hash,
@@ -93,7 +95,7 @@ class TelegramCrawlerService(BaseCrawler):
                             keyword=keyword
                         )
                         self._db.add(keyword_hit)
-                    await self._send_notification(article, matched_keywords)
+                    await self._send_matched_words_notification(article, matched_keywords)
                 await self._index_article(article, source, matched_keywords)
 
                 await self._db.commit()

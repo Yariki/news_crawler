@@ -77,9 +77,7 @@ class BaseCrawler(ABC):
             }
         )
 
-    async def _send_notification(self, article: Article, matched_words: list[str]):
-        # TODO: send notification to RabbitMQ aout Artcile with matched words.
-
+    async def _send_matched_words_notification(self, article: Article, matched_words: list[str]):
         if not self._rabbitmq_client:
             logger.warning("RabbitMQ client not configured, skipping notification for article %s", article.id)
             return
@@ -105,6 +103,7 @@ class BaseCrawler(ABC):
             articles_found=articles_found if articles_found is not None else job.articles_found,
             articles_created=articles_created if articles_created is not None else job.articles_created,
             error_message=job.error_message if job.error_message else "",
+            source_id=job.source_id if job.source_id else None,
             started_at=str(job.started_at.isoformat()),
             finished_at=str(job.finished_at.isoformat()) if job.finished_at else "",
         )
@@ -226,8 +225,8 @@ class BaseCrawler(ABC):
         return job
 
     async def _update_job_info(self, crawl_rp, job, created):
-        # if created % 5 != 0: # Update job info every 5 articles to reduce database writes
-        #     return
+        if created % 5 != 0: # Update job info every 5 articles to reduce database writes
+            return
         job.articles_created = created
         await crawl_rp.update_crawl_job(job)
         await self._send_job_update(job, articles_found=job.articles_found, articles_created=created)
@@ -235,4 +234,4 @@ class BaseCrawler(ABC):
     async def _index_article_and_send_notification(self, source, matched_words, article):
         await self._index_article(article, source, matched_words)
         if matched_words:
-            await self._send_notification(article, matched_words)
+            await self._send_matched_words_notification(article, matched_words)

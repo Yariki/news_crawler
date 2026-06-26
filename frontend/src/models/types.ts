@@ -1,4 +1,5 @@
 export const SourceTypes = [
+    {value: 0, label: 'Unknown'},
     {value: 1, label: 'News Site'},
     {value: 2, label: 'Blog'},
     {value: 3, label: 'Forum'},
@@ -172,6 +173,8 @@ export interface JobUpdateMessage {
     started_at: string;
 
     finished_at: string | null;
+
+    source_id: string;
 }
 
 
