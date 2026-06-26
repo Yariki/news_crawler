@@ -162,7 +162,7 @@ export interface JobUpdateMessage {
 
     job_id: string;
 
-    status: JobStatus;
+    status: Status;
 
     articles_found: number;
     articles_created: number;

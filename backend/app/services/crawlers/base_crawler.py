@@ -32,8 +32,6 @@ import logging
 
 from app.services.robots import RobotsService
 
-from app.messaging.rabbitmq_client import RabbitMQClient
-
 logger = logging.getLogger(__name__)
 
 
@@ -85,13 +83,13 @@ class BaseCrawler(ABC):
         if not self._rabbitmq_client:
             logger.warning("RabbitMQ client not configured, skipping notification for article %s", article.id)
             return
-        
+
         keywords_match_message = KeywordsMatchMessage(
             article_id=str(article.id),
             title=article.title,
             url=article.url,
             matched_keywords=matched_words,
-            published_at=str(article.published_at) if article.published_at else None,
+            published_at=str(article.published_at.isoformat()) if article.published_at else None,
         )
         await self._rabbitmq_client.publish(keywords_match_message)
 
@@ -102,13 +100,13 @@ class BaseCrawler(ABC):
             return
 
         job_update_message = JobUpdateMessage(
-            job_id=str(job.id),
-            status=job.status,
+            job_id=job.id,
+            status=str(job.status),
             articles_found=articles_found if articles_found is not None else job.articles_found,
             articles_created=articles_created if articles_created is not None else job.articles_created,
-            error_message=job.error_message,
-            started_at=str(job.started_at),
-            finished_at=str(job.finished_at) if job.finished_at else None,
+            error_message=job.error_message if job.error_message else "",
+            started_at=str(job.started_at.isoformat()),
+            finished_at=str(job.finished_at.isoformat()) if job.finished_at else "",
         )
         await self._rabbitmq_client.publish(job_update_message)
 
@@ -228,8 +226,8 @@ class BaseCrawler(ABC):
         return job
 
     async def _update_job_info(self, crawl_rp, job, created):
-        if created % 5 != 0: # Update job info every 5 articles to reduce database writes
-            return
+        # if created % 5 != 0: # Update job info every 5 articles to reduce database writes
+        #     return
         job.articles_created = created
         await crawl_rp.update_crawl_job(job)
         await self._send_job_update(job, articles_found=job.articles_found, articles_created=created)

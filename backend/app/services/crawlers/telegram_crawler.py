@@ -22,9 +22,9 @@ logger = logging.getLogger(__name__)
 class TelegramCrawlerService(BaseCrawler):
     """TelegramCrawler is responsible for orchestrating the crawling process for a specific Telegram channel. It uses the TelegramScrapper to fetch messages, detects keywords, and stores relevant articles in the database."""
 
-    def __init__(self, db: AsyncSession, notification_hub):
+    def __init__(self, db: AsyncSession, rabbitmq_client):
         """Initializes the TelegramCrawler with a database session and a NotificationHub instance."""
-        super().__init__(db, notification_hub)
+        super().__init__(db, rabbitmq_client)
 
     async def crawl(self, source_id: str, use_delay: bool = True) -> CrawlJob:
         """Executes the crawling process for a given Telegram source. This includes fetching messages from the Telegram channel, detecting keywords, and storing relevant articles in the database."""

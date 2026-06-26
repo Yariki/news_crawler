@@ -10,7 +10,16 @@ import {
     SourceItem,
     JobUpdateMessage,
     KeywordsMatchMessage,
+    Status,
 } from "../models/types";
+
+const sortJobsByStartedAtDesc = (jobs: JobItem[]): JobItem[] => {
+    return [...jobs].sort((a, b) => {
+        const aTime = Date.parse(a.started_at)
+        const bTime = Date.parse(b.started_at)
+        return bTime - aTime
+    })
+}
 
 
 export const useAppStore = defineStore('app', {
@@ -125,16 +134,36 @@ export const useAppStore = defineStore('app', {
             this.alerts = this.alerts.slice(0, 20)
         },
         processJobUpdateMessage(message: JobUpdateMessage) { 
-            const job = this.jobs.find((job) => job.id === message.job_id)
+            let job = this.jobs.find((job) => job.id === message.job_id)
             if (!job) {
+                this.jobs.push({
+                    id: message.job_id,
+                    source_id:"", // TODO: we need to find a way to get the source_id from the message or from the server
+                    status: message.status,
+                    articles_created: message.articles_created,
+                    articles_found: message.articles_found,
+                    error_message: message.status === Status.Failed ? message.error_message : null,
+                    started_at: message.started_at,
+                    finished_at: message.finished_at,
+                })
+                this.jobs = sortJobsByStartedAtDesc(this.jobs)
+                
+                job = this.jobs.find((job) => job.id === message.job_id)
+            }
+
+            if (!job) {
+                console.error(`Job with id ${message.job_id} not found after adding it.`)
                 return;
             }
+
             job.status = message.status;
             job.articles_created = message.articles_created;
             job.articles_found = message.articles_found;
-            job.error_message = message.status === 'FAILED' ? message.error_message : null;
+            job.error_message = message.status === Status.Failed ? message.error_message : null;
             job.started_at = message.started_at;
             job.finished_at = message.finished_at;
+
+            
         },
         async refreshJobs() {
             this.loading = true;

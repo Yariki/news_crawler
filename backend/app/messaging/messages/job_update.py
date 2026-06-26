@@ -14,8 +14,8 @@ class JobUpdateMessage(BaseMessage):
     started_at: str
     finished_at: str
 
-    def __init__(self, job_id: UUID, status: str, articles_found: int, articles_created: int, error_message: str, started_at: str, finished_at: str):
-        super().__init__(type=MessageTypes.JOB_UPDATE)
+    def __init__(self, job_id: UUID, status: str, articles_found: int, articles_created: int, error_message: str, started_at: str, finished_at: str, id: UUID | None = None, type: MessageTypes | None = None):
+        super().__init__(id=id,type=MessageTypes.JOB_UPDATE)
         self.job_id = job_id
         self.status = status
         self.articles_found = articles_found

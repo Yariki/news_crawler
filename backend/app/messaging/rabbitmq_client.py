@@ -14,6 +14,8 @@ from aio_pika.abc import (
     ConsumerTag,
 )
 
+from app.messaging.messages.base import to_dict
+
 logger = logging.getLogger(__name__)
 
 class RabbitMQClient:
@@ -93,7 +95,7 @@ class RabbitMQClient:
         self._channel = None
         self._exchange = None
     
-    async def publish(self, message_body: dict[str, Any], routing_key: str | None = None): 
+    async def publish(self, message_body: Any, routing_key: str | None = None):
         """Publish a message to the exchange with the specified routing key."""
         if not self.is_ready:
             raise RuntimeError("RabbitMQ client is not connected or exchange is not declared.")
@@ -101,7 +103,7 @@ class RabbitMQClient:
         routing_key = routing_key or self._crawling_update_queue_name
 
         message = Message(
-            body=json.dumps(message_body, default=str).encode(),
+            body=json.dumps(to_dict(message_body), default=str).encode(),
             content_type="application/json",
             delivery_mode=DeliveryMode.PERSISTENT
         )

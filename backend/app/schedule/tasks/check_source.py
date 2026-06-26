@@ -29,7 +29,7 @@ async def _run_job(
 ) -> None:
     async with AsyncSessionLocal() as db:
         rabbitmq_client = await get_rabbitmq_client()
-        service = crawler_cls(db, rabbitmq_client=rabbitmq_client)
+        service = crawler_cls(db, rabbitmq_client)
         await service.crawl(source_id)
 
 switcher = {

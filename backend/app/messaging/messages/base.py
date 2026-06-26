@@ -2,7 +2,7 @@
 from dataclasses import dataclass, fields
 from enum import Enum, unique
 from typing import Type
-from uuid import UUID
+from uuid import uuid4, UUID
 
 @unique
 class MessageTypes(str,Enum):
@@ -15,15 +15,15 @@ class MessageTypes(str,Enum):
 class BaseMessage:
     """Base class for messages."""
     id: UUID
-    type: MessageTypes
+    type: MessageTypes | None
 
-    def __init__(self, type: MessageTypes):
-        self.id = UUID(int=UUID.bytes_le.__hash__(self))
+    def __init__(self, id: UUID | None = None, type: MessageTypes | None = None):
+        self.id = id or uuid4()
         self.type = type
 
 
 def convert_dict_to_message(message: dict, cls: Type[BaseMessage]) -> BaseMessage:
-    
+
     set_field = {field.name for field in fields(cls)}
     filtered_message = {key: value for key, value in message.items() if key in set_field}
     return cls(**filtered_message)
