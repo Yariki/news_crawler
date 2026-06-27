@@ -12,7 +12,7 @@ class KeywordsMatchMessage(BaseMessage):
     title: str
     url: str
     published_at: str
-    
+
     def __init__(self, article_id: str, title: str, url: str, matched_keywords: list[str], published_at: str,id: UUID | None = None, type: MessageTypes | None = None):
         super().__init__(id=id,type=MessageTypes.KEYWORDS_MATCH)
         self.article_id = article_id
