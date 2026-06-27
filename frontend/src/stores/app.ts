@@ -7,8 +7,19 @@ import {
     JobItem,
     KeywordItem,
     SearchHit,
-    SourceItem
+    SourceItem,
+    JobUpdateMessage,
+    KeywordsMatchMessage,
+    Status,
 } from "../models/types";
+
+const sortJobsByStartedAtDesc = (jobs: JobItem[]): JobItem[] => {
+    return [...jobs].sort((a, b) => {
+        const aTime = Date.parse(a.started_at)
+        const bTime = Date.parse(b.started_at)
+        return bTime - aTime
+    })
+}
 
 
 export const useAppStore = defineStore('app', {
@@ -30,7 +41,7 @@ export const useAppStore = defineStore('app', {
             language: 'ru',
             source_type: 1,
             crawler_key: '',
-            scrape_interval_minutes: 1440,
+            scrape_interval_minutes: 60,
             is_enabled: true,
         } as CreateSourcePayload,
         ws: null as WebSocket | null,
@@ -106,16 +117,59 @@ export const useAppStore = defineStore('app', {
                 setInterval(() => ws.readyState === WebSocket.OPEN && ws.send('ping'), 15000)
             }
             ws.onmessage = (event) => {
+                //TODO: implement processing messages  from the server.
+                // There are two types of messages: "alert" and "job_update". For now, we only process "alert" messages.
                 const message = JSON.parse(event.data)
-                this.alerts.unshift(message.payload)
-                this.alerts = this.alerts.slice(0, 20)
+                const message_type = message.type
+                if (message_type === 'KEYWORDS_MATCH') {
+                    this.processAlertMessage(message.payload)
+                } else if (message_type === 'JOB_UPDATE') {
+                    this.processJobUpdateMessage(message.payload)
+                }
             }
             this.ws = ws
+        },
+        processAlertMessage(message: KeywordsMatchMessage) {
+            this.alerts.unshift(message)
+            this.alerts = this.alerts.slice(0, 20)
+        },
+        processJobUpdateMessage(message: JobUpdateMessage) { 
+            let job = this.jobs.find((job) => job.id === message.job_id)
+            if (!job) {
+                this.jobs.push({
+                    id: message.job_id,
+                    source_id: message.source_id,
+                    status: message.status,
+                    articles_created: message.articles_created,
+                    articles_found: message.articles_found,
+                    error_message: message.status === Status.Failed ? message.error_message : null,
+                    started_at: message.started_at,
+                    finished_at: message.finished_at,
+                })
+                this.jobs = sortJobsByStartedAtDesc(this.jobs)
+                
+                job = this.jobs.find((job) => job.id === message.job_id)
+            }
+
+            if (!job) {
+                console.error(`Job with id ${message.job_id} not found after adding it.`)
+                return;
+            }
+
+            job.status = message.status;
+            job.articles_created = message.articles_created;
+            job.articles_found = message.articles_found;
+            job.error_message = message.status === Status.Failed ? message.error_message : null;
+            job.started_at = message.started_at;
+            job.finished_at = message.finished_at;
+
+            
         },
         async refreshJobs() {
             this.loading = true;
             try{
                 const jobs = await api.get('/dashboard/jobs');
+                this.jobs = jobs && jobs.data ? jobs.data : [];
             }catch(e){
                 console.error(e);
             }finally {

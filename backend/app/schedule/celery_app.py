@@ -10,16 +10,9 @@ import logging
 logging.basicConfig(level=logging.DEBUG if settings.app_mode == "dev" else logging.INFO,
                     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-import logging
-
-logging.basicConfig(
-    level=logging.DEBUG if settings.app_mode != "prod" else logging.WARNING,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-
 celery_app = Celery(
     "celery_app",
-    broker=settings.celery_broker_url, 
+    broker=settings.rabbitmq_url,
     include=["app.schedule.tasks.dispatch_sources", "app.schedule.tasks.check_source"]
 )
 

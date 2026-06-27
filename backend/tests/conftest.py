@@ -1,6 +1,6 @@
 import os
 
-os.environ.setdefault("APP_MODE", "test")  # set BEFORE any app imports
+os.environ["APP_MODE"] = "test"  # set BEFORE any app imports
 
 import pytest
 import pytest_asyncio
@@ -33,9 +33,19 @@ def apply_migrations(database_url, postgres_container):
     sync_url = postgres_container.get_connection_url(driver="psycopg")
     cfg = Config("alembic.ini")
     cfg.set_main_option("sqlalchemy.url", sync_url)
-    command.upgrade(cfg, "head")
+
+    # VS Code's Python extension may load DATABASE_URL from the workspace .env.
+    # migrations/env.py gives that variable precedence over Alembic's configured
+    # URL, so pin it to the dynamically allocated Testcontainers URL here.
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setenv("DATABASE_URL", sync_url)
+        command.upgrade(cfg, "head")
+
     yield
-    command.downgrade(cfg, "base")
+
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setenv("DATABASE_URL", sync_url)
+        command.downgrade(cfg, "base")
 
 
 @pytest_asyncio.fixture

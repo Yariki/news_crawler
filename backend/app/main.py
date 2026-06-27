@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -7,7 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.core.config import settings
-from app.messaging.rabbitmq_client import RabbitMQClient
+from app.messaging.handling_messages.handle_messages import handle_message
+from app.messaging.rabbitmq_client import RabbitMQClient, get_rabbitmq_client
 from app.services.es import ElasticService
 import logging
 
@@ -19,20 +21,14 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-rabbitmq = RabbitMQClient()
-
-
-async def handle_message(message: dict) -> None:
-    """Handle incoming messages from RabbitMQ."""
-
-    logger.debug(f"Received message: {message}")
+rabbitmq: RabbitMQClient | None = None
 
 
 async def rabbitmq_connect(_app: FastAPI):
     """Connect to RabbitMQ and declare necessary infrastructure."""
-    await rabbitmq.connect()
-    await rabbitmq.declare_infrastructure()
-    await rabbitmq.consume(settings.job_update_queue_name, handle_message)
+    global rabbitmq
+    rabbitmq = await get_rabbitmq_client()
+    await rabbitmq.consume(settings.crawling_update_queue_name, handle_message)
     _app.state.rabbitmq = rabbitmq
 
 @asynccontextmanager
@@ -45,7 +41,8 @@ async def lifespan(_app: FastAPI):
     try:
         yield
     finally:
-        await rabbitmq.close()
+        if rabbitmq:
+            await rabbitmq.close()
 
 
 app = FastAPI(
