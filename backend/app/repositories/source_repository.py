@@ -43,3 +43,9 @@ class SourceRepository:
         )
         result = await self.db.scalars(query)
         return list(result.all())
+
+    async def get_source_by_url(self, url: str) -> Source:
+        """Retrieves a source record from the database based on the provided source URL. If a record is found, it returns the Source object; otherwise, it returns None."""
+        query = select(Source).where(Source.base_url == url)
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()

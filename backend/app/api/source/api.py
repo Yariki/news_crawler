@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status as HTTPStatus
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.source.services.source_service import SourceService
 from app.db.session import get_db
@@ -25,15 +25,24 @@ async def create_source(data: SourceCreateUpdate, db: AsyncSession = Depends(get
 
 @router.post("/{source_id}/run", status_code=200, response_model=SourceRunResponse)
 async def run_source(source_id: str, db: AsyncSession = Depends(get_db)):
-    
+
+    is_crawling_running = await SourceService(db).is_crawling_running(source_id)
+    if is_crawling_running:
+        raise HTTPException(status_code=HTTPStatus.HTTP_400_BAD_REQUEST, detail={
+            "id": source_id,
+            "status": "error",
+            "message": f"Source with id {source_id} is currently being crawled."
+        })
+
     source = await SourceService(db).get_source(source_id)
     if not source or not source.is_enabled:
-        return SourceRunResponse(
-            id=source_id,
-            status="error",
-            message=f"Source with id {source_id} is not found or is disabled."
-        )
-    
+        raise HTTPException(status_code=HTTPStatus.HTTP_400_BAD_REQUEST, detail={
+            "id": source_id,
+            "status": "error",
+            "message": f"Source with id {source_id} is not found or is disabled."
+        })
+
+    # Dispatch the source for crawling using celery task.
     from app.schedule.celery_app import celery_app
     celery_app.send_task("schedule.tasks.run_scheduled_job", args=[str(source_id)], queue=settings.celery_task_queue)
 
@@ -42,5 +51,3 @@ async def run_source(source_id: str, db: AsyncSession = Depends(get_db)):
         status="ok",
         message=f"Source with id {source_id} has been dispatched for crawling."
     )
-    
-    

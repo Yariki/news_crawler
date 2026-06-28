@@ -1,7 +1,7 @@
 
 
-
 from app.models.crawl_job import CrawlJob
+from app.models.source import Source
 from app.models.status import Status
 
 
@@ -10,9 +10,13 @@ class CrawlJobRepository:
     def __init__(self, db):
         self.db = db
         
-        
     async def create_crawl_job(self, source_id: str, status: Status) -> CrawlJob:
         """Creates a new crawl job record in the database for a given source ID and status. It returns the created CrawlJob object."""
+        
+        source = await self.db.get(Source, source_id)
+        if not source:
+            raise ValueError("Source not found")
+        
         job = CrawlJob(source_id=source_id, status=status)
         self.db.add(job)
         await self.db.commit()
