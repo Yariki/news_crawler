@@ -72,7 +72,7 @@ class FakeCrawlerService(BaseCrawler):
                 await self._update_job_info(crawl_rp, job, created)
 
                 if use_delay:
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(10)
 
             job.status = Status.COMPLETED
             job.articles_created = created

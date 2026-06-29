@@ -75,9 +75,18 @@ export const useAppStore = defineStore('app', {
             }
         },
         async runSource(sourceId: string) {
-          const response = await api.post(`/sources/${sourceId}/run`)
-          await this.refreshAll();
-          return response.data;
+            try {
+                const response = await api.post(`/sources/${sourceId}/run`)
+                await this.refreshAll();
+                return response.data;
+            } catch (e) { 
+                console.log('Error running source:', e);
+                return {
+                    status: "error",
+                    message: "Failed to run source. Please try again later."
+                }     
+            }
+            
         },
         async addKeyword() {
             if (!this.newKeyword.trim()) return
