@@ -75,8 +75,18 @@ export const useAppStore = defineStore('app', {
             }
         },
         async runSource(sourceId: string) {
-            await api.post(`/sources/${sourceId}/run`)
-            await this.refreshAll()
+            try {
+                const response = await api.post(`/sources/${sourceId}/run`)
+                await this.refreshAll();
+                return response.data;
+            } catch (e) { 
+                console.log('Error running source:', e);
+                return {
+                    status: "error",
+                    message: "Failed to run source. Please try again later."
+                }     
+            }
+            
         },
         async addKeyword() {
             if (!this.newKeyword.trim()) return
@@ -133,7 +143,7 @@ export const useAppStore = defineStore('app', {
             this.alerts.unshift(message)
             this.alerts = this.alerts.slice(0, 20)
         },
-        processJobUpdateMessage(message: JobUpdateMessage) { 
+        processJobUpdateMessage(message: JobUpdateMessage) {
             let job = this.jobs.find((job) => job.id === message.job_id)
             if (!job) {
                 this.jobs.push({
@@ -146,14 +156,8 @@ export const useAppStore = defineStore('app', {
                     started_at: message.started_at,
                     finished_at: message.finished_at,
                 })
-                this.jobs = sortJobsByStartedAtDesc(this.jobs)
-                
-                job = this.jobs.find((job) => job.id === message.job_id)
-            }
-
-            if (!job) {
-                console.error(`Job with id ${message.job_id} not found after adding it.`)
-                return;
+              this.jobs = sortJobsByStartedAtDesc(this.jobs)
+              return;
             }
 
             job.status = message.status;
@@ -163,7 +167,7 @@ export const useAppStore = defineStore('app', {
             job.started_at = message.started_at;
             job.finished_at = message.finished_at;
 
-            
+
         },
         async refreshJobs() {
             this.loading = true;

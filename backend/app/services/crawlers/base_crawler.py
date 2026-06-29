@@ -1,6 +1,4 @@
 import asyncio
-from dataclasses import asdict
-from dataclasses import asdict
 from datetime import datetime, timezone
 from abc import ABC, abstractmethod
 import uuid
@@ -11,7 +9,6 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
-from app.messaging.messages.base import MessageTypes
 from app.messaging.messages.job_update import JobUpdateMessage
 from app.messaging.messages.keywords_match import KeywordsMatchMessage
 from app.models import MonitoredKeyword, CrawlJob, Source, Article, KeywordHit

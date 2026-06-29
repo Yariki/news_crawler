@@ -1,15 +1,17 @@
-from __future__ import annotations
+from pydantic import Field
+from app.models.source_type import SourceType
+
 
 from pydantic import BaseModel, HttpUrl, UUID4
 
 
 class SourceCreateUpdate(BaseModel):
-    name: str
-    base_url: HttpUrl | str
+    name: str = Field(min_length=1)
+    base_url: HttpUrl
     language: str
-    source_type: int
+    source_type: int = Field(gt=0, le=SourceType.RSS.value)
     crawler_key: str
-    scrape_interval_minutes: int = 1440
+    scrape_interval_minutes: int = Field(gt=0, default=1440)
     is_enabled: bool = True
 
 
