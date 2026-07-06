@@ -19,7 +19,7 @@ class CrawlJobRepository:
         
         job = CrawlJob(source_id=source_id, status=status)
         self.db.add(job)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(job)
         return job
     
@@ -32,7 +32,7 @@ class CrawlJobRepository:
         for key, value in params.__dict__.items():
             setattr(job, key, value)
 
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(job)
         
     async def get_crawl_job_by_id(self, job_id: str) -> CrawlJob | None:
