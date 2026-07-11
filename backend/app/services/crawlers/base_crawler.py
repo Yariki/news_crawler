@@ -55,40 +55,6 @@ class BaseCrawler(ABC):
                     for value in result.all() if value]
         return keywords or settings.default_keywords_list
 
-    # async def _index_article(self, article: Article, source: Source, matched_words: list[str]):
-    #     if not self._elasticsearch_client:
-    #         logger.warning("Elasticsearch client not configured, skipping indexing for article %s", article.id)
-    #         return
-    #     await self._elasticsearch_client.index_article(
-    #         {
-    #             "article_id": str(article.id),
-    #             "source_id": source.id,
-    #             "source_name": source.name,
-    #             "title": article.title,
-    #             "content_text": article.content_text,
-    #             "published_at": article.published_at.isoformat() if article.published_at else None,
-    #             "url": article.url,
-    #             "language": article.language,
-    #             "is_alert": article.is_alert,
-    #             "matched_keywords": matched_words,
-    #         }
-    #     )
-
-    # async def _send_matched_words_notification(self, article: Article, matched_words: list[str]):
-    #     if not self._rabbitmq_client:
-    #         logger.warning("RabbitMQ client not configured, skipping notification for article %s", article.id)
-    #         return
-
-    #     keywords_match_message = KeywordsMatchMessage(
-    #         article_id=str(article.id),
-    #         title=article.title,
-    #         url=article.url,
-    #         matched_keywords=matched_words,
-    #         published_at=str(article.published_at.isoformat()) if article.published_at else None,
-    #     )
-    #     await self._rabbitmq_client.publish(keywords_match_message)
-
-
     async def _send_job_update(self, job: CrawlJob, articles_found: int | None = None, articles_created: int | None = None):
         if not self._rabbitmq_client:
             logger.warning("RabbitMQ client not configured, skipping job finished notification for job %s", job.id)
@@ -231,18 +197,12 @@ class BaseCrawler(ABC):
         await crawl_rp.update_crawl_job(job)
         await self._send_job_update(job, articles_found=job.articles_found, articles_created=created)
 
-    # async def _index_article_and_send_notification(self, source, matched_words, article):
-    #     await self._index_article(article, source, matched_words)
-    #     if matched_words:
-    #         await self._send_matched_words_notification(article, matched_words)
-    
-    
     def _enqueue_outbox_event(self, outbox_rp: OutboxRepository, source: Source, article: Article, matched_words: list[str]) -> None:
         
         """Enqueue an outbox event for the given article and matched keywords."""
         payload = {
             "article_id": str(article.id),
-            "source_id": source.id,
+            "source_id": str(source.id),
             "source_name": source.name,
             "title": article.title,
             "url": article.url,
@@ -259,6 +219,7 @@ class BaseCrawler(ABC):
             event_type=OutboxEventType.ARTICLE_INDEX.value,
             payload=payload
         )
+        logger.info("Enqueued outbox event for article %s with payload: %s", article.id, payload)
         
         if matched_words:
             outbox_rp.enqueue(
@@ -272,3 +233,5 @@ class BaseCrawler(ABC):
                     "published_at": article.published_at.isoformat() if article.published_at else None,
                 }
             )
+            logger.info("Enqueued outbox event for article %s with matched keywords: %s", article.id, matched_words)
+

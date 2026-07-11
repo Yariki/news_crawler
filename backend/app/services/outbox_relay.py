@@ -54,9 +54,11 @@ class OutboxRelay:
         
     async def _dispatch_event(self, event) -> None:
         if event.event_type == OutboxEventType.ARTICLE_INDEX:
-            await self._elasticsearch_client.index_article(event.payload)
+            await self._elasticsearch_client.index_article(event.payload_json)
+            logger.info(f"Indexed article with ID {event.payload_json.get('id')} to Elasticsearch.")
         elif event.event_type == OutboxEventType.KEYWORDS_MATCH:
-            message = KeywordsMatchMessage(**event.payload)
+            message = KeywordsMatchMessage(**event.payload_json)
             await self._rabbitmq_client.publish(message)
+            logger.info(f"Published keywords match message with ID {event.payload_json.get('id')} to RabbitMQ.")
         else:
             logger.warning(f"Unknown event type: {event.event_type}. Event ID: {event.id}")

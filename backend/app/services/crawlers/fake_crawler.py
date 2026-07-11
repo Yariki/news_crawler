@@ -1,9 +1,11 @@
 import asyncio
 from datetime import timezone, datetime
+from uuid import uuid4
 
 from app.models import Source, Article
 from app.models.status import Status
 from app.repositories.crawljob_repository import CrawlJobRepository
+from app.repositories.outbox_repository import OutboxRepository
 from app.services.crawlers.base_crawler import BaseCrawler
 from app.services.keyword_detector import detect_keywords
 
@@ -22,6 +24,7 @@ class FakeCrawlerService(BaseCrawler):
             raise ValueError("Source not found")
 
         crawl_rp = CrawlJobRepository(self._db)
+        outbox_rp = OutboxRepository(self._db)
         job = await crawl_rp.create_crawl_job(source_id, Status.RUNNING)
         await self._send_job_update(job, articles_found=0, articles_created=0)
         
@@ -42,6 +45,7 @@ class FakeCrawlerService(BaseCrawler):
                 matched_keywords = detect_keywords(fetched_article.content_text, active_keywords)
 
                 article = Article(
+                    id = uuid4(),
                     source_id=source_id,
                     external_id=fetched_article.external_id,
                     url=fetched_article.url,
@@ -64,9 +68,9 @@ class FakeCrawlerService(BaseCrawler):
                     ),
                 )
 
-                if matched_keywords:
-                    await self._send_matched_words_notification(article, matched_keywords)
-
+                self._enqueue_outbox_event(outbox_rp, source, article, matched_keywords)
+                await self._update_job_info(crawl_rp, job, created)
+                
                 created += 1
 
                 await self._update_job_info(crawl_rp, job, created)
@@ -80,7 +84,6 @@ class FakeCrawlerService(BaseCrawler):
         except Exception  as e:
             job.status = Status.FAILED
             await self._send_job_update(job, articles_found=job.articles_found, articles_created=created)
-            raise e
         finally:
             await self._db.commit()
             await self._send_job_update(job, articles_found=job.articles_found, articles_created=created)
