@@ -15,6 +15,8 @@ from ...scrapers.telegram.telegram_scraper import TelegramScrapper
 from ...services.crawlers.base_crawler import BaseCrawler
 from ...core.config import settings
 from ...models import Source, CrawlJob, Article, KeywordHit
+from app.repositories.crawljob_repository import CrawlJobRepository
+from app.repositories.outbox_repository import OutboxRepository
 import logging
 
 logger = logging.getLogger(__name__)
@@ -45,6 +47,10 @@ class TelegramCrawlerService(BaseCrawler):
             channel=source.base_url,
             last_message_id=source.last_message_id
         )
+        
+        crawl_rp = CrawlJobRepository(self._db)
+        outbox_rp = OutboxRepository(self._db)
+        
         created = 0
         try:
             await scraper.start()
@@ -95,8 +101,9 @@ class TelegramCrawlerService(BaseCrawler):
                             keyword=keyword
                         )
                         self._db.add(keyword_hit)
-                    await self._send_matched_words_notification(article, matched_keywords)
-                await self._index_article(article, source, matched_keywords)
+
+                self._enqueue_outbox_event(outbox_rp, source, article, matched_keywords)
+                await self._update_job_info(crawl_rp, job, created)
 
                 await self._db.commit()
                 await self._db.refresh(article)

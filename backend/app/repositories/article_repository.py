@@ -16,7 +16,7 @@ class ArticleRepository:
     async def add_article(self, new_article: Article) -> Article:
         """Adds a new article record to the database based on the provided Article object."""
         self.db.add(new_article)
-        await self.db.commit()
+        await self.db.flush()  # Ensure the new article is written to the database
         return new_article
     
     async def get_article_by_id(self, article_id):
@@ -53,5 +53,5 @@ class ArticleRepository:
             if key != "id" and value is not None:
                 setattr(existing_article, key, value)
         
-        await self.db.commit()
+        await self.db.flush()
         return existing_article

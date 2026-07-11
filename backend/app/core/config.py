@@ -31,6 +31,11 @@ class Settings(BaseSettings):
 
     dlx_name: str = Field(default="news_monitor_dlx", alias="DLX_NAME")
     dlq_name: str = Field(default="news_monitor_dlx_queue", alias="DLQ_NAME")
+    
+    outbox_poll_interval_seconds: int = Field(default=5, alias="OUTBOX_POLL_INTERVAL_SECONDS")
+    outbox_batch_size: int = Field(default=50, alias="OUTBOX_BATCH_SIZE")
+    outbox_backoff_base_seconds: int = Field(default=10, alias="OUTBOX_BACKOFF_BASE_SECONDS")
+    outbox_max_attempts: int = Field(default=8, alias="OUTBOX_MAX_ATTEMPTS")
 
     @property
     def cors_origins_list(self) -> list[str]:
