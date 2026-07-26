@@ -17,12 +17,14 @@ class OutboxRepository:
 
     def enqueue(self, aggregate_id: UUID, event_type: int, payload: dict) -> OutboxEvent:
         """Enqueue a new outbox event."""
+        now = datetime.now(timezone.utc)
         new_event = OutboxEvent(
             aggregate_id=aggregate_id,
             event_type=event_type,
             payload_json=payload,
             status=OutboxStatus.PENDING,
             created_at=datetime.now(timezone.utc),
+            next_attempt_at=datetime.now(timezone.utc)
         )
         self._db.add(new_event)
         return new_event

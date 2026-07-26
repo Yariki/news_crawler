@@ -26,6 +26,7 @@ from app.scrapers.telegram.telegram_scraper import TelegramScrapper
 from app.services.es import ElasticService
 from app.services.keyword_detector import normalize_keyword, detect_keywords
 from app.messaging.rabbitmq_client import RabbitMQClient
+from app.db.session import AsyncSessionLocal
 import logging
 
 from app.services.robots import RobotsService
@@ -98,7 +99,6 @@ class BaseCrawler(ABC):
         keyword_rp = KeywordHitRepository(self._db)
         article_rp = ArticleRepository(self._db)
         crawl_rp = CrawlJobRepository(self._db)
-        outbox_rp = OutboxRepository(self._db)
         job = await crawl_rp.create_crawl_job(source_id, Status.RUNNING)
 
         await self._send_job_update(job, articles_found=0, articles_created=0)  # Initial job update
@@ -153,7 +153,7 @@ class BaseCrawler(ABC):
 
                 created += 1
 
-                self._enqueue_outbox_event(outbox_rp, source, article, matched_words)
+                await self._enqueue_outbox_event(source, article, matched_words)
 
                 await self._update_job_info(crawl_rp, job, created)
 
@@ -197,41 +197,42 @@ class BaseCrawler(ABC):
         await crawl_rp.update_crawl_job(job)
         await self._send_job_update(job, articles_found=job.articles_found, articles_created=created)
 
-    def _enqueue_outbox_event(self, outbox_rp: OutboxRepository, source: Source, article: Article, matched_words: list[str]) -> None:
-        
+    async def _enqueue_outbox_event(self, source: Source, article: Article, matched_words: list[str]) -> None:
         """Enqueue an outbox event for the given article and matched keywords."""
-        payload = {
-            "article_id": str(article.id),
-            "source_id": str(source.id),
-            "source_name": source.name,
-            "title": article.title,
-            "url": article.url,
-            "matched_keywords": matched_words,
-            "published_at": article.published_at.isoformat() if article.published_at else None,
-            "url": article.url,
-            "language": article.language,
-            "is_alert": article.is_alert,
-            "matched_keywords": matched_words,
-            "content_text": article.content_text,
-        }
-        outbox_rp.enqueue(
-            aggregate_id=article.id,
-            event_type=OutboxEventType.ARTICLE_INDEX.value,
-            payload=payload
-        )
-        logger.info("Enqueued outbox event for article %s with payload: %s", article.id, payload)
-        
-        if matched_words:
+        async with AsyncSessionLocal() as session, session.begin():
+            outbox_rp = OutboxRepository(session)
+            payload = {
+                "article_id": str(article.id),
+                "source_id": str(source.id),
+                "source_name": source.name,
+                "title": article.title,
+                "url": article.url,
+                "matched_keywords": matched_words,
+                "published_at": article.published_at.isoformat() if article.published_at else None,
+                "url": article.url,
+                "language": article.language,
+                "is_alert": article.is_alert,
+                "matched_keywords": matched_words,
+                "content_text": article.content_text,
+            }
             outbox_rp.enqueue(
                 aggregate_id=article.id,
-                event_type=OutboxEventType.KEYWORDS_MATCH.value,
-                payload={
-                    "article_id": str(article.id),
-                    "title": article.title,
-                    "url": article.url,
-                    "matched_keywords": matched_words,
-                    "published_at": article.published_at.isoformat() if article.published_at else None,
-                }
+                event_type=OutboxEventType.ARTICLE_INDEX.value,
+                payload=payload
             )
-            logger.info("Enqueued outbox event for article %s with matched keywords: %s", article.id, matched_words)
+            logger.info("Enqueued outbox event for article %s with payload: %s", article.id, payload)
+            
+            if matched_words:
+                outbox_rp.enqueue(
+                    aggregate_id=article.id,
+                    event_type=OutboxEventType.KEYWORDS_MATCH.value,
+                    payload={
+                        "article_id": str(article.id),
+                        "title": article.title,
+                        "url": article.url,
+                        "matched_keywords": matched_words,
+                        "published_at": article.published_at.isoformat() if article.published_at else None,
+                    }
+                )
+                logger.info("Enqueued outbox event for article %s with matched keywords: %s", article.id, matched_words)
 

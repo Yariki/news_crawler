@@ -24,7 +24,6 @@ class FakeCrawlerService(BaseCrawler):
             raise ValueError("Source not found")
 
         crawl_rp = CrawlJobRepository(self._db)
-        outbox_rp = OutboxRepository(self._db)
         job = await crawl_rp.create_crawl_job(source_id, Status.RUNNING)
         await self._send_job_update(job, articles_found=0, articles_created=0)
         
@@ -68,11 +67,8 @@ class FakeCrawlerService(BaseCrawler):
                     ),
                 )
 
-                self._enqueue_outbox_event(outbox_rp, source, article, matched_keywords)
-                await self._update_job_info(crawl_rp, job, created)
-                
+                await self._enqueue_outbox_event(source, article, matched_keywords)
                 created += 1
-
                 await self._update_job_info(crawl_rp, job, created)
 
                 if use_delay:
