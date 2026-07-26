@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import UUID4
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import status as HttpStatus
+from fastapi import status as HttpStatus, HTTPException
 
 from app.repositories.monitore_keyword_repository import MonitoreKeywordRepository
 
@@ -36,6 +36,12 @@ async def get_keyword(keyword_id: UUID4, db: AsyncSession = Depends(get_db)):
 async def create_keyword(
     request: MonitoredKeywordCreate, db: AsyncSession = Depends(get_db)
 ):
+    
+    request.keyword = request.keyword.lower().strip()
+    
+    if len(request.keyword) == 0:
+        raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Keyword cannot be empty")
+    
     word = await MonitoreKeywordRepository(db).create_keyword(request.keyword)
     return word
 
@@ -45,5 +51,10 @@ async def update_keyword(
     request: MonitoredKeywordUpdate, 
     db: AsyncSession = Depends(get_db)
 ):
+    
+    request.keyword = request.keyword.lower().strip()
+    if len(request.keyword) == 0:
+        raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Keyword cannot be empty")
+    
     word = await MonitoreKeywordRepository(db).update_keyword(keyword_id, request)
     return word

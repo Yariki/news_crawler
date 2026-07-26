@@ -22,3 +22,24 @@ async def test_update_keyword_not_found(client):
     assert update_response.status_code == 404
     error_data = update_response.json()
     assert error_data["detail"] == "Keyword not found"    
+    
+
+async def test_update_keyword_invalid_data(client):
+    response = await client.post("/keywords", json={"keyword": "test"})
+    assert response.status_code == 201
+    data = response.json()
+    keyword_id = data["id"]
+
+    update_response = await client.put(f"/keywords/{keyword_id}", json={"keyword": "", "is_enabled": False})
+    assert update_response.status_code == 422
+    error_data = update_response.json()
+    assert "detail" in error_data
+    
+async def test_update_keyword_whitespace(client):
+    response = await client.post("/keywords", json={"keyword": "test"})
+    assert response.status_code == 201
+    data = response.json()
+    keyword_id = data["id"]
+
+    update_response = await client.put(f"/keywords/{keyword_id}", json={"keyword": "   ", "is_enabled": False})
+    assert update_response.status_code == 400

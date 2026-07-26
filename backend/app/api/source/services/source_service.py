@@ -1,6 +1,7 @@
 from app.models.status import Status
 from app.models import CrawlJob
 from sqlalchemy import exists, select
+from pydantic import UUID4
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi.exceptions import HTTPException
@@ -42,7 +43,7 @@ class SourceService:
         )
         return await self.rp.add_source(source)
 
-    async def get_source(self, id: str) -> Source:
+    async def get_source(self, id: UUID4) -> Source:
         """Retrieves a source record from the database based on the provided source ID. If a record is found, it returns the Source object; otherwise, it raises an HTTPException with a 404 status code."""
         source = await self.rp.get_source_by_id(id)
         if not source:
@@ -54,7 +55,7 @@ class SourceService:
         now = utc_now()
         return await self.rp.get_due_sources(now, limit)
 
-    async def is_crawling_running(self, source_id: str) -> bool:
+    async def is_crawling_running(self, source_id: UUID4) -> bool:
         """Checks if a source is currently being crawled."""
         job_exist_query = select(CrawlJob).where(CrawlJob.source_id == source_id).where(
             (CrawlJob.status == Status.RUNNING) | (CrawlJob.status == Status.WAITING)

@@ -29,6 +29,6 @@ class SourceRead(BaseModel):
 
 
 class SourceRunResponse(BaseModel):
-    id: str
+    id: UUID4
     status: str = "ok"  # "ok" | "error"
     message: str

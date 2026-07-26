@@ -45,7 +45,7 @@ class BaseScraper(ABC):
             if not href:
                 continue
             full_url = urljoin(self.base_url, href)
-            logger.warning(f"Discovered URL: {full_url}; {any(pattern.search(full_url) for pattern in PATTERNS)}")
+            
             if any(pattern.search(full_url) for pattern in PATTERNS) and full_url not in seen:
                 seen.add(full_url)
                 found.append(UrlFeed(
@@ -70,7 +70,6 @@ class BaseScraper(ABC):
             response = await client.get(feed.url)
         
         if not response:
-            logger.warning(f"Failed to fetch article from {feed.url}")
             return None
 
         try:
@@ -78,7 +77,7 @@ class BaseScraper(ABC):
         except httpx.HTTPStatusError:
             return None
 
-        soup = BeautifulSoup(response.text, "lxml")
+        soup = BeautifulSoup(response.text, features="lxml")
 
         title = self._get_title(soup)
         published_at = self._get_published_at(soup)
@@ -88,6 +87,7 @@ class BaseScraper(ABC):
         tags = self._get_tags(soup)
         external_id = self._extract_external_id(feed.url)
         checksum = hashlib.sha256(content_text.encode("utf-8")).hexdigest()
+        language = self._get_language(soup) or "en"
 
         if not title or not content_text:
             return None
@@ -102,7 +102,7 @@ class BaseScraper(ABC):
             content_html=content_html,
             content_text=content_text,
             summary=summary,
-            language="ru",
+            language=language,
             tags=tags,
             raw_payload_json={
                 "scraped_at": datetime.now(timezone.utc).isoformat(),
@@ -181,6 +181,12 @@ class BaseScraper(ABC):
                     if node.get_text(strip=True):
                         tags.append(node.get_text(strip=True))
         return list(dict.fromkeys(tags))[:10]
+    
+    def _get_language(self, soup: BeautifulSoup) -> str | None:
+        html_tag = soup.select_one("html")
+        if html_tag and html_tag.get("lang"):
+            return html_tag["lang"].strip()
+        return None
 
     def _extract_external_id(self, url: str) -> str:
         match = re.search(fr"(\d{4,10})", url.rstrip("/"))
