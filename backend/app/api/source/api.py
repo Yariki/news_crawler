@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status as HTTPStatus
+from pydantic import UUID4
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.source.services.source_service import SourceService
 from app.db.session import get_db
@@ -28,7 +29,7 @@ async def create_source(data: SourceCreateUpdate, db: AsyncSession = Depends(get
     return result
 
 @router.post("/{source_id}/run", status_code=200, response_model=SourceRunResponse)
-async def run_source(source_id: str, db: AsyncSession = Depends(get_db)):
+async def run_source(source_id: UUID4, db: AsyncSession = Depends(get_db)):
     """Dispatches a source for crawling based on the provided source ID. It checks if the source exists, is enabled, and is not currently being crawled. If all conditions are met, it updates the next_run_at field and dispatches the source for crawling using a Celery task. Returns a SourceRunResponse indicating the result of the operation."""
     async with db.begin():
         source = await SourceService(db).get_source(source_id)
