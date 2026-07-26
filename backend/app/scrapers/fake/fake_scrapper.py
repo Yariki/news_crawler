@@ -17,7 +17,7 @@ class FakeScrapper(BaseScraper):
     async def discover_urls(self) -> list[UrlFeed]:
         urls = []
 
-        for i in range(40):
+        for i in range(20):  # Generate 20 fake URLs
             urls.append(UrlFeed(
                 id=self._fake.uuid4(),
                 url=self._fake.url(),

@@ -31,10 +31,12 @@ class OutboxRelay:
         while not self._stopping.is_set():
             try:
                 processed = await self._run_once()
+                logger.info(f"====== Processed {processed} outbox events.")
             except Exception as e:
                 logger.error(f"Error running outbox relay: {e}")
                 processed = 0
             if processed == 0:
+                logger.info(f"====== No events processed. Sleeping for {settings.outbox_poll_interval_seconds} seconds.")
                 await asyncio.sleep(settings.outbox_poll_interval_seconds)
     
     async def _run_once(self) -> int:

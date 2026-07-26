@@ -49,7 +49,6 @@ class TelegramCrawlerService(BaseCrawler):
         )
         
         crawl_rp = CrawlJobRepository(self._db)
-        outbox_rp = OutboxRepository(self._db)
         
         created = 0
         try:
@@ -102,7 +101,7 @@ class TelegramCrawlerService(BaseCrawler):
                         )
                         self._db.add(keyword_hit)
 
-                self._enqueue_outbox_event(outbox_rp, source, article, matched_keywords)
+                await self._enqueue_outbox_event(source, article, matched_keywords)
                 await self._update_job_info(crawl_rp, job, created)
 
                 await self._db.commit()
