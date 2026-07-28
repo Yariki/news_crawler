@@ -1,8 +1,8 @@
 from __future__ import annotations
-
+from uuid import UUID
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, func
+from sqlalchemy import Boolean, DateTime, Integer, String, func, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import PrimaryIdMixin
@@ -24,6 +24,7 @@ class Source(PrimaryIdMixin):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     last_message_id: Mapped[str] = mapped_column(String(255), nullable=True)
     next_run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    owner_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     articles = relationship("Article", back_populates="source", cascade="all, delete-orphan")
     jobs = relationship("CrawlJob", back_populates="source", cascade="all, delete-orphan")

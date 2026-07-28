@@ -21,5 +21,6 @@ class CrawlJob(PrimaryIdMixin):
     articles_found: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     articles_created: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    owner_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     source = relationship("Source", back_populates="jobs")
