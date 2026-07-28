@@ -3,7 +3,7 @@ from uuid import uuid4, UUID
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text, func, UUID, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import PrimaryIdMixin
@@ -28,6 +28,7 @@ class Article(PrimaryIdMixin):
     checksum: Mapped[str] = mapped_column(String(64), nullable=False)
     is_alert: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     matched_keywords_csv: Mapped[str | None] = mapped_column(Text, nullable=True)
+    owner_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
 
     source = relationship("Source", back_populates="articles")
     keyword_hits = relationship("KeywordHit", back_populates="article", cascade="all, delete-orphan")
