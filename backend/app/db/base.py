@@ -12,3 +12,16 @@ class PrimaryIdMixin(Base):
         primary_key=True, default=uuid4,
         server_default=text("gen_random_uuid()")
     )
+
+class ChangeTrackingMixin(Base):
+    __abstract__ = True
+    created_at: Mapped[str] = mapped_column(
+        server_default=text("now()"), nullable=False
+    )
+    updated_at: Mapped[str] = mapped_column(
+        server_default=text("now()"), onupdate=text("now()"), nullable=False
+    ) 
+    
+    is_delete: Mapped[bool] = mapped_column(
+        default=False, nullable=False
+    )   

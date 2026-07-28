@@ -5,5 +5,12 @@ from app.models.monitored_keyword import MonitoredKeyword
 from app.models.robots import Robot
 from app.models.source import Source
 from app.models.outbox_event import OutboxEvent
+from app.models.user import User
+from app.models.role import Role
+from app.models.permission import Permission
+from app.models.user_role import UserRole
+from app.models.role_permisisons import RolePermission
 
-__all__ = ["Source", "CrawlJob", "Article", "KeywordHit", "MonitoredKeyword", "Robot", "OutboxEvent"]
+__all__ = ["Source",
+           "CrawlJob", "Article", "KeywordHit", "MonitoredKeyword", "Robot", "OutboxEvent", "User", "Role",
+           "Permission", "UserRole", "RolePermission"]
