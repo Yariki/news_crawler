@@ -8,7 +8,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
+from app.db.seed_data import seed_data
 from app.core.config import settings
+from app.db.session import AsyncSessionLocal, engine as db_engine
+from app.db.base import Base
 from app.messaging.handling_messages.handle_messages import handle_message
 from app.messaging.rabbitmq_client import RabbitMQClient, get_rabbitmq_client
 from app.services.es import ElasticService
@@ -76,3 +79,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(router)
+
+@app.on_event("startup")
+def on_startup():
+    Base.metadata.create_all(bind=db_engine)
+    db = AsyncSessionLocal()
+    asyncio.run(seed_data(db))
