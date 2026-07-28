@@ -41,9 +41,18 @@ async def __seed_users(session: AsyncSession):
         "is_verified": True,
     }
     # Add the user to the session
-    session.add(User(**user))
-    await session.commit()
-    
+    try:
+        session.add(User(
+            email=user["email"],
+            username=user["username"],
+            hashed_password=user["password"],
+            is_active=user["is_active"],
+            is_verified=user["is_verified"],
+        ))
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        logger.error("Error seeding users: %s", e)
 
 async def seed_data(session: AsyncSession):
     try:

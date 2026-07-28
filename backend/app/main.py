@@ -47,6 +47,10 @@ async def lifespan(_app: FastAPI):
     """Lifespan function to initialize resources before the application starts."""
     elasticsearch_client = ElasticService()
     await elasticsearch_client.ensure_index()
+
+    async with AsyncSessionLocal() as session:
+        await seed_data(session)
+
     await rabbitmq_connect(_app)
 
     outbox_relay = OutboxRelay(elasticsearch_client, rabbitmq)
@@ -79,9 +83,3 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(router)
-
-@app.on_event("startup")
-def on_startup():
-    Base.metadata.create_all(bind=db_engine)
-    db = AsyncSessionLocal()
-    asyncio.run(seed_data(db))
