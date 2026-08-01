@@ -54,7 +54,6 @@ class UserService:
             id=user.id,
             email=user.email,
             username=user.username,
-            password=user.hashed_password,
             is_active=user.is_active,
             is_verified=user.is_verified,
             last_login_at=user.last_login_at,
