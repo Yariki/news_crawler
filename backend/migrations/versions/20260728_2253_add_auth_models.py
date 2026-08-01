@@ -78,6 +78,24 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('user_id', 'role_id')
     )
+    
+    
+    meta_obj = sa.MetaData()
+    meta_obj.reflect(bind=op.get_bind())
+    roles_table = meta_obj.tables['roles']
+    users_table = meta_obj.tables['users']
+    
+    roles: list[dict[str, str | bool]] = [
+        {"name": "admin", "description": "Administrator role with full access", "is_system": True, "is_delete": False},
+        {"name": "manager", "description": "Manager user", "is_system": True, "is_delete": False},
+        {"name": "user", "description": "Regular user role with limited access", "is_system": True, "is_delete": False},
+    ]
+    
+    op.bulk_insert(roles_table, roles, multiinsert=False)
+    
+    user: dict[str, str | bool] = {"username": "admin", "email": "admin@example.com", "hashed_password": "hashed_password", "is_active": True, "is_verified": True, "is_delete": False}
+    op.bulk_insert(users_table, [user], multiinsert=False)
+    
     # ### end Alembic commands ###
 
 

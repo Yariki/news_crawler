@@ -8,9 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
-from app.db.seed_data import seed_data
 from app.core.config import settings
-from app.db.session import AsyncSessionLocal, engine as db_engine
 from app.db.base import Base
 from app.messaging.handling_messages.handle_messages import handle_message
 from app.messaging.rabbitmq_client import RabbitMQClient, get_rabbitmq_client
@@ -47,9 +45,6 @@ async def lifespan(_app: FastAPI):
     """Lifespan function to initialize resources before the application starts."""
     elasticsearch_client = ElasticService()
     await elasticsearch_client.ensure_index()
-
-    async with AsyncSessionLocal() as session:
-        await seed_data(session)
 
     await rabbitmq_connect(_app)
 
