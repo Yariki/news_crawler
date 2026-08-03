@@ -37,6 +37,20 @@ class Settings(BaseSettings):
     outbox_backoff_base_seconds: int = Field(default=10, alias="OUTBOX_BACKOFF_BASE_SECONDS")
     outbox_max_attempts: int = Field(default=8, alias="OUTBOX_MAX_ATTEMPTS")
 
+    security_key: str = Field(
+        default="*args, **kwargs",
+        alias="SECURITY_KEY",
+    )
+
+    algorithm: str = Field(
+        default="HS256",
+        alias="ALGORITHM",
+    )
+
+    access_ttl_minutes: int = Field(default=60 * 11, alias="ACCESS_TTL_MINUTES")
+    refresh_ttl_minutes: int = Field(default=60 * 24 * 7, alias="REFRESH_TTL_MINUTES")
+    issuer: str = Field(default="News Crawler", alias="ISSUER")
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [item.strip() for item in self.cors_origins.split(",") if item.strip()]

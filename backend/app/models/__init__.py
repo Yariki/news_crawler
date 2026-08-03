@@ -10,7 +10,8 @@ from app.models.role import Role
 from app.models.permission import Permission
 from app.models.user_role import UserRole
 from app.models.role_permisisons import RolePermission
+from app.models.issued_refresh_token import IssuedRefreshToken
 
 __all__ = ["Source",
            "CrawlJob", "Article", "KeywordHit", "MonitoredKeyword", "Robot", "OutboxEvent", "User", "Role",
-           "Permission", "UserRole", "RolePermission"]
+           "Permission", "UserRole", "RolePermission", "IssuedRefreshToken"]

@@ -9,6 +9,7 @@ from app.api.health.api import route as health_router
 from app.api.articles.api import router as articles_router
 from app.api.ws.api import router as ws_router
 from app.api.dev.api import router as dev_router
+from app.api.auth.api import router as auth_router
 
 from app.core.config import settings
 
@@ -20,6 +21,7 @@ router.include_router(dashboard_router)
 router.include_router(health_router)
 router.include_router(articles_router)
 router.include_router(ws_router)
+router.include_router(auth_router)
 
 if settings.app_mode == 'dev':
     router.include_router(dev_router)
