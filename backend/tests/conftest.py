@@ -1,5 +1,7 @@
 import os
 
+from faker import Faker
+
 os.environ["APP_MODE"] = "test"  # set BEFORE any app imports
 
 import pytest
@@ -14,6 +16,10 @@ from testcontainers.postgres import PostgresContainer
 from app.db.session import get_db
 from app.main import app
 
+
+@pytest.fixture
+def faker() -> Faker:
+    return Faker()
 
 @pytest.fixture(scope="session")
 def postgres_container():
@@ -71,3 +77,7 @@ async def client(db_session):
     ) as ac:
         yield ac
     app.dependency_overrides.clear()
+
+pytest_plugins = [
+    "tests.conftest_plugins.user",
+]
