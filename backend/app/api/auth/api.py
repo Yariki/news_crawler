@@ -83,9 +83,6 @@ async def refresh_token(refresh_request: RefreshRequest, db: AsyncSession = Depe
 async def logout(logout_request: LogoutRequest, db: AsyncSession = Depends(get_db)):
     
     claims = decode_token(logout_request.refresh_token, settings)
-    if not claims:
-        raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Invalid refresh token.")
-    
     jti = validate_claims(claims)
     
     try:
