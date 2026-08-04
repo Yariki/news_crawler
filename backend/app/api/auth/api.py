@@ -81,6 +81,7 @@ async def refresh_token(refresh_request: RefreshRequest, db: AsyncSession = Depe
 
 @router.post('/logout', status_code=HttpStatus.HTTP_200_OK)
 async def logout(logout_request: LogoutRequest, db: AsyncSession = Depends(get_db)):
+    
     claims = decode_token(logout_request.refresh_token, settings)
     if not claims:
         raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Invalid refresh token.")
@@ -90,7 +91,7 @@ async def logout(logout_request: LogoutRequest, db: AsyncSession = Depends(get_d
     try:
         active_refresh_token = await get_active_token(db, jti)
     except TokenReusedException as exc:
-        raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Refresh token has been reused or is not active.") from exc
+        raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Refresh token has been reused or is not active.")
     
     active_refresh_token.status = IssuedRefreshTokenStatus.REVOKED.value
     active_refresh_token.terminal_at = datetime.now(timezone.utc)
