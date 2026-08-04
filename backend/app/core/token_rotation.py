@@ -1,13 +1,10 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi  import HTTPException
-from sqlalchemy import select
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import issued_refresh_token
 from app.models.issued_refresh_token import IssuedRefreshToken, IssuedRefreshTokenStatus
-
 
 class TokenReusedException(Exception):
     """Throw when you find that token with status not Active"""
