@@ -4,6 +4,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from app.utils.validation import validate_password
+
+
+
 
 class UserBase(BaseModel):
     email: EmailStr = Field(min_length=1, max_length=255)
@@ -17,14 +21,7 @@ class UserCreate(UserBase):
     @field_validator("password")
     @classmethod
     def validate_password(cls, password: str) -> str:
-        if not re.search(r"[A-Z]", password):
-            raise ValueError("Password must contain at least one uppercase letter")
-        if not re.search(r"[a-z]", password):
-            raise ValueError("Password must contain at least one lowercase letter")
-        if not re.search(r"\d", password):
-            raise ValueError("Password must contain at least one digit")
-        if not re.search(r"[^\w\s]", password):
-            raise ValueError("Password must contain at least one special character")
+        validate_password(password)
         return password
 
 class UserUpdate(BaseModel):
