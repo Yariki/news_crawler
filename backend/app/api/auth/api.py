@@ -105,9 +105,8 @@ def validate_claims(claims: dict) -> str:
         raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
     
     token_type = claims.get("type")
-    if token_type not in [TokenType.ACCESS, TokenType.REFRESH]:
-        raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
-    
+    if token_type != TokenType.REFRESH:
+        raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
     expires_at = claims.get("exp")
     if not expires_at or datetime.fromtimestamp(expires_at, tz=timezone.utc) < datetime.now(timezone.utc):
         raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Token has expired")
