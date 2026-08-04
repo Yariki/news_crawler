@@ -32,12 +32,13 @@ def _create_token(*, subject: str, \
     jti = secrets.token_urlsafe(32)
 
     claims = {
-        'jti': jti,
-        'exp': expires_at,
-        'iat': now,
-        'sub': subject,
-        'user_id': subject,
-        'type': token_type,
+        "jti": jti,
+        "exp": expires_at,
+        "iat": now,
+        "iss": issuer,
+        "sub": subject,
+        "user_id": subject,
+        "type": token_type.value,
     }
     if extra_claims is not None:
         claims.update(extra_claims)
