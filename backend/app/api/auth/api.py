@@ -1,16 +1,15 @@
 from datetime import datetime, timezone
-from uuid import UUID
 
 from fastapi import APIRouter, status as HttpStatus, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import hash_password, verify_password, issue_token_pair, decode_token
+from app.core.security import verify_password, issue_token_pair, decode_token
 from app.core.token_rotation import TokenReusedException, get_active_token
 from app.models import User
 from app.db.session import get_db
 from app.models.issued_refresh_token import IssuedRefreshTokeStatus
-from app.schemas.security import LogoutRequest, MeRequest, RegisterRequest, LoginRequest, TokenPair, RefreshRequest, TokenType
+from app.schemas.security import LogoutRequest, LoginRequest, TokenPair, RefreshRequest, TokenType
 from app.core.config import settings
 from app.schemas.user_models import UserCreate, UserRead
 from app.services.user_service import UserService
@@ -30,23 +29,21 @@ async def register(register_request: UserCreate, db: AsyncSession = Depends(get_
 @router.post('/login', status_code=HttpStatus.HTTP_200_OK, response_model=TokenPair)
 async def login(login_request: LoginRequest, db: AsyncSession = Depends(get_db)):
 
-    async with db.begin():
+    existing_user = await db.scalar(
+        select(User)
+            .where(User.email == login_request.email)
+    )
 
-        existing_user = await db.scalar(
-            select(User)
-                .where(User.email == login_request.email)
-        )
+    if not existing_user:
+        raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
 
-        if not existing_user:
-            raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
+    if not existing_user.is_active or not verify_password(login_request.password, existing_user.hashed_password):
+        raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
 
-        if not existing_user.is_active or not verify_password(login_request.password, existing_user.hashed_password):
-            raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
+    token_pair, _, _ = await issue_token_pair(db, str(existing_user.id), settings)
 
-        token_pair, _, _ = await issue_token_pair(db, str(existing_user.id), settings)
+    await db.commit()
 
-        await db.commit()
-        
     return token_pair
 
 
@@ -57,30 +54,28 @@ async def refresh_token(refresh_request: RefreshRequest, db: AsyncSession = Depe
     
     jti = validate_claims(claims)
     
-    async with db.begin():
-        try:
-            active_refresh_token = await get_active_token(db, jti)
-        except TokenReusedException:
-            # TODO: revoke all tokens for this user and log them out
-            raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
-        
-        user_id = claims.get("user_id")
-        if not user_id:
-            raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
+    try:
+        active_refresh_token = await get_active_token(db, jti)
+    except TokenReusedException as exc:
+        raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.") from exc
 
-        existing_user = await db.scalar(
-            select(User).where(User.id == user_id)
-        )
-        if not existing_user or not existing_user.is_active:
-            raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
-        
-        token_pair, jti, expires_at = await issue_token_pair(db, str(existing_user.id), settings)
-        
-        active_refresh_token.status = IssuedRefreshTokeStatus.ROTATED.value
-        active_refresh_token.replaced_by_jti = jti
-        active_refresh_token.terminal_at = datetime.now(timezone.utc)
-        db.add(active_refresh_token)
-        await db.commit()
+    user_id = claims.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
+
+    existing_user = await db.scalar(
+        select(User).where(User.id == user_id)
+    )
+    if not existing_user or not existing_user.is_active:
+        raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
+
+    token_pair, jti, _ = await issue_token_pair(db, str(existing_user.id), settings)
+
+    active_refresh_token.status = IssuedRefreshTokeStatus.ROTATED.value
+    active_refresh_token.replaced_by_jti = jti
+    active_refresh_token.terminal_at = datetime.now(timezone.utc)
+    db.add(active_refresh_token)
+    await db.commit()
     
     return token_pair
 
@@ -94,8 +89,8 @@ async def logout(logout_request: LogoutRequest, db: AsyncSession = Depends(get_d
     
     try:
         active_refresh_token = await get_active_token(db, jti)
-    except TokenReusedException:
-        raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Refresh token has been reused or is not active.")
+    except TokenReusedException as exc:
+        raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Refresh token has been reused or is not active.") from exc
     
     active_refresh_token.status = IssuedRefreshTokeStatus.REVOKED.value
     active_refresh_token.terminal_at = datetime.now(timezone.utc)

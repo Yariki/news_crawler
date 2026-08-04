@@ -23,7 +23,6 @@ async def add_new_refreshed_token(db: AsyncSession, jti: str, user_id: UUID, exp
         replaced_by_jti=None
     )
     db.add(new_token)
-    await db.flush()
     return new_token
 
 async def get_active_token(db: AsyncSession, jti: str) -> IssuedRefreshToken:
