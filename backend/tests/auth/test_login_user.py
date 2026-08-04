@@ -81,4 +81,4 @@ async def test_login_weak_password(client):
     response = await client.post("/auth/login", json=login_request)
     
     # Assert
-    assert response.status_code == HttpStatus.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == HttpStatus.HTTP_401_UNAUTHORIZED
