@@ -8,7 +8,7 @@ from app.core.security import verify_password, issue_token_pair, decode_token
 from app.core.token_rotation import TokenReusedException, get_active_token
 from app.models import User
 from app.db.session import get_db
-from app.models.issued_refresh_token import IssuedRefreshTokeStatus
+from app.models.issued_refresh_token import IssuedRefreshTokenStatus
 from app.schemas.security import LogoutRequest, LoginRequest, TokenPair, RefreshRequest, TokenType
 from app.core.config import settings
 from app.schemas.user_models import UserCreate, UserRead
@@ -57,7 +57,7 @@ async def refresh_token(refresh_request: RefreshRequest, db: AsyncSession = Depe
     try:
         active_refresh_token = await get_active_token(db, jti)
     except TokenReusedException as exc:
-        raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.") from exc
+        raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
 
     user_id = claims.get("user_id")
     if not user_id:
@@ -71,7 +71,7 @@ async def refresh_token(refresh_request: RefreshRequest, db: AsyncSession = Depe
 
     token_pair, jti, _ = await issue_token_pair(db, str(existing_user.id), settings)
 
-    active_refresh_token.status = IssuedRefreshTokeStatus.ROTATED.value
+    active_refresh_token.status = IssuedRefreshTokenStatus.ROTATED.value
     active_refresh_token.replaced_by_jti = jti
     active_refresh_token.terminal_at = datetime.now(timezone.utc)
     db.add(active_refresh_token)
@@ -92,7 +92,7 @@ async def logout(logout_request: LogoutRequest, db: AsyncSession = Depends(get_d
     except TokenReusedException as exc:
         raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Refresh token has been reused or is not active.") from exc
     
-    active_refresh_token.status = IssuedRefreshTokeStatus.REVOKED.value
+    active_refresh_token.status = IssuedRefreshTokenStatus.REVOKED.value
     active_refresh_token.terminal_at = datetime.now(timezone.utc)
     db.add(active_refresh_token)
     await db.commit()

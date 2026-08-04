@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import issued_refresh_token
-from app.models.issued_refresh_token import IssuedRefreshToken, IssuedRefreshTokeStatus
+from app.models.issued_refresh_token import IssuedRefreshToken, IssuedRefreshTokenStatus
 
 
 class TokenReusedException(Exception):
@@ -16,7 +16,7 @@ async def add_new_refreshed_token(db: AsyncSession, jti: str, user_id: UUID, exp
     new_token = IssuedRefreshToken(
         jti=jti,
         user_id=user_id,
-        status=IssuedRefreshTokeStatus.ACTIVE.value,
+        status=IssuedRefreshTokenStatus.ACTIVE.value,
         issued_at=datetime.now(timezone.utc),
         expires_at=expires_at,
         terminal_at=None,
@@ -33,7 +33,7 @@ async def get_active_token(db: AsyncSession, jti: str) -> IssuedRefreshToken:
     if not issued_refresh_token:
         raise HTTPException(status_code=401, detail="Refresh token not found")
     
-    if issued_refresh_token.status != IssuedRefreshTokeStatus.ACTIVE.value:
+    if issued_refresh_token.status != IssuedRefreshTokenStatus.ACTIVE.value:
         raise TokenReusedException("Refresh token has been reused or is not active")
     
     if issued_refresh_token.expires_at < datetime.now(timezone.utc):
@@ -46,7 +46,7 @@ async def mark_token_as_revoked(db: AsyncSession, jti: str, replaced_by_jti: str
     if not issued_refresh_token:
         raise HTTPException(status_code=401, detail="Refresh token not found")
     
-    issued_refresh_token.status = IssuedRefreshTokeStatus.REVOKED.value
+    issued_refresh_token.status = IssuedRefreshTokenStatus.REVOKED.value
     issued_refresh_token.replaced_by_jti = replaced_by_jti
     issued_refresh_token.terminal_at = datetime.now(timezone.utc)
 
