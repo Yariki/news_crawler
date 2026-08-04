@@ -22,12 +22,6 @@ class LoginRequest(BaseModel):
     email: EmailStr = Field(min_length=1, max_length=255)
     password: str = Field(min_length=1, max_length=255)
     
-    @field_validator("password")
-    @classmethod
-    def validate_password(cls, password: str) -> str:
-        validate_password(password)
-        return password
-    
     
 class LogoutRequest(BaseModel):
     refresh_token: str = Field(min_length=1)
