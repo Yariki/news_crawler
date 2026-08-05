@@ -39,7 +39,12 @@ async def _authenticate_token(*, token: str, db: DbSession) -> User | None:
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    user = await _load_user(user_id=UUID(user_id), db=db)
+    try:
+        user_uuid = UUID(str(user_id))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    user = await _load_user(user_id=user_uuid, db=db)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
@@ -71,4 +76,4 @@ async def get_optional_user(*, token: OptionalBearerToken, db: DbSession) -> Use
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
 CurrentActiveUser = Annotated[User, Depends(get_current_active_user)]
-OptionalUser = Annotated[User, Depends(get_optional_user)]
+OptionalUser = Annotated[User | None, Depends(get_optional_user)]

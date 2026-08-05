@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi.exceptions import HTTPException
 
 from app.models.monitored_keyword import MonitoredKeyword
+from app.models.user import User
 from app.schemas.keyword import MonitoredKeywordUpdate
 from app.services.keyword_detector import normalize_keyword
 
@@ -18,10 +19,11 @@ class MonitoreKeywordRepository:
         result = await self.db.scalars(query)
         return list(result.all())
 
-    async def get_active_keywords(self) -> list[str]:
+    async def get_active_keywords(self, user_id: UUID) -> list[str]:
         result = await self.db.scalars(
             select(MonitoredKeyword.keyword)
             .where(MonitoredKeyword.is_enabled.is_(True))
+            .where(MonitoredKeyword.owner_id == user_id)
             .order_by(MonitoredKeyword.keyword)
         )
         keywords = [normalize_keyword(value) for value in result.all() if value]
@@ -33,25 +35,25 @@ class MonitoreKeywordRepository:
             raise HTTPException(status_code=404, detail="Keyword not found")
         return item
 
-    async def create_keyword(self, keyword: str) -> MonitoredKeyword:
+    async def create_keyword(self, keyword: str, user_id: UUID) -> MonitoredKeyword:
         normalized = normalize_keyword(keyword)
         existing = await self.db.scalar(
             select(MonitoredKeyword).where(MonitoredKeyword.keyword == normalized)
         )
         if existing:
             return existing
-        item = MonitoredKeyword(keyword=normalized, is_enabled=True)
+        item = MonitoredKeyword(keyword=normalized, is_enabled=True, owner_id=user_id)
         self.db.add(item)
         await self.db.commit()
         await self.db.refresh(item)
         return item
-    
+
     async def update_keyword(self, keyword_id: UUID4, keyword_update: MonitoredKeywordUpdate) -> MonitoredKeyword:
         keyword = await self.get_keyword(keyword_id)
 
         if not keyword:
             raise HTTPException(status_code=404, detail="Keyword not found")
-        
+
         keyword.keyword = normalize_keyword(keyword_update.keyword)
         keyword.is_enabled = keyword_update.is_enabled
         self.db.add(keyword)

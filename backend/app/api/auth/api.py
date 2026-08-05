@@ -9,7 +9,7 @@ from app.core.token_rotation import TokenReusedException, get_active_token
 from app.models import User
 from app.db.session import get_db
 from app.models.issued_refresh_token import IssuedRefreshTokenStatus
-from app.schemas.security import LogoutRequest, LoginRequest, TokenPair, RefreshRequest, TokenType
+from app.schemas.security import LogoutRequest, TokenPair, RefreshRequest, TokenType
 from app.core.config import settings
 from app.schemas.user_models import UserCreate, UserRead
 from app.services.user_service import UserService

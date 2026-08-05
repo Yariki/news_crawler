@@ -3,7 +3,7 @@ from pydantic import UUID4
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import status as HttpStatus, HTTPException
 
-from app.core.auth import CurrentActiveUser
+from app.core.auth import CurrentActiveUser, CurrentUser
 from app.repositories.monitore_keyword_repository import MonitoreKeywordRepository
 
 from app.db.session import get_db
@@ -22,7 +22,7 @@ async def get_keywords(current_user: CurrentActiveUser, db: AsyncSession = Depen
 
 
 @router.get("/active", response_model=list[str])
-async def get_active_keywords(db: AsyncSession = Depends(get_db)):
+async def get_active_keywords(current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     keywords = await MonitoreKeywordRepository(db).get_active_keywords()
     return keywords
 
@@ -30,32 +30,32 @@ async def get_active_keywords(db: AsyncSession = Depends(get_db)):
 @router.get("/{keyword_id}", response_model=MonitoredKeywordRead)
 async def get_keyword(keyword_id: UUID4, db: AsyncSession = Depends(get_db)):
     word = await MonitoreKeywordRepository(db).get_keyword(keyword_id)
-    return word 
+    return word
 
 
 @router.post("", status_code=HttpStatus.HTTP_201_CREATED, response_model=MonitoredKeywordRead)
 async def create_keyword(
     request: MonitoredKeywordCreate, db: AsyncSession = Depends(get_db)
 ):
-    
+
     request.keyword = request.keyword.lower().strip()
-    
+
     if len(request.keyword) == 0:
         raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Keyword cannot be empty")
-    
+
     word = await MonitoreKeywordRepository(db).create_keyword(request.keyword)
     return word
 
 @router.put("/{keyword_id}", status_code=HttpStatus.HTTP_200_OK, response_model=MonitoredKeywordRead)
 async def update_keyword(
-    keyword_id: UUID4, 
-    request: MonitoredKeywordUpdate, 
+    keyword_id: UUID4,
+    request: MonitoredKeywordUpdate,
     db: AsyncSession = Depends(get_db)
 ):
-    
+
     request.keyword = request.keyword.lower().strip()
     if len(request.keyword) == 0:
         raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Keyword cannot be empty")
-    
+
     word = await MonitoreKeywordRepository(db).update_keyword(keyword_id, request)
     return word
