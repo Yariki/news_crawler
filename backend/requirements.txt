@@ -20,3 +20,4 @@ aio-pika>=9.4
 bcrypt==5.0.0
 pydantic[email]==2.7.0
 pyjwt==2.13.0
+python-multipart==0.0.32
