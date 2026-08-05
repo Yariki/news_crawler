@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from typing import Annotated
 
+from fastapi import Depends
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -15,3 +17,5 @@ AsyncSessionLocal = async_sessionmaker(bind=async_engine, autoflush=False, expir
 async def get_db() -> AsyncIterator[AsyncSession]:
     async with AsyncSessionLocal() as db:
         yield db
+
+DbSession = Annotated[AsyncSession, Depends(get_db)]

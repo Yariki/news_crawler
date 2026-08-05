@@ -18,10 +18,10 @@ async def test_refresh_token_success(client, db_session):
     assert response.status_code == HttpStatus.HTTP_201_CREATED
     
     login_request = {
-        "email": "test@example.com",
+        "username": "test@example.com",
         "password": "Password123!"
     }
-    login_response = await client.post("/auth/login", json=login_request)
+    login_response = await client.post("/auth/login", data=login_request)
     assert login_response.status_code == HttpStatus.HTTP_200_OK
     token_pair = login_response.json()
     refresh_token = token_pair['refresh_token']
@@ -62,10 +62,10 @@ async def test_refresh_token_reuse(client, db_session):
     assert response.status_code == HttpStatus.HTTP_201_CREATED
     
     login_request = {
-        "email": "test@example.com",
+        "username": "test@example.com",
         "password": "Password123!"
     }
-    login_response = await client.post("/auth/login", json=login_request)
+    login_response = await client.post("/auth/login", data=login_request)
     assert login_response.status_code == HttpStatus.HTTP_200_OK
     token_pair = login_response.json()
     refresh_token = token_pair['refresh_token']
@@ -95,10 +95,10 @@ async def test_refresh_token_invalid_wrong_type(client, db_session):
     assert response.status_code == HttpStatus.HTTP_201_CREATED
     
     login_request = {
-        "email": "test@example.com",
+        "username": "test@example.com",
         "password": "Password123!"
     }
-    login_response = await client.post("/auth/login", json=login_request)
+    login_response = await client.post("/auth/login", data=login_request)
     assert login_response.status_code == HttpStatus.HTTP_200_OK
     token_pair = login_response.json()
     access_token = token_pair['access_token']

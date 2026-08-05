@@ -3,6 +3,7 @@ from pydantic import UUID4
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import status as HttpStatus, HTTPException
 
+from app.core.auth import CurrentActiveUser
 from app.repositories.monitore_keyword_repository import MonitoreKeywordRepository
 
 from app.db.session import get_db
@@ -15,8 +16,8 @@ router = APIRouter(
 
 
 @router.get("", response_model=list[MonitoredKeywordRead])
-async def get_keywords(db: AsyncSession = Depends(get_db)):
-    words = await MonitoreKeywordRepository(db).list_keywords()
+async def get_keywords(current_user: CurrentActiveUser, db: AsyncSession = Depends(get_db)):
+    words = await MonitoreKeywordRepository(db).list_keywords(current_user.id)
     return words
 
 

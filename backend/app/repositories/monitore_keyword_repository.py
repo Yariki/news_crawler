@@ -1,7 +1,7 @@
 from pydantic import UUID4
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from uuid import UUID
 from fastapi.exceptions import HTTPException
 
 from app.models.monitored_keyword import MonitoredKeyword
@@ -13,8 +13,8 @@ class MonitoreKeywordRepository:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def list_keywords(self) -> list[MonitoredKeyword]:
-        query = select(MonitoredKeyword).order_by(MonitoredKeyword.keyword)
+    async def list_keywords(self, user_id: UUID) -> list[MonitoredKeyword]:
+        query = select(MonitoredKeyword).where(MonitoredKeyword.owner_id == user_id).order_by(MonitoredKeyword.keyword)
         result = await self.db.scalars(query)
         return list(result.all())
 

@@ -19,12 +19,12 @@ async def test_login_user(client, db_session):
     assert response.status_code == HttpStatus.HTTP_201_CREATED
     
     login_request = {
-        "email": "test@test.com",
+        "username": "test@test.com",
         "password": "Password123!"
     }
     
     # Act
-    login_response = await client.post("/auth/login", json=login_request)
+    login_response = await client.post("/auth/login", data=login_request)
     
     # Assert
     assert login_response.status_code == HttpStatus.HTTP_200_OK
@@ -43,42 +43,42 @@ async def test_login_user(client, db_session):
 async def test_login_email_is_empty(client):
     # Arrange
     login_request = {
-        "email": "",
+        "username": "",
         "password": "Password123!"
     }
     
     # Act
-    login_response = await client.post("/auth/login", json=login_request)
+    login_response = await client.post("/auth/login", data=login_request)
     
     # Assert
-    assert login_response.status_code == HttpStatus.HTTP_422_UNPROCESSABLE_ENTITY
-    
+    assert login_response.status_code == HttpStatus.HTTP_401_UNAUTHORIZED
+
     
 async def test_login_password_is_empty(client):
     # Arrange
     login_request = {
-        "email": "test@TEST.com",
+        "username": "test@TEST.com",
         "password": ""
     }
     
     # Act
     
-    response = await client.post("/auth/login", json=login_request)
+    response = await client.post("/auth/login", data=login_request)
     
     # Assert
-    assert response.status_code == HttpStatus.HTTP_422_UNPROCESSABLE_ENTITY
-    
+    assert response.status_code == HttpStatus.HTTP_401_UNAUTHORIZED
+
     
 async def test_login_weak_password(client):
     # Arrange
     login_request = {
-        "email": "test@TEST.com",
+        "username": "test@TEST.com",
         "password": "weak"
     }
     
     # Act
     
-    response = await client.post("/auth/login", json=login_request)
+    response = await client.post("/auth/login", data=login_request)
     
     # Assert
     assert response.status_code == HttpStatus.HTTP_401_UNAUTHORIZED
