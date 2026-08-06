@@ -3,14 +3,13 @@ from dataclasses import dataclass
 from typing import Final, Literal, Annotated
 from uuid import UUID
 
-from pygments.lexers import kuin
 from sqlalchemy import select
 from fastapi import Request, Depends, HTTPException, status as HttpStatus
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import CurrentUser
 from app.db.session import DbSession
-from app.models import Role, Permission, UserRole, RolePermission, permission
+from app.models import Role, Permission, UserRole, RolePermission
 
 ALL_PERMISSIONS: Final = '*'
 

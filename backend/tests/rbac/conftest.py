@@ -1,5 +1,4 @@
-from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, Iterator
 
 import pytest
 from fastapi import Depends, FastAPI
@@ -41,7 +40,7 @@ def app() -> FastAPI:
 
 
 @pytest.fixture
-def client (app: FastAPI) -> AsyncIterator[TestClient]:
+def client (app: FastAPI) -> Iterator[TestClient]:
     with TestClient(app) as client:
         yield client
 
