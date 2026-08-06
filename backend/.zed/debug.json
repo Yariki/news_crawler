@@ -61,5 +61,14 @@
     "env": {
       "APP_MODE": "dev"
     }
+  },
+  {
+    "adapter": "Debugpy",
+    "label": "run '…t_login_user.py'",
+    "request": "launch",
+    "python": "$ZED_CUSTOM_PYTHON_ACTIVE_ZED_TOOLCHAIN",
+    "args": [],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "program": "$ZED_FILE"
   }
 ]

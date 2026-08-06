@@ -26,3 +26,6 @@ exclude_lines = [
     "if __name__ == .__main__.:",
 ]
 show_missing = true
+[tool.isort]
+line_length = 100
+known_first_party = ["app"]

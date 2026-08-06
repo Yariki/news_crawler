@@ -12,7 +12,6 @@ apscheduler==3.10.4
 elasticsearch==8.15.1
 python-dateutil==2.9.0.post0
 feedparser==6.0.10
-autopep8==2.3.2
 protego==0.6.0
 Telethon==1.43.2
 celery==5.3.0
