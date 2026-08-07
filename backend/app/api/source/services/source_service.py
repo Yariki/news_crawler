@@ -1,6 +1,7 @@
+from app.core.rbac import PermissionGranted
 from app.models.status import Status
 from app.models import CrawlJob
-from sqlalchemy import exists, select
+from sqlalchemy import select
 from pydantic import UUID4
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,9 +15,9 @@ from app.utils.time import utc_now
 
 class SourceService:
 
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(self, db: AsyncSession, access_control: PermissionGranted) -> None:
         self._db = db
-        self.rp = SourceRepository(db)
+        self.rp = SourceRepository(db, access_control)
 
     async def list_sources(self) -> list[Source]:
         """Retrieves a list of all sources from the database and returns them as a list of Source objects."""
@@ -39,7 +40,8 @@ class SourceService:
             crawler_key=payload.crawler_key,
             scrape_interval_minutes=payload.scrape_interval_minutes,
             is_enabled=payload.is_enabled,
-            next_run_at=now
+            next_run_at=now,
+            owner_id=self.rp.access_control.auth.user_id
         )
         return await self.rp.add_source(source)
 
@@ -50,7 +52,7 @@ class SourceService:
             raise HTTPException(status_code=404, detail="The Source is not found")
         return source
 
-    async def  get_due_sources(self, limit: int) -> list[Source]:
+    async def get_due_sources(self, limit: int) -> list[Source]:
         """Retrieves a list of sources that are due for crawling based on their next_run_at field. It returns a list of Source objects that are ready to be crawled."""
         now = utc_now()
         return await self.rp.get_due_sources(now, limit)
@@ -60,5 +62,6 @@ class SourceService:
         job_exist_query = select(CrawlJob).where(CrawlJob.source_id == source_id).where(
             (CrawlJob.status == Status.RUNNING) | (CrawlJob.status == Status.WAITING)
         )
+        job_exist_query = self.rp.filter_owned_resources(query=job_exist_query, model=CrawlJob)
         result = await self._db.execute(job_exist_query)
         return result.scalar_one_or_none() is not None

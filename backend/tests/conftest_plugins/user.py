@@ -9,7 +9,7 @@ from app.models import User
 @pytest.fixture(name="create_user")
 def create_user(faker) -> Callable[[Any], Awaitable[User]]:
 
-    async def _create_user() -> User:
+    async def _create_user(**kwargs: dict[Any, Any]) -> User:
         email = faker.email()
         user = User(
             email = email,

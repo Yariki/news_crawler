@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 
 
-class Role(PrimaryIdMixin, ChangeTrackingMixin):
+class Role(ChangeTrackingMixin):
     __tablename__ = "roles"
 
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)

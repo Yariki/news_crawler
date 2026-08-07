@@ -2,20 +2,23 @@ from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.rbac import PermissionGranted
 
 from app.models.source import Source
+from app.repositories.base_auth_repository import BaseAuthRepository
 
 
-class SourceRepository:
+class SourceRepository(BaseAuthRepository):
     """Repository class responsible for managing Source records in the database. It provides methods to retrieve all sources and get a source by its ID. This class abstracts away the database interactions related to the Source model, allowing other parts of the application to work with Source objects without needing to know about the underlying database structure."""
 
-    def __init__(self, db: AsyncSession):
-        self.db = db
+    def __init__(self, db: AsyncSession, access_control: PermissionGranted):
+        super().__init__(db, access_control)
 
     async def get_all_sources(self):
         """Retrieves all source records from the database and returns them as a list of Source objects."""
 
         query = select(Source).order_by(Source.name)
+        query = self.filter_owned_resources(query=query, model=Source)
         result = await self.db.scalars(query)
         return list(result.all())
 
@@ -29,6 +32,7 @@ class SourceRepository:
     async def get_source_by_id(self, source_id):
         """Retrieves a source record from the database based on the provided source ID. If a record is found, it returns the Source object; otherwise, it returns None."""
         query = select(Source).where(Source.id == source_id)
+        query = self.filter_owned_resources(query=query, model=Source)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
@@ -41,11 +45,13 @@ class SourceRepository:
             .limit(limit)
             .order_by(Source.next_run_at)
         )
+        query = self.filter_owned_resources(query=query, model=Source)
         result = await self.db.scalars(query)
         return list(result.all())
 
     async def get_source_by_url(self, url: str) -> Source:
         """Retrieves a source record from the database based on the provided source URL. If a record is found, it returns the Source object; otherwise, it returns None."""
         query = select(Source).where(Source.base_url == url)
+        query = self.filter_owned_resources(query=query, model=Source)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()

@@ -1,6 +1,12 @@
 import os
+from types import SimpleNamespace
+from typing import Any
+from sqlalchemy.future import select
+from app.models.user import User
 
 from faker import Faker
+
+from app.core.rbac import AuthorizationContext
 
 os.environ["APP_MODE"] = "test"  # set BEFORE any app imports
 
@@ -15,6 +21,8 @@ from testcontainers.postgres import PostgresContainer
 
 from app.db.session import get_db
 from app.main import app
+from app.core.auth import get_current_active_user, get_current_user
+from app.core.rbac import get_authorization_context
 
 
 @pytest.fixture
@@ -57,12 +65,18 @@ def apply_migrations(database_url, postgres_container):
 @pytest_asyncio.fixture
 async def db_session(database_url):
     engine = create_async_engine(database_url, echo=False)
-    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async_session = sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
     async with engine.connect() as conn:
         trans = await conn.begin()
         async with async_session(bind=conn) as session:
             yield session
-        await trans.rollback()
+        if trans.is_active:
+            await trans.rollback()
     await engine.dispose()
 
 
@@ -78,6 +92,32 @@ async def client(db_session):
         yield ac
     app.dependency_overrides.clear()
 
+
+async def set_authorization_context(db_session: AsyncSession, *permission: str, user_name: str ) -> None:
+    
+    user_query = (
+        select(User)
+        .where(User.username == user_name)
+    )
+    user = (await db_session.execute(user_query)).scalar_one()
+    
+    current_user = SimpleNamespace(id=user.id, is_active=True)
+    
+    context = AuthorizationContext(user_id=user.id, roles=frozenset({}), permissions=frozenset(permission))
+
+    async def override_current_user() -> Any:
+        return current_user
+
+    async def override_context() -> AuthorizationContext:
+        return context
+
+    app.dependency_overrides[get_current_user] = override_current_user
+    app.dependency_overrides[get_current_active_user] = override_current_user
+    app.dependency_overrides[get_authorization_context] = override_context
+
+
 pytest_plugins = [
     "tests.conftest_plugins.user",
+    "tests.conftest_plugins.source",
 ]
+

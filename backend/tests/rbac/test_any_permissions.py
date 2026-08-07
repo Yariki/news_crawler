@@ -17,21 +17,22 @@ def test_missing_permissions_403(app: FastAPI, client: TestClient):
                               )
     )
 
-    response = client.get("/single")
+    response = client.get(f"/single/{uuid.uuid4()}")
     assert response.status_code == HttpStatus.HTTP_403_FORBIDDEN
-    # assert response.json() == {"detail": "Missing required permissions: post:read:any"}
 
 
 def test_user_with_permissions_is_allowed(app: FastAPI, client: TestClient):
+    
+    id = uuid.uuid4()
     set_authorization_context(app,
                               AuthorizationContext(
-                                  user_id=uuid.uuid4(),
+                                  user_id=id,
                                   roles=frozenset({'users'}),
                                   permissions=frozenset({'post:read:any'}),
                               )
                               )
 
-    response = client.get("/single")
+    response = client.get(f"/single/{uuid.uuid4()}")
     assert response.status_code == HttpStatus.HTTP_200_OK
     
 def test_user_with_all_permissions_is_allowed(app: FastAPI, client: TestClient):

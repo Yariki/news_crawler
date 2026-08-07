@@ -2,14 +2,14 @@
 
 import datetime
 from uuid import UUID
-from sqlalchemy import JSON, DateTime, Integer, String, String, func, ForeignKey
+from sqlalchemy import JSON, DateTime, Integer, String, func, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, PrimaryIdMixin
+from app.db.base import Base, PrimaryIdMixin, OwnerMixin
 from app.models.outbox_status import OutboxStatus
 
 
-class OutboxEvent(PrimaryIdMixin, Base):
+class OutboxEvent( OwnerMixin):
     """Model representing an outbox event."""
     __tablename__ = "outbox_events"
     
@@ -26,6 +26,6 @@ class OutboxEvent(PrimaryIdMixin, Base):
     last_error: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     processed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    owner_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    # owner_id is now inherited from OwnerMixin
     
 

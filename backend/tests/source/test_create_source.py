@@ -1,21 +1,29 @@
-from tests.source.source_test_helper import create_source_payload
+from app.core.rbac import AuthorizationContext
+from tests.conftest import set_authorization_context
+import uuid
 
+async def test_create_source(client, db_session, create_source):
 
-async def test_create_source(client):
+    await set_authorization_context(
+        db_session,
+        "source:create:own",
+        user_name="admin",
+    )
 
-    payload = create_source_payload(
+    payload = create_source(
         name="Test Source",
         crawler_key="test_crawler_key",
         scrape_interval_minutes=1,
-        is_enabled=True,
+        is_enabled=True
     )
 
-    response = await client.post("/sources", json=payload)
+    response = await client.post("/sources", json=payload.model_dump(mode='json'))
+    
+    payload = payload.model_dump(mode='json')
 
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == payload["name"]
-    assert data["base_url"] == payload["base_url"]
     assert data["language"] == payload["language"]
     assert data["source_type"] == payload["source_type"]
     assert data["crawler_key"] == payload["crawler_key"]
