@@ -138,7 +138,7 @@ class RequiredPermissionsAndOwnership:
         self.mode = mode
         self.resource_type = resource_type
 
-    def _check_ownership(self, auth_context: AuthorizationContext,request:Request) -> bool:
+    async def _check_ownership(self, auth_context: AuthorizationContext, request: Request, db_session: AsyncSession) -> bool:
 
         resource_id = request.path_params.get(OWNED_RESOURCE_PATH_PARAM_KEY)
 
@@ -162,9 +162,9 @@ class RequiredPermissionsAndOwnership:
                 detail="Resource ID must be a valid UUID"
             )
         
-        return is_user_owner_of_resource(user_id=auth_context.user_id, resource_type=self.resource_type, resource_id=resource_uuid)
+        return await is_user_owner_of_resource(user_id=auth_context.user_id, resource_type=self.resource_type, resource_id=resource_uuid, db=db_session)
     
-    async def __call__(self, request: Request, auth_context: Annotated[AuthorizationContext, Depends(get_authorization_context)]) -> PermissionGranted:
+    async def __call__(self, request: Request, db_session: DbSession, auth_context: Annotated[AuthorizationContext, Depends(get_authorization_context)]) -> PermissionGranted:
         matched = [permission for permission in self.permissions if auth_context.has_permission(permission)]
         missing = [permission for permission in self.permissions if permission not in matched]
         
@@ -185,7 +185,7 @@ class RequiredPermissionsAndOwnership:
         if self.resource_type is None:
             return PermissionGranted(auth=auth_context, is_any=is_any)
         
-        if not self._check_ownership(auth_context, request):
+        if not await self._check_ownership(auth_context, request, db_session):
             raise HTTPException(
                 status_code=HttpStatus.HTTP_403_FORBIDDEN,
                 detail="User is not the owner of the resource"

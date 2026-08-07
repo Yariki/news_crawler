@@ -1,15 +1,25 @@
-from tests.source.source_test_helper import create_source_payload
 
 
-async def test_get_source_by_id(client):
+from tests.conftest import set_authorization_context
+
+
+async def test_get_source_by_id(db_session, client, create_source):
+    
+    await set_authorization_context(
+        db_session,
+        "source:read:own",
+        "source:create:own",
+        user_name="admin",
+    )
+    
     # Create a source
-    payload = create_source_payload(
+    payload = create_source(
         name="source1",
         crawler_key="crawler1",
         scrape_interval_minutes=1,
         is_enabled=True,
     )
-    create_response = await client.post("/sources", json=payload)
+    create_response = await client.post("/sources", json=payload.model_dump(mode='json'))
     assert create_response.status_code == 201
     created_source = create_response.json()
 

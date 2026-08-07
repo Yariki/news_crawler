@@ -43,7 +43,7 @@ def client (app: FastAPI) -> Iterator[TestClient]:
     with TestClient(app) as client:
         yield client
 
-def set_authorization_context(app: FastAPI, context: AuthorizationContext ) -> None:
+def set_rbac_authorization_context(app: FastAPI, context: AuthorizationContext ) -> None:
     current_user = SimpleNamespace(id=context.user_id, is_active=True)
 
     async def override_current_user() -> Any:
