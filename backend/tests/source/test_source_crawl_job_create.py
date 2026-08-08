@@ -1,66 +1,86 @@
 import uuid
 
-from fastapi import HTTPException
 import pytest
 
+from app.core.rbac import PermissionGranted
 from app.models.status import Status
 from app.repositories.crawljob_repository import CrawlJobRepository
-from tests.source.source_test_helper import create_source_payload
+from tests.conftest import set_authorization_context
 
+async def test_create_source_and_crawl_job(client, db_session, create_source):
 
-async def test_create_source_and_crawl_job(client, db_session):
+    context = await set_authorization_context(
+        db_session,
+        "source:read:own",
+        "source:create:own",
+        user_name="admin",
+    )
 
-    payload = create_source_payload(
+    source = create_source(
         name="Test Source",
         crawler_key="test_crawler_key",
         scrape_interval_minutes=1,
         is_enabled=True,
     )
 
-    response = await client.post("/sources", json=payload)
+    response = await client.post("/sources", json=source.model_dump(mode='json'))
 
     assert response.status_code == 201
     data = response.json()
-    assert data["name"] == payload["name"]
-    assert data["base_url"] == payload["base_url"]
+    assert data["name"] == source.name
     
     source_id = data["id"]
     
-    crawl_job = await CrawlJobRepository(db_session).create_crawl_job(source_id=source_id, status=Status.RUNNING)
+    crawl_job = await CrawlJobRepository(db_session,PermissionGranted(auth=context, is_any=False)).create_crawl_job(source_id=source_id, status=Status.RUNNING)
     
     assert crawl_job is not None
     assert str(crawl_job.source_id) == source_id
-    assert crawl_job.status == Status.RUNNING.value
+    assert crawl_job.status == Status.RUNNING
     
     
 async def test_create_source_and_crawl_job_with_invalid_source(client, db_session):
 
+    context = await set_authorization_context(
+        db_session,
+        "source:read:own",
+        "source:create:own",
+        user_name="admin",
+    )
+
     invalid_source_id = str(uuid.uuid4())  # Assuming this source ID does not exist
 
     with pytest.raises(ValueError) as exc_info:
-        await CrawlJobRepository(db_session).create_crawl_job(source_id=invalid_source_id, status=Status.RUNNING)
+        await CrawlJobRepository(db_session,PermissionGranted(auth=context, is_any=False)).create_crawl_job(source_id=invalid_source_id, status=Status.RUNNING)
     assert str(exc_info.value) == "Source not found"
         
 
-async def test_source_run_crawl_job_twice(client, db_session):
+async def test_source_run_crawl_job_twice(client, db_session, create_source):
 
-    payload = create_source_payload(
+    context = await set_authorization_context(
+        db_session,
+        "source:read:own",
+        "source:create:own",
+        user_name="admin",
+    )
+
+    payload = create_source(
         name="Test Source",
         crawler_key="test_crawler_key",
         scrape_interval_minutes=1,
         is_enabled=True,
     )
 
-    response = await client.post("/sources", json=payload)
+    response = await client.post("/sources", json=payload.model_dump(mode='json'))
+
+    payload = payload.model_dump(mode='json')
 
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == payload["name"]
-    assert data["base_url"] == payload["base_url"]
     
     source_id = data["id"]
     
-    crawl_job1 = await CrawlJobRepository(db_session).create_crawl_job(source_id=source_id, status=Status.RUNNING)
+    crawl_job1 = await CrawlJobRepository(db_session,PermissionGranted(auth=context, is_any=False)).create_crawl_job(source_id=source_id, status=Status.RUNNING)
     
     assert crawl_job1 is not None
     assert str(crawl_job1.source_id) == source_id

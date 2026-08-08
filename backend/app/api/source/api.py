@@ -36,27 +36,28 @@ async def create_source(data: SourceCreateUpdate, db: AsyncSession = Depends(get
 async def run_source(resouce_id: UUID4, db: AsyncSession = Depends(get_db), \
                         access_control=Depends(RequiredPermissionsAndOwnership("source:read:own", mode=PermissionMode.ALL, resource_type=OwnedResourceType.SOURCE))):
     """Dispatches a source for crawling based on the provided source ID. It checks if the source exists, is enabled, and is not currently being crawled. If all conditions are met, it updates the next_run_at field and dispatches the source for crawling using a Celery task. Returns a SourceRunResponse indicating the result of the operation."""
-    async with db.begin():
-        source = await SourceService(db, access_control).get_source(resouce_id)
-        if not source or not source.is_enabled:
-            raise HTTPException(status_code=HTTPStatus.HTTP_400_BAD_REQUEST, detail={
-                "id": resouce_id,
-                "status": "error",
-                "message": f"Source with id {resouce_id} is not found or is disabled."
-            })
-        
-        is_crawling_running = await SourceService(db,access_control).is_crawling_running(resouce_id)
-        if is_crawling_running:
-            raise HTTPException(status_code=HTTPStatus.HTTP_400_BAD_REQUEST, detail={
-                "id": resouce_id,
-                "status": "error",
-                "message": f"Source with id {resouce_id} is currently being crawled."
-            })
-        
-        source.next_run_at = utc_now() + timedelta(minutes=source.scrape_interval_minutes)
+    source = await SourceService(db, access_control).get_source(resouce_id)
+    if not source or not source.is_enabled:
+        raise HTTPException(status_code=HTTPStatus.HTTP_400_BAD_REQUEST, detail={
+            "id": str(resouce_id),
+            "status": "error",
+            "message": f"Source with id {resouce_id} is not found or is disabled."
+        })
+    
+    is_crawling_running = await SourceService(db,access_control).is_crawling_running(resouce_id)
+    if is_crawling_running:
+        raise HTTPException(status_code=HTTPStatus.HTTP_400_BAD_REQUEST, detail={
+            "id": str(resouce_id),
+            "status": "error",
+            "message": f"Source with id {resouce_id} is currently being crawled."
+        })
+    
+    source.next_run_at = utc_now() + timedelta(minutes=source.scrape_interval_minutes)
 
-        from app.schedule.celery_app import celery_app
-        celery_app.send_task("schedule.tasks.run_scheduled_job", args=[str(resouce_id)], queue=settings.celery_task_queue)
+    from app.schedule.celery_app import celery_app
+    celery_app.send_task("schedule.tasks.run_scheduled_job", args=[str(resouce_id)], queue=settings.celery_task_queue)
+
+    await db.commit()
 
     return SourceRunResponse(
         id=resouce_id,

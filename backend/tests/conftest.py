@@ -93,7 +93,7 @@ async def client(db_session):
     app.dependency_overrides.clear()
 
 
-async def set_authorization_context(db_session: AsyncSession, *permission: str, user_name: str ) -> None:
+async def set_authorization_context(db_session: AsyncSession, *permission: str, user_name: str ) -> AuthorizationContext:
     
     user_query = (
         select(User)
@@ -114,6 +114,8 @@ async def set_authorization_context(db_session: AsyncSession, *permission: str, 
     app.dependency_overrides[get_current_user] = override_current_user
     app.dependency_overrides[get_current_active_user] = override_current_user
     app.dependency_overrides[get_authorization_context] = override_context
+    
+    return context
 
 
 pytest_plugins = [
