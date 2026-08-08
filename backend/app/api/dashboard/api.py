@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
+from app.core.rbac import RequiredPermissionsAndOwnership, PermissionMode
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dashboard.services.dashbord_service import DashboardService
 from app.db.session import get_db
 from app.schemas.dashboard import DashboardStats
 from app.schemas.job import CrawlJobRead
-from app.schemas.source import SourceRead
 
 router = APIRouter(
     prefix="/dashboard",
@@ -14,8 +14,8 @@ router = APIRouter(
 
 
 @router.get("/jobs", response_model=list[CrawlJobRead])
-async def get_jobs(db: AsyncSession = Depends(get_db)):
-    result = await DashboardService(db).list_jobs()
+async def get_jobs(db: AsyncSession = Depends(get_db), access_control=Depends(RequiredPermissionsAndOwnership("job:read:own", mode=PermissionMode.ANY))):
+    result = await DashboardService(db).list_jobs(access_control=access_control)
     return result
 
 

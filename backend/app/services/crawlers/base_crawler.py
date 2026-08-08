@@ -214,6 +214,7 @@ class BaseCrawler(ABC):
                 "is_alert": article.is_alert,
                 "matched_keywords": matched_words,
                 "content_text": article.content_text,
+                "owner_id": str(source.owner_id) if source.owner_id else None,
             }
             outbox_rp.enqueue(
                 aggregate_id=article.id,

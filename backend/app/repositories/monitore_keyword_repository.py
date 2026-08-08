@@ -3,29 +3,31 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from fastapi.exceptions import HTTPException
-
+from app.repositories.base_auth_repository import BaseAuthRepository, PermissionGranted
 from app.models.monitored_keyword import MonitoredKeyword
 from app.models.user import User
 from app.schemas.keyword import MonitoredKeywordUpdate
 from app.services.keyword_detector import normalize_keyword
 
 
-class MonitoreKeywordRepository:
-    def __init__(self, db: AsyncSession) -> None:
+class MonitoreKeywordRepository(BaseAuthRepository):
+    def __init__(self, db: AsyncSession, access_control: PermissionGranted) -> None:
         self.db = db
+        self.access_control = access_control
 
     async def list_keywords(self, user_id: UUID) -> list[MonitoredKeyword]:
         query = select(MonitoredKeyword).where(MonitoredKeyword.owner_id == user_id).order_by(MonitoredKeyword.keyword)
+        query = self.filter_owned_resources(query, MonitoredKeyword)
         result = await self.db.scalars(query)
         return list(result.all())
 
-    async def get_active_keywords(self, user_id: UUID) -> list[str]:
+    async def get_active_keywords(self) -> list[str]:
         result = await self.db.scalars(
             select(MonitoredKeyword.keyword)
             .where(MonitoredKeyword.is_enabled.is_(True))
-            .where(MonitoredKeyword.owner_id == user_id)
             .order_by(MonitoredKeyword.keyword)
         )
+        query = self.filter_owned_resources(result, MonitoredKeyword)
         keywords = [normalize_keyword(value) for value in result.all() if value]
         return keywords
 
