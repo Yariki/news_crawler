@@ -50,7 +50,7 @@ class ElasticService:
             document=payload,
         )
 
-    async def search(self, query: str, owner_id: str | None = None) -> Any:
+    async def search(self, query: str, owner_id: str | None = None) -> dict[str, Any]:
         es_query: dict = {
             "bool": {
                 "must": [

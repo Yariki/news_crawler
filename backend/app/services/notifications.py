@@ -20,7 +20,7 @@ class NotificationHub:
             del self._connections[user_id]
 
     async def broadcast(self, event_type: str, payload: dict) -> None:
-        dead: list[WebSocket] = []
+        dead: list[UUID] = []
         message = json.dumps({"type": event_type, "payload": payload}, ensure_ascii=False)
         for user_id, connection in list(self._connections.items()):
             try:

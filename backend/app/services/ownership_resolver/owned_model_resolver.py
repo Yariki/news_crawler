@@ -32,6 +32,6 @@ class OwnedModelResolver(OwnershipResolver):
         result = await db.scalar(stmt)
         
         if result is None:
-            raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail=f"The resource not found.")
+            raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="The resource not found.")
 
         return result.owner_id == user_id

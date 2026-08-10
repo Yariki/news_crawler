@@ -5,7 +5,7 @@ from pydantic import UUID4
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import status as HttpStatus, HTTPException
 
-from app.core.auth import CurrentActiveUser, CurrentUser
+from app.core.auth import CurrentActiveUser
 from app.core.rbac import PermissionMode, RequiredPermissionsAndOwnership
 from app.repositories.monitore_keyword_repository import MonitoreKeywordRepository
 
