@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import Field
 from app.models.source_type import SourceType
 
@@ -24,6 +26,7 @@ class SourceRead(BaseModel):
     crawler_key: str
     is_enabled: bool
     scrape_interval_minutes: int
+    owner_id: Optional[UUID4] = None
 
     model_config = {"from_attributes": True}
 

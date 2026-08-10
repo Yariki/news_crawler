@@ -10,6 +10,7 @@ from sqlalchemy import select
 
 from app.models.status import Status
 from app.services.keyword_detector import detect_keywords
+from ...core.rbac import PermissionGranted
 
 from ...scrapers.telegram.telegram_scraper import TelegramScrapper
 from ...services.crawlers.base_crawler import BaseCrawler
@@ -24,9 +25,9 @@ logger = logging.getLogger(__name__)
 class TelegramCrawlerService(BaseCrawler):
     """TelegramCrawler is responsible for orchestrating the crawling process for a specific Telegram channel. It uses the TelegramScrapper to fetch messages, detects keywords, and stores relevant articles in the database."""
 
-    def __init__(self, db: AsyncSession, rabbitmq_client):
+    def __init__(self, db: AsyncSession, permission_granted: PermissionGranted, rabbitmq_client):
         """Initializes the TelegramCrawler with a database session and a NotificationHub instance."""
-        super().__init__(db, rabbitmq_client)
+        super().__init__(db, permission_granted, rabbitmq_client)
 
     async def crawl(self, source_id: str, use_delay: bool = True) -> CrawlJob:
         """Executes the crawling process for a given Telegram source. This includes fetching messages from the Telegram channel, detecting keywords, and storing relevant articles in the database."""
@@ -48,7 +49,7 @@ class TelegramCrawlerService(BaseCrawler):
             last_message_id=source.last_message_id
         )
         
-        crawl_rp = CrawlJobRepository(self._db)
+        crawl_rp = CrawlJobRepository(self._db, self._permission_granted)
         
         created = 0
         try:
@@ -90,6 +91,7 @@ class TelegramCrawlerService(BaseCrawler):
                     matched_keywords_csv=(
                         ",".join(matched_keywords) if matched_keywords else None
                     ),
+                    owner_id=source.owner_id,
                 )
                 self._db.add(article)
                 await self._db.flush()  # Flush to get the article ID for keyword hits
@@ -97,7 +99,8 @@ class TelegramCrawlerService(BaseCrawler):
                     for keyword in matched_keywords:
                         keyword_hit = KeywordHit(
                             article_id=article.id,
-                            keyword=keyword
+                            keyword=keyword,
+                            owner_id=source.owner_id,
                         )
                         self._db.add(keyword_hit)
 

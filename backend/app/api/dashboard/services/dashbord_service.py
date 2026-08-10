@@ -1,6 +1,8 @@
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.rbac import PermissionGranted
+from app.db.scope_filter import filter_owned_resources
 from app.models import CrawlJob, Source, Article, MonitoredKeyword
 
 
@@ -10,9 +12,17 @@ class DashboardService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-
-    async def list_jobs(self, limit: int = 50) -> list[CrawlJob]:
-        result = await self.db.scalars(select(CrawlJob).order_by(desc(CrawlJob.started_at)).limit(limit))
+    async def list_jobs(self, access_control: PermissionGranted,  limit: int = 50 ) -> list[CrawlJob]:
+        
+        query = (
+            select(CrawlJob)
+            .order_by(desc(CrawlJob.started_at))
+            .limit(limit)
+        )
+        
+        query = filter_owned_resources(query=query, user_id=access_control.auth.user_id, model=CrawlJob, access_control=access_control)
+        
+        result = await self.db.scalars(query)
         return list(result.all())
 
     async def dashboard_stats(self) -> dict:

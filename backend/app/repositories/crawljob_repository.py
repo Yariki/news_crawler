@@ -1,15 +1,16 @@
 
-
+from app.core.rbac import PermissionGranted
+from app.repositories.base_auth_repository import BaseAuthRepository
 from app.models.crawl_job import CrawlJob
 from app.models.source import Source
 from app.models.status import Status
 
 
-class CrawlJobRepository:
+class CrawlJobRepository(BaseAuthRepository):
     """Repository class responsible for managing CrawlJob records in the database. It provides methods to create new crawl jobs and update existing crawl jobs. This class abstracts away the database interactions related to the CrawlJob model, allowing other parts of the application to work with CrawlJob objects without needing to know about the underlying database structure."""
-    def __init__(self, db):
+    def __init__(self, db, access_control: PermissionGranted):
         self.db = db
-        
+        self.access_control = access_control    
     async def create_crawl_job(self, source_id: str, status: Status) -> CrawlJob:
         """Creates a new crawl job record in the database for a given source ID and status. It returns the created CrawlJob object."""
         
@@ -17,7 +18,7 @@ class CrawlJobRepository:
         if not source:
             raise ValueError("Source not found")
         
-        job = CrawlJob(source_id=source_id, status=status)
+        job = CrawlJob(source_id=source_id, status=status, owner_id=self.access_control.auth.user_id)
         self.db.add(job)
         await self.db.flush()
         await self.db.refresh(job)

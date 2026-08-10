@@ -33,6 +33,7 @@ class ElasticService:
                     "language": {"type": "keyword"},
                     "is_alert": {"type": "boolean"},
                     "matched_keywords": {"type": "keyword"},
+                    "owner_id": {"type": "text"},
                 }
             },
         )

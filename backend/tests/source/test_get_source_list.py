@@ -1,24 +1,31 @@
-from tests.source.source_test_helper import create_source_payload
 
+from tests.conftest import set_authorization_context
 
-async def test_get_source_list(client):
+async def test_get_source_list(db_session, client, create_source):
 
-    source1 = create_source_payload(
+    await set_authorization_context(
+        db_session,
+        "source:read:own",
+        "source:create:own",
+        user_name="admin",
+    )
+
+    source1 = create_source(
         name="source1",
         crawler_key="crawler1",
         scrape_interval_minutes=1,
         is_enabled=True,
     )
-    response = await client.post("/sources", json=source1)
+    response = await client.post("/sources", json=source1.model_dump(mode='json'))
     assert response.status_code == 201
 
-    source2 = create_source_payload(
-        name="source1",
+    source2 = create_source(
+        name="source2",
         crawler_key="crawler2",
         scrape_interval_minutes=1,
         is_enabled=True,
     )
-    response = await client.post("/sources", json=source2)
+    response = await client.post("/sources", json=source2.model_dump(mode='json'))
     assert response.status_code == 201
 
     response = await client.get("/sources")

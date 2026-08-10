@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Final, Literal, Annotated
 from uuid import UUID
 
@@ -7,15 +8,25 @@ from sqlalchemy import select
 from fastapi import Request, Depends, HTTPException, status as HttpStatus
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import CurrentUser
+from app.core.auth import CurrentActiveUser, CurrentUser
 from app.db.session import DbSession
 from app.models import Role, Permission, UserRole, RolePermission
+from app.models.owned_resource_type import OwnedResourceType
+from app.services.ownership_resolver.service import is_user_owner_of_resource
 
 ALL_PERMISSIONS: Final = '*'
 
 AUTHORIZATION_CONTEXT_KEY: Final = "authorization_context"
 
-PermissionMode = Literal["all", "any"]
+OWNED_RESOURCE_PATH_PARAM_KEY: Final = "resource_id"
+
+class PermissionMode(StrEnum):
+    ALL = "all"
+    ANY = "any"
+
+class ScopeMode(StrEnum):
+    ANY = "any"
+    OWN = "own"
 
 PERMISSION_NAME_PATTERN = re.compile(
     r"^[a-z][a-z0-9_-]*:[a-z][a-z0-9_-]*:[a-z][a-z0-9_-]*$"
@@ -101,16 +112,19 @@ async def get_authorization_context(*, request: Request,  db: DbSession, current
 
     return auth_context
 
-
-
-class RequiredPermissions:
+@dataclass(frozen=True, slots=True)
+class PermissionGranted:
+    auth: AuthorizationContext
+    is_any: bool
+    
+class RequiredPermissionsAndOwnership:
     """ """
-    def __init__(self, *permissions: str, mode: PermissionMode = "all") -> None:
+    def __init__(self, *permissions: str, mode: PermissionMode = PermissionMode.ALL, resource_type: OwnedResourceType | None = None) -> None:
 
         if not permissions:
             raise ValueError("Permissions cannot be empty")
 
-        if mode not in {"all", "any"}:
+        if mode not in PermissionMode._value2member_map_:
             raise ValueError("Permissions mode must be 'all' or 'any'")
 
         unique_permissions = tuple(dict.fromkeys(permissions))
@@ -118,30 +132,66 @@ class RequiredPermissions:
         invalid_permissions = [permission for permission in unique_permissions if not PERMISSION_NAME_PATTERN.fullmatch(permission)]
 
         if invalid_permissions:
-            raise ValueError("Permissions contains invalid permissions")
+            raise ValueError(f"Permissions contains invalid permissions: {', '.join(invalid_permissions)}")
 
         self.permissions = unique_permissions
         self.mode = mode
+        self.resource_type = resource_type
 
-    async def __call__(self, auth_context: Annotated[AuthorizationContext, Depends(get_authorization_context)]):
-        missing_permission = [
-            permission
-            for permission in self.permissions
-            if not auth_context.has_permission(permission)
-        ]
+    async def _check_ownership(self, auth_context: AuthorizationContext, request: Request, db_session: AsyncSession) -> bool:
 
-        if self.mode == 'all':
-            is_allowed = not missing_permission
+        resource_id = request.path_params.get(OWNED_RESOURCE_PATH_PARAM_KEY)
+
+        if resource_id is None:
+            raise HTTPException(
+                status_code=HttpStatus.HTTP_400_BAD_REQUEST,
+                detail="Resource ID is missing in the request path"
+            )
+
+        if not isinstance(resource_id, str):
+            raise HTTPException(
+                status_code=HttpStatus.HTTP_400_BAD_REQUEST,
+                detail="Resource ID must be a string"
+            )
+
+        try:
+            resource_uuid = UUID(resource_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=HttpStatus.HTTP_400_BAD_REQUEST,
+                detail="Resource ID must be a valid UUID"
+            )
+        
+        return await is_user_owner_of_resource(user_id=auth_context.user_id, resource_type=self.resource_type, resource_id=resource_uuid, db=db_session)
+    
+    async def __call__(self, request: Request, db_session: DbSession, auth_context: Annotated[AuthorizationContext, Depends(get_authorization_context)]) -> PermissionGranted:
+        matched = [permission for permission in self.permissions if auth_context.has_permission(permission)]
+        missing = [permission for permission in self.permissions if permission not in matched]
+        
+        
+        if self.mode == PermissionMode.ALL:
+            is_allowed = not missing
         else:
-            is_allowed = (len(missing_permission) < len(self.permissions))
+            is_allowed = len(matched) > 0
 
         if not is_allowed:
             raise HTTPException(
                 status_code=HttpStatus.HTTP_403_FORBIDDEN,
-                detail=f"Missing required permissions: {', '.join(missing_permission)}"
+                detail=f"Missing required permissions: {', '.join(missing)}"
             )
 
-        return auth_context
+        is_any = any(permission.endswith(":any") for permission in matched)
+        
+        if self.resource_type is None:
+            return PermissionGranted(auth=auth_context, is_any=is_any)
+        
+        if not await self._check_ownership(auth_context, request, db_session):
+            raise HTTPException(
+                status_code=HttpStatus.HTTP_403_FORBIDDEN,
+                detail="User is not the owner of the resource"
+            )
+        
+        return PermissionGranted(auth=auth_context, is_any=is_any)
 
 class RequiredRoles:
 

@@ -2,13 +2,14 @@ import asyncio
 from datetime import datetime, timezone
 from abc import ABC, abstractmethod
 import uuid
-import uuid
+from uuid import UUID
 
 import httpx
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
+from app.core.rbac import PermissionGranted
 from app.messaging.messages.job_update import JobUpdateMessage
 from app.models import MonitoredKeyword, CrawlJob, Source, Article, KeywordHit
 from app.models.outbox_event_type import OutboxEventType
@@ -42,14 +43,16 @@ SCRAPPERS = {
 
 class BaseCrawler(ABC):
     """BaseCrawler is an abstract class that defines the structure and common functionality for different types of crawlers. It provides methods for crawling sources, detecting keywords, indexing articles, and sending notifications. Specific crawler implementations should inherit from this class and implement the crawl method with the logic specific to their source type."""
-    def __init__(self, db: AsyncSession, rabbitmq_client: RabbitMQClient | None = None):
+    def __init__(self, db: AsyncSession, permission_granted: PermissionGranted, rabbitmq_client: RabbitMQClient | None = None):
         self._db = db
         self._rabbitmq_client = rabbitmq_client
+        self._permission_granted = permission_granted
 
     async def _get_keywords(self) -> list[str]:
         result = await self._db.scalars(
-            select(MonitoredKeyword.keyword)
+            statement=select(MonitoredKeyword.keyword)
             .where(MonitoredKeyword.is_enabled.is_(True))
+            .where(MonitoredKeyword.owner_id == self._permission_granted.auth.user_id)
             .order_by(MonitoredKeyword.keyword)
         )
         keywords = [normalize_keyword(value)
@@ -88,7 +91,7 @@ class BaseCrawler(ABC):
 
     async def crawl(self, source_id: str, use_delay: bool = True) -> CrawlJob:
         """Runs the crawling process for a given RSS source. This includes discovering article URLs, fetching article data, detecting keywords, and storing results in the database and search index."""
-        source = await SourceRepository(self._db).get_source_by_id(source_id)
+        source = await SourceRepository(self._db, self._permission_granted).get_source_by_id(source_id)
         if not source:
             raise ValueError("Source not found")
 
@@ -98,7 +101,7 @@ class BaseCrawler(ABC):
 
         keyword_rp = KeywordHitRepository(self._db)
         article_rp = ArticleRepository(self._db)
-        crawl_rp = CrawlJobRepository(self._db)
+        crawl_rp = CrawlJobRepository(self._db, self._permission_granted)
         job = await crawl_rp.create_crawl_job(source_id, Status.RUNNING)
 
         await self._send_job_update(job, articles_found=0, articles_created=0)  # Initial job update
@@ -124,7 +127,7 @@ class BaseCrawler(ABC):
                     article_data.content_text, active_keywords
                 )
                 article = Article(
-                    source_id=source_id,
+                    source_id=UUID(source_id),
                     external_id=article_data.external_id,
                     url=feed.url,
                     title=article_data.title,
@@ -144,12 +147,13 @@ class BaseCrawler(ABC):
                     matched_keywords_csv=(
                         ",".join(matched_words) if matched_words else None
                     ),
+                    owner_id=source.owner_id
                 )
 
                 await article_rp.add_article(article)
 
                 for keyword in matched_words:
-                    await keyword_rp.create_keyword_hit(KeywordHit(article_id=article.id, keyword=keyword.strip()))
+                    await keyword_rp.create_keyword_hit(KeywordHit(article_id=article.id, keyword=keyword.strip()), owner_id=source.owner_id)
 
                 created += 1
 
@@ -206,14 +210,13 @@ class BaseCrawler(ABC):
                 "source_id": str(source.id),
                 "source_name": source.name,
                 "title": article.title,
-                "url": article.url,
-                "matched_keywords": matched_words,
                 "published_at": article.published_at.isoformat() if article.published_at else None,
                 "url": article.url,
                 "language": article.language,
                 "is_alert": article.is_alert,
                 "matched_keywords": matched_words,
                 "content_text": article.content_text,
+                "owner_id": str(source.owner_id) if source.owner_id else None,
             }
             outbox_rp.enqueue(
                 aggregate_id=article.id,
