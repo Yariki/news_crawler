@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from app.core.rbac import RequiredPermissionsAndOwnership, PermissionMode, OwnedResourceType
+from app.core.rbac import RequiredPermissionsAndOwnership, PermissionMode
 from sqlalchemy import desc, select 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,14 +30,11 @@ async def get_recent_articles(limit: int = 20, db: AsyncSession = Depends(get_db
 async def search_articles(q: str, access_control=Depends(RequiredPermissionsAndOwnership("article:read:own", mode=PermissionMode.ANY))):
     """Endpoint to search for articles based on a query string."""
     elastic_service = ElasticService()
-    response = await elastic_service.search(q)
+    owner_id = None if access_control.is_any else str(access_control.auth.user_id)
+    response = await elastic_service.search(q, owner_id=owner_id)
     hits: list[SearchHit] = []
     for hit in response["hits"]["hits"]:
         src = hit["_source"]
-        
-        if not access_control.is_any and str(access_control.auth.user_id) != str(src.get("owner_id")):
-            continue
-        
         hits.append(
             SearchHit(
                 article_id=src["article_id"],

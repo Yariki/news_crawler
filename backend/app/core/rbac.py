@@ -98,7 +98,7 @@ async def load_authorization_context(*, db: AsyncSession, user_id: UUID) -> Auth
         permissions=frozenset(permissions)
     )
 
-async def get_authorization_context(*, request: Request,  db: DbSession, current_user: CurrentUser) -> AuthorizationContext:
+async def get_authorization_context(*, request: Request,  db: DbSession, current_user: CurrentActiveUser) -> AuthorizationContext:
 
     cached_context: AuthorizationContext | None = getattr(request.state, AUTHORIZATION_CONTEXT_KEY, None)
 

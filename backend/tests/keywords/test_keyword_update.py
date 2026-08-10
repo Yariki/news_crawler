@@ -1,6 +1,16 @@
 import uuid
+from tests.conftest import set_authorization_context
 
-async def test_update_keyword(client):
+
+async def test_update_keyword(client, db_session):
+    
+    await set_authorization_context(
+                db_session,
+                "keyword:create:own",
+                "keyword:update:own",
+                user_name="admin",
+            )
+    
     response = await client.post("/keywords", json={"keyword": "test"})
     assert response.status_code == 201
     data = response.json()
@@ -16,15 +26,31 @@ async def test_update_keyword(client):
     assert updated_data["is_enabled"] is False
 
 
-async def test_update_keyword_not_found(client):
+async def test_update_keyword_not_found(client, db_session):
+    
+    await set_authorization_context(
+                    db_session,
+                    "keyword:create:own",
+                    "keyword:update:own",
+                    user_name="admin",
+                )
+    
     non_existent_id = uuid.uuid4()
     update_response = await client.put(f"/keywords/{non_existent_id}", json={"keyword": "updated", "is_enabled": False})
     assert update_response.status_code == 404
     error_data = update_response.json()
-    assert error_data["detail"] == "Keyword not found"    
+    assert error_data["detail"] == "The resource not found."    
     
 
-async def test_update_keyword_invalid_data(client):
+async def test_update_keyword_invalid_data(client, db_session):
+    
+    await set_authorization_context(
+                        db_session,
+                        "keyword:create:own",
+                        "keyword:update:own",
+                        user_name="admin",
+                    )
+    
     response = await client.post("/keywords", json={"keyword": "test"})
     assert response.status_code == 201
     data = response.json()
@@ -35,7 +61,14 @@ async def test_update_keyword_invalid_data(client):
     error_data = update_response.json()
     assert "detail" in error_data
     
-async def test_update_keyword_whitespace(client):
+async def test_update_keyword_whitespace(client, db_session):
+    await set_authorization_context(
+                db_session,
+                "keyword:create:own",
+                "keyword:update:own",
+                user_name="admin",
+            )
+
     response = await client.post("/keywords", json={"keyword": "test"})
     assert response.status_code == 201
     data = response.json()

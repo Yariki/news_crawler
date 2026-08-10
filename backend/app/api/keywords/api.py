@@ -25,13 +25,13 @@ async def get_keywords(current_user: CurrentActiveUser, db: AsyncSession = Depen
 
 
 @router.get("/active", response_model=list[str])
-async def get_active_keywords(current_user: CurrentUser, db: AsyncSession = Depends(get_db), access_control=Depends(RequiredPermissionsAndOwnership("keyword:read:own", mode=PermissionMode.ANY))):
+async def get_active_keywords(db: AsyncSession = Depends(get_db), access_control=Depends(RequiredPermissionsAndOwnership("keyword:read:own", mode=PermissionMode.ANY))):
     keywords = await MonitoreKeywordRepository(db, access_control).get_active_keywords()
     return keywords
 
 
 @router.get("/{resource_id}", response_model=MonitoredKeywordRead)
-async def get_keyword(resource_id: UUID4, db: AsyncSession = Depends(get_db), access_control=Depends(RequiredPermissionsAndOwnership("keyword:read:own", mode=PermissionMode.ANY, resource_type=OwnedResourceType.MONITOPRED_KEYWORD))):
+async def get_keyword(resource_id: UUID4, db: AsyncSession = Depends(get_db), access_control=Depends(RequiredPermissionsAndOwnership("keyword:read:own", mode=PermissionMode.ANY, resource_type=OwnedResourceType.MONITORED_KEYWORD))):
     word = await MonitoreKeywordRepository(db, access_control).get_keyword(resource_id)
     return word
 
@@ -46,7 +46,7 @@ async def create_keyword(
     if len(request.keyword) == 0:
         raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Keyword cannot be empty")
 
-    word = await MonitoreKeywordRepository(db, access_control).create_keyword(request.keyword, access_control.user_id)
+    word = await MonitoreKeywordRepository(db, access_control).create_keyword(request.keyword, access_control.auth.user_id)
     return word
 
 @router.put("/{resource_id}", status_code=HttpStatus.HTTP_200_OK, response_model=MonitoredKeywordRead)

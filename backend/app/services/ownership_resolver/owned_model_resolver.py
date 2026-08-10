@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.base import OwnerMixin
 from app.db.session import get_db
 from app.services.ownership_resolver.interface import OwnershipResolver
+from fastapi import HTTPException, status as HttpStatus
 
 
 class OwnedModelResolver(OwnershipResolver):
@@ -27,7 +28,10 @@ class OwnedModelResolver(OwnershipResolver):
         stmt = (
             select(self._model)
             .where(self._model.id == resource_id)
-            .where(self._model.owner_id == user_id)
         )
-        result = await db.execute(stmt) 
-        return result.scalar_one_or_none() is not None
+        result = await db.scalar(stmt)
+        
+        if result is None:
+            raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail=f"The resource not found.")
+
+        return result.owner_id == user_id
