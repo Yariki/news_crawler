@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 
 from elasticsearch import Elasticsearch
 
@@ -49,20 +50,44 @@ class ElasticService:
             document=payload,
         )
 
-    async def search(self, query: str) -> dict:
+    async def search(self, query: str, owner_id: str | None = None) -> dict[str, Any]:
+        es_query: dict = {
+            "bool": {
+                "must": [
+                    {
+                        "multi_match": {
+                            "query": query,
+                            "fields": ["title^3", "content_text"],
+                            "fuzziness": "AUTO",
+                            "prefix_length": 1,
+                            "max_expansions": 50,
+                            "fuzzy_transpositions": True,
+                        }
+                    }
+                ],
+                "filter": [],
+            }
+        }
+
+        if owner_id:
+            # Support both explicit keyword mappings and legacy text mapping.
+            es_query["bool"]["filter"].append(
+                {
+                    "bool": {
+                        "should": [
+                            {"term": {"owner_id.keyword": owner_id}},
+                            {"term": {"owner_id": owner_id}},
+                            {"match_phrase": {"owner_id": owner_id}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                }
+            )
+
         return await asyncio.to_thread(
             self.client.search,
             index=INDEX_NAME,
-            query={
-                "multi_match": {
-                    "query": query,
-                    "fields": ["title^3", "content_text"],
-                    "fuzziness": "AUTO",
-                    "prefix_length": 1,
-                    "max_expansions": 50,
-                    "fuzzy_transpositions": True,
-                }
-            },
+            query=es_query,
             size=50,
         )
 

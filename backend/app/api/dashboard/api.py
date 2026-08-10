@@ -20,6 +20,6 @@ async def get_jobs(db: AsyncSession = Depends(get_db), access_control=Depends(Re
 
 
 @router.get("/stats", status_code=200, response_model=DashboardStats)
-async def get_stats(db: AsyncSession = Depends(get_db)):
-    result = await DashboardService(db).dashboard_stats()
+async def get_stats(db: AsyncSession = Depends(get_db), access_control=Depends(RequiredPermissionsAndOwnership("dashboard:read:own", mode=PermissionMode.ANY))):
+    result = await DashboardService(db).dashboard_stats(access_control)
     return result
