@@ -35,7 +35,7 @@ async def search_articles(q: str, access_control=Depends(RequiredPermissionsAndO
     for hit in response["hits"]["hits"]:
         src = hit["_source"]
         
-        if not access_control.is_any and access_control.auth.user_id != src.get("owner_id"):
+        if not access_control.is_any and str(access_control.auth.user_id) != str(src.get("owner_id")):
             continue
         
         hits.append(

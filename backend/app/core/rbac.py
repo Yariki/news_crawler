@@ -18,7 +18,7 @@ ALL_PERMISSIONS: Final = '*'
 
 AUTHORIZATION_CONTEXT_KEY: Final = "authorization_context"
 
-OWNED_RESOURCE_PATH_PARAM_KEY: Final = "resouce_id"
+OWNED_RESOURCE_PATH_PARAM_KEY: Final = "resource_id"
 
 class PermissionMode(StrEnum):
     ALL = "all"

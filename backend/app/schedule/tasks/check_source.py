@@ -5,6 +5,7 @@ import logging
 from uuid import UUID
 from sqlalchemy import select
 
+from ...core.rbac import PermissionGranted, AuthorizationContext, load_authorization_context
 from ...messaging.rabbitmq_client import RabbitMQClient
 
 from ...models.source import Source
@@ -26,6 +27,7 @@ _worker_loop = None
 
 async def _run_job(
     source_id: str,
+    permission_granted: PermissionGranted,
     crawler_cls: type[BaseCrawler]
 ) -> None:
     async with AsyncSessionLocal() as db:
@@ -45,6 +47,9 @@ async def _run_scheduled_job(source_id: UUID) -> None:
         async with AsyncSessionLocal() as db:
             logger.info(f"Running scheduled job for source {source_id}")
             source = await db.scalar(select(Source).where(Source.id == source_id).where(Source.is_enabled.is_(True)))
+            auth_context = await load_authorization_context(db=db, user_id=source.owner_id) if source else None
+            permission_granted = PermissionGranted(is_any=False,
+                                                   auth=auth_context)
             if not source:
                 logger.warning(f"Source with id {source_id} not found")
                 return
@@ -53,7 +58,7 @@ async def _run_scheduled_job(source_id: UUID) -> None:
                 logger.warning(f"No handler for source type {source.source_type}")
                 return
 
-            await handler(source_id=source_id)
+            await handler(source_id=source_id, permission_granted=permission_granted)
             logger.info(f"Completed scheduled job for source {source_id}/{source.name}")
     except Exception:
         logger.exception(f"Error running scheduled job for source {source_id}")

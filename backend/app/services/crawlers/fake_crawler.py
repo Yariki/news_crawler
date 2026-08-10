@@ -12,8 +12,8 @@ from app.services.keyword_detector import detect_keywords
 
 class FakeCrawlerService(BaseCrawler):
 
-    def __init__(self, db, rabbitmq_client):
-        super().__init__(db, rabbitmq_client)
+    def __init__(self, db, permission_granted, rabbitmq_client):
+        super().__init__(db, permission_granted, rabbitmq_client)
 
     async def crawl(self, source_id:str, use_delay: bool = True):
         """Crawl method for the FakeCrawler. This method is responsible for orchestrating the crawling process for a specific source. It uses the FakeScrapper to fetch articles, detects keywords, and stores relevant articles in the database."""
@@ -23,7 +23,7 @@ class FakeCrawlerService(BaseCrawler):
         if not source:
             raise ValueError("Source not found")
 
-        crawl_rp = CrawlJobRepository(self._db)
+        crawl_rp = CrawlJobRepository(self._db, self._permission_granted)
         job = await crawl_rp.create_crawl_job(source_id, Status.RUNNING)
         await self._send_job_update(job, articles_found=0, articles_created=0)
         
@@ -65,6 +65,7 @@ class FakeCrawlerService(BaseCrawler):
                     matched_keywords_csv=(
                         ",".join(matched_keywords) if matched_keywords else None
                     ),
+                    owner_id=source.owner_id
                 )
 
                 await self._enqueue_outbox_event(source, article, matched_keywords)

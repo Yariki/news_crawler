@@ -1,4 +1,3 @@
-from os import access
 
 from fastapi import APIRouter, Depends
 from app.core.rbac import OwnedResourceType
@@ -31,9 +30,9 @@ async def get_active_keywords(current_user: CurrentUser, db: AsyncSession = Depe
     return keywords
 
 
-@router.get("/{keyword_id}", response_model=MonitoredKeywordRead)
-async def get_keyword(keyword_id: UUID4, db: AsyncSession = Depends(get_db), access_control=Depends(RequiredPermissionsAndOwnership("keyword:read:own", mode=PermissionMode.ANY, resource_type=OwnedResourceType.MONITOPRED_KEYWORD))):
-    word = await MonitoreKeywordRepository(db, access_control).get_keyword(keyword_id)
+@router.get("/{resource_id}", response_model=MonitoredKeywordRead)
+async def get_keyword(resource_id: UUID4, db: AsyncSession = Depends(get_db), access_control=Depends(RequiredPermissionsAndOwnership("keyword:read:own", mode=PermissionMode.ANY, resource_type=OwnedResourceType.MONITOPRED_KEYWORD))):
+    word = await MonitoreKeywordRepository(db, access_control).get_keyword(resource_id)
     return word
 
 
@@ -50,16 +49,16 @@ async def create_keyword(
     word = await MonitoreKeywordRepository(db, access_control).create_keyword(request.keyword, access_control.user_id)
     return word
 
-@router.put("/{keyword_id}", status_code=HttpStatus.HTTP_200_OK, response_model=MonitoredKeywordRead)
+@router.put("/{resource_id}", status_code=HttpStatus.HTTP_200_OK, response_model=MonitoredKeywordRead)
 async def update_keyword(
-    keyword_id: UUID4,
+    resource_id: UUID4,
     request: MonitoredKeywordUpdate,
-    db: AsyncSession = Depends(get_db), access_control=Depends(RequiredPermissionsAndOwnership("keyword:update:own", mode=PermissionMode.ANY, resource_type=OwnedResourceType.MONITOPRED_KEYWORD))
+    db: AsyncSession = Depends(get_db), access_control=Depends(RequiredPermissionsAndOwnership("keyword:update:own", mode=PermissionMode.ANY, resource_type=OwnedResourceType.MONITORED_KEYWORD))
 ):
 
     request.keyword = request.keyword.lower().strip()
     if len(request.keyword) == 0:
         raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Keyword cannot be empty")
 
-    word = await MonitoreKeywordRepository(db, access_control).update_keyword(keyword_id, request)
+    word = await MonitoreKeywordRepository(db, access_control).update_keyword(resource_id, request)
     return word

@@ -22,12 +22,14 @@ class MonitoreKeywordRepository(BaseAuthRepository):
         return list(result.all())
 
     async def get_active_keywords(self) -> list[str]:
-        result = await self.db.scalars(
+        
+        query = (
             select(MonitoredKeyword.keyword)
-            .where(MonitoredKeyword.is_enabled.is_(True))
-            .order_by(MonitoredKeyword.keyword)
+                        .where(MonitoredKeyword.is_enabled.is_(True))
+                        .order_by(MonitoredKeyword.keyword)
         )
-        query = self.filter_owned_resources(result, MonitoredKeyword)
+        query = self.filter_owned_resources(query, MonitoredKeyword)
+        result = await self.db.scalars(query)
         keywords = [normalize_keyword(value) for value in result.all() if value]
         return keywords
 
