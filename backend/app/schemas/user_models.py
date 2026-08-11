@@ -51,3 +51,6 @@ class UserChangePassword(BaseModel):
             raise ValueError("Password must contain at least one special character")
         return password
 
+
+class UserRoles(BaseModel):
+    roles_ids: list[UUID] = Field(default_factory=list)

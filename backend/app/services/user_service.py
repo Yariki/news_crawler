@@ -4,7 +4,10 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas.user_models import UserCreate, UserRead, UserUpdate
+from sqlalchemy.orm import selectinload
+
+from app.models import Role
+from app.schemas.user_models import UserCreate, UserRead, UserUpdate, UserChangePassword
 from app.models.user import User
 from app.core.security import hash_password, verify_password
 from fastapi import HTTPException, status as HttpStatus
@@ -150,6 +153,143 @@ class UserService:
 
         user.last_login_at = datetime.now(timezone.utc)
 
+        await self._db.commit()
+        await self._db.refresh(user)
+        return UserRead(
+            id=user.id,
+            email=user.email,
+            username=user.username,
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+            last_login_at=user.last_login_at,
+        )
+
+    async def get_users(self) -> list[UserRead]:
+        query = (
+            select(User)
+            .where(~User.is_delete)
+        )
+        result = await self._db.execute(query)
+        users = result.scalars().all()
+        return [
+            UserRead(
+                id=user.id,
+                email=user.email,
+                username=user.username,
+                is_active=user.is_active,
+                is_verified=user.is_verified,
+                last_login_at=user.last_login_at,
+            )
+            for user in users
+        ]
+
+    async def delete_user(self, user_id: UUID) -> None:
+        query = (
+            select(User)
+            .where(User.id == user_id, ~User.is_delete)
+        )
+        result = await self._db.execute(query)
+        user = result.scalar_one_or_none()
+        if user is None:
+            raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="User not found")
+
+        user.is_delete = True
+        await self._db.commit()
+
+    async def change_user_activation_status(self, user_id: UUID, is_active: bool) -> UserRead:
+        query = (
+            select(User)
+            .where(User.id == user_id, ~User.is_delete)
+        )
+        result = await self._db.execute(query)
+        user = result.scalar_one_or_none()
+        if user is None:
+            raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="User not found")
+
+        user.is_active = is_active
+        await self._db.commit()
+        await self._db.refresh(user)
+        return UserRead(
+            id=user.id,
+            email=user.email,
+            username=user.username,
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+            last_login_at=user.last_login_at,
+        )
+
+
+    async def assign_roles(self, user_id: UUID, roles: list[UUID]) -> UserRead:
+        query = (
+            select(User)
+            .where(User.id == user_id, ~User.is_delete)
+        )
+        result = await self._db.execute(query)
+        user = result.scalar_one_or_none()
+        if user is None:
+            raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="User not found")
+
+        roles = await self._db.execute(
+            select(Role).where(Role.id.in_(roles))
+        )
+        roles = roles.scalars().all()
+
+        for role in roles:
+            user.roles.append(role)
+
+        await self._db.commit()
+        await self._db.refresh(user)
+        return UserRead(
+            id=user.id,
+            email=user.email,
+            username=user.username,
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+            last_login_at=user.last_login_at,
+        )
+
+    async def remove_roles(self, user_id: UUID, role_id: UUID) -> UserRead:
+
+        role = await self._db.scalar(
+            select(Role).where(Role.id == role_id)
+        )
+
+        if not role:
+            raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="Role not found")
+
+        user = await self._db.scalar(
+            select(User).where(User.id == user_id, ~User.is_delete).options(
+                selectinload(User.roles)
+            )
+        )
+
+        if not user:
+            raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="User not found")
+
+        user.roles.remove(role)
+        await self._db.commit()
+        await self._db.refresh(user)
+        return UserRead(
+            id=user.id,
+            email=user.email,
+            username=user.username,
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+            last_login_at=user.last_login_at,
+        )
+
+    async def change_password(self, user_id: UUID, new_password: UserChangePassword) -> UserRead:
+        query = (
+            select(User)
+            .where(User.id == user_id, ~User.is_delete)
+        )
+        result = await self._db.execute(query)
+        user = result.scalar_one_or_none()
+        if user is None:
+            raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="User not found")
+
+        hashed_password = hash_password(new_password.new_password)
+        user.hashed_password = hashed_password
         await self._db.commit()
         await self._db.refresh(user)
         return UserRead(

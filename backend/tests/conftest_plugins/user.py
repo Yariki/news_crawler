@@ -3,20 +3,20 @@ from typing import Any, Awaitable, Callable
 
 import pytest
 
-from app.models import User
+
+from app.schemas.user_models import UserCreate
 
 
 @pytest.fixture(name="create_user")
-def create_user(faker) -> Callable[[Any], Awaitable[User]]:
+def create_user(faker) -> Callable[[Any], UserCreate]:
 
-    async def _create_user(**kwargs: dict[Any, Any]) -> User:
+    def _create_user(**kwargs: dict[Any, Any]) -> UserCreate:
         email = faker.email()
-        user = User(
-            email = email,
-            username = email,
-            hashed_password=faker.password(),
-            is_active = True,
-            is_verified = True
+        user = UserCreate(
+            email = kwargs.get("email", email),
+            username = kwargs.get("username", email),
+            password = faker.password(),
+            is_active = True
         )
         return user
 

@@ -2,7 +2,7 @@
 from sqlalchemy import Boolean, DateTime, String
 from datetime import datetime
 from app.db.base import ChangeTrackingMixin, PrimaryIdMixin
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class User(ChangeTrackingMixin):
@@ -17,3 +17,8 @@ class User(ChangeTrackingMixin):
     
     def __repr__(self) -> str:
         return f"<User {self.email}>"
+
+    roles: Mapped[list["Role"]] = relationship(
+        secondary="user_roles",
+        back_populates="users",
+    )
