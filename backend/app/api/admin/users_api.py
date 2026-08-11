@@ -1,8 +1,8 @@
-from fastapi import status as HttpStatus, HTTPException, APIRouter, Depends
+from fastapi import status as HttpStatus, APIRouter, Depends
 
 from app.core.rbac import  RequiredRoles
 from app.db.session import DbSession
-from app.schemas.user_models import UserRead, UserCreate, UserUpdate, UserChangePassword, UserRoles
+from app.schemas.user_models import AdminChangePassword, UserRead, UserCreate, UserUpdate, UserRoles
 from app.services.user_service import UserService
 
 from uuid import UUID
@@ -58,11 +58,10 @@ async def deactivate_user(user_id: UUID, db: DbSession):
     user = await UserService(db).change_user_activation_status(user_id, False)
     return user
 
-
 @router.post("/{user_id}/change-password", status_code=HttpStatus.HTTP_201_CREATED, response_model=UserRead,
              dependencies=[Depends(RequiredRoles('admin'))])
-async def change_user_password(user_id: UUID, new_password: UserChangePassword, db: DbSession):
-    user = await UserService(db).change_password(user_id, new_password)
+async def change_user_password(user_id: UUID, admin_change_password: AdminChangePassword, db: DbSession):
+    user = await UserService(db).change_password(user_id, admin_change_password)
     return user
 
 @router.post("/{user_id}/roles", status_code=HttpStatus.HTTP_200_OK, response_model=UserRead,

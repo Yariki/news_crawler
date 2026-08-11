@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import Role
-from app.schemas.user_models import UserCreate, UserRead, UserUpdate, UserChangePassword
+from app.schemas.user_models import AdminChangePassword, UserCreate, UserRead, UserUpdate, UserChangePassword
 from app.models.user import User
 from app.core.security import hash_password, verify_password
 from fastapi import HTTPException, status as HttpStatus
@@ -111,18 +111,13 @@ class UserService:
 
     async def update_user(self, user_id: UUID, userUpdate: UserUpdate) -> UserRead:
 
-        if not await self.__is_email_unique(userUpdate.email):
-            raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Email is already in use")
-
-        if not await self.__is_username_unique(userUpdate.username):
-            raise HTTPException(status_code=HttpStatus.HTTP_400_BAD_REQUEST, detail="Username is already in use")
-
         query = (
             select(User)
             .where(User.id == user_id, ~User.is_delete)
         )
         result = await self._db.execute(query)
         user = result.scalar_one_or_none()
+        
         if user is None:
             raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="User not found")
 
@@ -219,10 +214,11 @@ class UserService:
         )
 
 
-    async def assign_roles(self, user_id: UUID, roles: list[UUID]) -> UserRead:
+    async def assign_roles(self, user_id: UUID, roles_ids: list[UUID]) -> UserRead:
         query = (
             select(User)
             .where(User.id == user_id, ~User.is_delete)
+            .options(selectinload(User.roles))
         )
         result = await self._db.execute(query)
         user = result.scalar_one_or_none()
@@ -230,12 +226,16 @@ class UserService:
             raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="User not found")
 
         roles = await self._db.execute(
-            select(Role).where(Role.id.in_(roles))
+            select(Role).where(Role.id.in_(roles_ids))
         )
         roles = roles.scalars().all()
 
+        existing_role_ids = [role.id for role in user.roles]
+
         for role in roles:
-            user.roles.append(role)
+            if role.id not in existing_role_ids:
+                user.roles.append(role)
+                existing_role_ids.append(role.id)
 
         await self._db.commit()
         await self._db.refresh(user)
@@ -265,7 +265,10 @@ class UserService:
 
         if not user:
             raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="User not found")
-
+        
+        if role not in user.roles:
+            raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="Role not assigned to user")
+        
         user.roles.remove(role)
         await self._db.commit()
         await self._db.refresh(user)
@@ -278,8 +281,9 @@ class UserService:
             last_login_at=user.last_login_at,
         )
 
-    async def change_password(self, user_id: UUID, new_password: UserChangePassword) -> UserRead:
+    async def change_password(self, user_id: UUID, admin_change_password: AdminChangePassword) -> UserRead:
         query = (
+            
             select(User)
             .where(User.id == user_id, ~User.is_delete)
         )
@@ -288,7 +292,7 @@ class UserService:
         if user is None:
             raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="User not found")
 
-        hashed_password = hash_password(new_password.new_password)
+        hashed_password = hash_password(admin_change_password.new_password)
         user.hashed_password = hashed_password
         await self._db.commit()
         await self._db.refresh(user)

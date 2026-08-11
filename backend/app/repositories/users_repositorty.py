@@ -4,6 +4,7 @@ from sqlalchemy import select
 from app.db.session import DbSession
 from app.models import User
 from app.schemas.user_models import UserCreate
+from uuid import UUID
 
 
 class UserRepository:
@@ -44,7 +45,7 @@ class UserRepository:
 
         return updated_user
 
-    async def delete_user(self, user_id: int) -> User:
+    async def delete_user(self, user_id: UUID) -> None:
         user = await self.get_user_by_id(user_id)
         if not user:
             raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="User not found")
