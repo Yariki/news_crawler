@@ -93,7 +93,7 @@ async def client(db_session):
     app.dependency_overrides.clear()
 
 
-async def set_authorization_context(db_session: AsyncSession, *permission: str, user_name: str ) -> AuthorizationContext:
+async def set_authorization_context(db_session: AsyncSession, *permission: str, user_name: str, role: str = 'admin' ) -> AuthorizationContext:
     
     user_query = (
         select(User)
@@ -103,7 +103,7 @@ async def set_authorization_context(db_session: AsyncSession, *permission: str, 
     
     current_user = SimpleNamespace(id=user.id, is_active=True)
     
-    context = AuthorizationContext(user_id=user.id, roles=frozenset({}), permissions=frozenset(permission))
+    context = AuthorizationContext(user_id=user.id, roles=frozenset({role}), permissions=frozenset(permission))
 
     async def override_current_user() -> Any:
         return current_user
