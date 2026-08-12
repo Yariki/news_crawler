@@ -1,14 +1,14 @@
 import re
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Final, Literal, Annotated
+from typing import Final,Annotated
 from uuid import UUID
 
 from sqlalchemy import select
 from fastapi import Request, Depends, HTTPException, status as HttpStatus
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import CurrentActiveUser, CurrentUser
+from app.core.auth import CurrentActiveUser
 from app.db.session import DbSession
 from app.models import Role, Permission, UserRole, RolePermission
 from app.models.owned_resource_type import OwnedResourceType
@@ -19,6 +19,22 @@ ALL_PERMISSIONS: Final = '*'
 AUTHORIZATION_CONTEXT_KEY: Final = "authorization_context"
 
 OWNED_RESOURCE_PATH_PARAM_KEY: Final = "resource_id"
+
+
+class Resources(StrEnum):
+    SOURCE = "source"
+    ARTICLE = "article"
+    ALERT = "alert"
+    JOB = "job"
+    KEYWORD = "keyword"
+    DASHBOARD = "dashboard"
+    
+class Actions(StrEnum):
+    CREATE = "create"
+    READ = "read"
+    UPDATE = "update"
+    DELETE = "delete"
+    RUN = "run"    
 
 class PermissionMode(StrEnum):
     ALL = "all"

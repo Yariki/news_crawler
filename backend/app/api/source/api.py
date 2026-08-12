@@ -34,7 +34,7 @@ async def create_source(data: SourceCreateUpdate, db: AsyncSession = Depends(get
 
 @router.post("/{resource_id}/run", status_code=200, response_model=SourceRunResponse)
 async def run_source(resource_id: UUID4, db: AsyncSession = Depends(get_db), \
-                        access_control=Depends(RequiredPermissionsAndOwnership("source:read:own", mode=PermissionMode.ALL, resource_type=OwnedResourceType.SOURCE))):
+                        access_control=Depends(RequiredPermissionsAndOwnership("source:run:own", mode=PermissionMode.ALL, resource_type=OwnedResourceType.SOURCE))):
     """Dispatches a source for crawling based on the provided source ID. It checks if the source exists, is enabled, and is not currently being crawled. If all conditions are met, it updates the next_run_at field and dispatches the source for crawling using a Celery task. Returns a SourceRunResponse indicating the result of the operation."""
     source = await SourceService(db, access_control).get_source(resource_id)
     if not source or not source.is_enabled:
