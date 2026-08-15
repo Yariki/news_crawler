@@ -2,7 +2,8 @@
 from sqlalchemy import DateTime, String
 from datetime import datetime
 from app.db.base import ChangeTrackingMixin, PrimaryIdMixin
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 
 class Permission(ChangeTrackingMixin):
     __tablename__ = "permissions"
@@ -14,3 +15,9 @@ class Permission(ChangeTrackingMixin):
 
     def __repr__(self) -> str:
         return f"<Permission {self.name}>"
+
+    roles: Mapped[list["Role"]] = relationship(
+        secondary="role_permissions",
+        back_populates="permissions",
+    )
+    
