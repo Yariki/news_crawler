@@ -1,5 +1,5 @@
 import re
-from app.core.rbac import Resources, Actions, ScopeMode
+from app.core.permission_types import Actions, Resources, ScopeMode
 
 
 def validate_password(password: str) -> None:
@@ -44,4 +44,3 @@ def validate_scope(scope: str) -> None:
         raise ValueError("Scope name must be a string.")
     if not ScopeMode.has_value(scope):
         raise ValueError(f"Invalid scope name: {scope}")
-    

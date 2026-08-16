@@ -1,7 +1,6 @@
 import re
 from datetime import datetime, timezone
-from typing import Tuple
-from uuid import UUID
+from typing import Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import Result, select
@@ -10,9 +9,7 @@ from sqlalchemy.orm import selectinload
 from app.models import Role
 from app.models.permission import Permission
 from app.schemas.role_models import PermissionCreateUpdate, RoleCreateUpdate, RoleRead
-from app.schemas.user_models import AdminChangePassword, UserCreate, UserRead, UserUpdate, UserChangePassword
-from app.models.user import User
-from app.core.security import hash_password, verify_password
+from app.schemas.user_models import  UserRead
 from fastapi import HTTPException, status as HttpStatus
 
 

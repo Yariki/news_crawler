@@ -4,6 +4,7 @@ from app.core.rbac import  RequiredRoles
 from app.db.session import DbSession
 from app.schemas.role_models import RoleCreateUpdate, RoleRead, PermissionCreateUpdate
 
+from app.schemas.user_models import UserRead
 from app.services.roles_service import RolePermissionService
 
 from uuid import UUID
@@ -78,3 +79,13 @@ async def add_permission_to_role(resource_id: UUID, permission: PermissionCreate
 async def remove_permission_from_role(resource_id: UUID, permission_id: UUID, db_session: DbSession):
     await RolePermissionService(db_session).remove_permission_from_role(resource_id, permission_id)
     return {"detail": "Permission removed from role successfully."}
+
+
+@router.get("/{resource_id}/users",
+            response_model=list[UserRead],
+            status_code=HttpStatus.HTTP_200_OK,
+            dependencies=[Depends(RequiredRoles("admin"))])
+async def get_role_users(resource_id: UUID, db_session: DbSession):
+    users = await RolePermissionService(db_session).get_users_for_role(resource_id)
+    return users
+    

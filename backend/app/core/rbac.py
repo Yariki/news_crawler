@@ -9,6 +9,7 @@ from fastapi import Request, Depends, HTTPException, status as HttpStatus
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import CurrentActiveUser
+from app.core.permission_types import Actions, Resources, ScopeMode
 from app.db.session import DbSession
 from app.models import Role, Permission, UserRole, RolePermission
 from app.models.owned_resource_type import OwnedResourceType
@@ -21,41 +22,9 @@ AUTHORIZATION_CONTEXT_KEY: Final = "authorization_context"
 OWNED_RESOURCE_PATH_PARAM_KEY: Final = "resource_id"
 
 
-class Resources(StrEnum):
-    SOURCE = "source"
-    ARTICLE = "article"
-    ALERT = "alert"
-    JOB = "job"
-    KEYWORD = "keyword"
-    DASHBOARD = "dashboard"
-    
-    @classmethod
-    def has_value(cls, value: str) -> bool:
-        return value in cls._value2member_map_
-    
-class Actions(StrEnum):
-    CREATE = "create"
-    READ = "read"
-    UPDATE = "update"
-    DELETE = "delete"
-    RUN = "run"    
-    
-    @classmethod
-    def has_value(cls, value: str) -> bool:
-        return value in cls._value2member_map_
-
 class PermissionMode(StrEnum):
     ALL = "all"
     ANY = "any"
-
-class ScopeMode(StrEnum):
-    ALL = "*"
-    ANY = "any"
-    OWN = "own"
-    
-    @classmethod
-    def has_value(cls, value: str) -> bool:
-        return value in cls._value2member_map_
 
 PERMISSION_NAME_PATTERN = re.compile(
     r"^[a-z][a-z0-9_-]*:[a-z][a-z0-9_-]*:[a-z][a-z0-9_-]*$"
