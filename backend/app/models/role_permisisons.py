@@ -1,12 +1,9 @@
 
-from sqlalchemy import UUID, Boolean, DateTime, ForeignKey, String
-from datetime import datetime
+from sqlalchemy import UUID, ForeignKey
+from app.db.base import AssociationChangeTrackingMixin
+from sqlalchemy.orm import Mapped, mapped_column
 
-from traitlets import Integer
-from app.db.base import ChangeTrackingMixin, PrimaryIdMixin
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-class RolePermission(ChangeTrackingMixin):
+class RolePermission(AssociationChangeTrackingMixin):
     __tablename__ = "role_permissions"
 
     role_id: Mapped[UUID] = mapped_column(ForeignKey("roles.id"),  nullable=False, primary_key=True)

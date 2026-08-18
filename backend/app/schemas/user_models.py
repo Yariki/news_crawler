@@ -6,9 +6,6 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.utils.validation import validate_password
 
-
-
-
 class UserBase(BaseModel):
     email: EmailStr = Field(min_length=1, max_length=255)
     username: str = Field(min_length=1, max_length=255)
@@ -33,6 +30,18 @@ class UserRead(UserBase):
     id: UUID
     is_verified: bool
     last_login_at: datetime | None
+    
+    
+    @classmethod
+    def from_orm(cls, obj):
+        return cls(
+            id=obj.id,
+            email=obj.email,
+            username=obj.username,
+            is_active=obj.is_active,
+            is_verified=obj.is_verified,
+            last_login_at=obj.last_login_at,
+        )
 
 class UserChangePassword(BaseModel):
     old_password: str = Field(min_length=8, max_length=255)

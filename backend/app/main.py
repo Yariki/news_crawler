@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,6 +17,7 @@ from app.services.es import ElasticService
 import logging
 
 from app.services.outbox_relay import OutboxRelay
+from app.services.resource_actions.loader import PermissionsCatalog
 
 # Configure root logger
 logging.basicConfig(
@@ -47,6 +49,7 @@ async def lifespan(_app: FastAPI):
     await elasticsearch_client.ensure_index()
 
     await rabbitmq_connect(_app)
+    _app.state.permissions_actions_catalog = PermissionsCatalog.create_from_file(Path(settings.permissions_actions_catalog))
 
     outbox_relay = OutboxRelay(elasticsearch_client, rabbitmq)
     outbox_relay_task = asyncio.create_task(outbox_relay.run_forever())

@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     refresh_ttl_minutes: int = Field(default=60 * 24 * 7, alias="REFRESH_TTL_MINUTES")
     issuer: str = Field(default="News Crawler", alias="ISSUER")
 
+    permissions_actions_catalog: str = Field(default="app/services/resource_actions/resource_actions.json", alias="PERMISSIONS_ACTIONS_CATALOG")
+
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [item.strip() for item in self.cors_origins.split(",") if item.strip()]

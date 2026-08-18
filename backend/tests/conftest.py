@@ -121,5 +121,7 @@ async def set_authorization_context(db_session: AsyncSession, *permission: str, 
 pytest_plugins = [
     "tests.conftest_plugins.user",
     "tests.conftest_plugins.source",
+    "tests.conftest_plugins.create_role",
+    "tests.conftest_plugins.permission",
 ]
 
