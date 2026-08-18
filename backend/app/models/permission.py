@@ -20,4 +20,3 @@ class Permission(ChangeTrackingMixin):
         secondary="role_permissions",
         back_populates="permissions",
     )
-    

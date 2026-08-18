@@ -2,7 +2,7 @@ from fastapi import status as HttpStatus, APIRouter, Depends
 
 from app.core.rbac import  RequiredRoles
 from app.db.session import DbSession
-from app.schemas.role_models import RoleCreateUpdate, RoleRead, PermissionCreateUpdate
+from app.schemas.role_models import PermissionRead, RoleCreateUpdate, RoleRead, PermissionCreateUpdate
 
 from app.schemas.user_models import UserRead
 from app.services.roles_service import RolePermissionService
@@ -14,17 +14,17 @@ router = APIRouter(
     tags=["admin"],
 )
 
-@router.get("", 
-            response_model=list[RoleRead], 
-            status_code=HttpStatus.HTTP_200_OK, 
+@router.get("",
+            response_model=list[RoleRead],
+            status_code=HttpStatus.HTTP_200_OK,
             dependencies=[Depends(RequiredRoles("admin"))])
 async def get_roles(db_session: DbSession):
     roles = await RolePermissionService(db_session).get_roles()
     return roles
 
 @router.get("/{resource_id}",
-            response_model=RoleRead, 
-            status_code=HttpStatus.HTTP_200_OK, 
+            response_model=RoleRead,
+            status_code=HttpStatus.HTTP_200_OK,
             dependencies=[Depends(RequiredRoles("admin"))])
 async def get_role_by_id(resource_id: UUID, db_session: DbSession):
     role = await RolePermissionService(db_session).get_role_by_id(resource_id)
@@ -56,22 +56,22 @@ async def delete_role(resource_id: UUID, db_session: DbSession):
     return {"detail": "Role deleted successfully."}
 
 @router.get("/{resource_id}/permissions",
-            response_model=None,
-            status_code=HttpStatus.HTTP_201_CREATED,
+            response_model=list[PermissionRead],
+            status_code=HttpStatus.HTTP_200_OK,
             dependencies=[Depends(RequiredRoles("admin"))])
-async def get_role_permissions(resource_id: UUID, permission: PermissionCreateUpdate, db_session: DbSession):
-    await RolePermissionService(db_session).add_permission_to_role(resource_id, permission)
-    return {"detail": "Permission added to role successfully."}
+async def get_role_permissions(resource_id: UUID, db_session: DbSession):
+    permissions = await RolePermissionService(db_session).get_role_permissions(resource_id)
+    return permissions
 
 @router.post("/{resource_id}/permissions",
-            response_model=None,
+            response_model=PermissionRead,
             status_code=HttpStatus.HTTP_201_CREATED,
             dependencies=[Depends(RequiredRoles("admin"))])
 async def add_permission_to_role(resource_id: UUID, permission: PermissionCreateUpdate, db_session: DbSession):
-    await RolePermissionService(db_session).add_permission_to_role(resource_id, permission)
-    return {"detail": "Permission added to role successfully."}
-    
-    
+    permission_read = await RolePermissionService(db_session).add_permission_to_role(resource_id, permission)
+    return permission_read
+
+
 @router.delete("/{resource_id}/permissions/{permission_id}",
             response_model=None,
             status_code=HttpStatus.HTTP_204_NO_CONTENT,
@@ -88,4 +88,3 @@ async def remove_permission_from_role(resource_id: UUID, permission_id: UUID, db
 async def get_role_users(resource_id: UUID, db_session: DbSession):
     users = await RolePermissionService(db_session).get_users_for_role(resource_id)
     return users
-    

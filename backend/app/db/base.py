@@ -20,8 +20,23 @@ class ChangeTrackingMixin(PrimaryIdMixin):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=text("now()"), onupdate=text("now()"), nullable=False
-    ) 
-    
+    )
+
+    is_delete: Mapped[bool] = mapped_column(
+        default=False, nullable=False
+    )
+
+class AssociationChangeTrackingMixin(Base):
+    """Change-tracking columns for join tables whose primary key is composite (no surrogate `id`)."""
+    __abstract__ = True
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
+        server_default=text("now()"), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=text("now()"), onupdate=text("now()"), nullable=False
+    )
+
     is_delete: Mapped[bool] = mapped_column(
         default=False, nullable=False
     )

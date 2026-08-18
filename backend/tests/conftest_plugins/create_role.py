@@ -6,12 +6,10 @@ import pytest
 from app.schemas.role_models import RoleCreateUpdate
 
 
-
-
 @pytest.fixture(name="create_role")
-def create_role(faker) -> Callable[[Any], RoleCreateUpdate]:
+def create_role(faker) -> Callable[..., RoleCreateUpdate]:
 
-    def _create_role(**kwargs: dict[Any, Any]) -> RoleCreateUpdate:
+    def _create_role(**kwargs: Any) -> RoleCreateUpdate:
         name = kwargs.get("name", faker.word())
         role = RoleCreateUpdate(
             name=name,
