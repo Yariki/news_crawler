@@ -58,9 +58,9 @@ class PermissionRead(BaseModel):
 class PermissionCreateUpdate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=255)
-    resource: str = Field(default=None, max_length=255)
-    action: str = Field(default=None, max_length=255)
-    scope: str = Field(default=None, max_length=255)
+    resource: str = Field(min_length=1, max_length=255)
+    action: str = Field(min_length=1, max_length=255)
+    scope: str = Field(min_length=1, max_length=255)
 
     @field_validator("resource")
     @classmethod

@@ -70,7 +70,7 @@ async def test_delete_role_permission_role_not_found(
     assert del_resp.status_code == 404
 
 
-async def test_delete_role_permission_role_not_found(
+async def test_delete_role_permission_permission_not_found(
     client: AsyncClient,
     create_role: Callable[..., RoleCreateUpdate],
     create_permission: Callable[..., PermissionCreateUpdate],

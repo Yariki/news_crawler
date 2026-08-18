@@ -20,7 +20,7 @@ class RolePermissionService:
 
     async def get_role_by_id(self, role_id: UUID) -> Optional[RoleRead]:
         result = await self._db.execute(
-            select(Role).where(Role.id == role_id)
+            select(Role).where(Role.id == role_id, ~Role.is_delete)
         )
         role = result.scalar_one_or_none()
 
@@ -34,7 +34,7 @@ class RolePermissionService:
 
     async def get_role_by_name(self, name: str) -> Optional[RoleRead]:
         result = await self._db.execute(
-            select(Role).where(Role.name == name)
+            select(Role).where(Role.name == name, ~Role.is_delete)
         )
         role = result.scalar_one_or_none()
         return RoleRead.from_orm(role) if role else None
@@ -53,8 +53,11 @@ class RolePermissionService:
             .where(Role.name == role_data.name)
         )
         role = (await self._db.execute(query)).scalar_one_or_none()
-
-        if role:
+        
+        if role and role.is_delete:
+            role.is_delete = False
+            return RoleRead.from_orm(role)
+        elif role and not role.is_delete:
             raise HTTPException(
                 status_code=HttpStatus.HTTP_400_BAD_REQUEST,
                 detail=f"Role with name '{role_data.name}' already exists."
@@ -63,6 +66,7 @@ class RolePermissionService:
         new_role = Role(
             name=role_data.name,
             description=role_data.description,
+            is_system=role_data.is_system,
             is_delete=False,
             created_at=datetime.now(timezone.utc)
         )
@@ -98,6 +102,7 @@ class RolePermissionService:
         role.name = role_data.name
         role.description = role_data.description
         role.updated_at = datetime.now(timezone.utc)
+        role.is_system = role_data.is_system
 
         self._db.add(role)
         await self._db.commit()
