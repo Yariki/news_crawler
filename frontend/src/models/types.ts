@@ -177,4 +177,62 @@ export interface JobUpdateMessage {
     source_id: string;
 }
 
+export type TokenType = 'access' | 'refresh';
 
+export interface LoginCredentials {
+    username: string;
+    passwortd: string;
+}
+
+export interface TokenPair {
+    access_token: string;
+    refresh_token: string;
+    access_token_exp: number;
+    refresh_token_exp: number;
+    token_type: string;
+}
+
+export interface RefreshRequest {
+    refresh_token: string;
+}
+
+
+export interface LogoutRequest {
+    refresh_token: string;
+}
+
+export interface MeRequest {
+    access_token: string;
+}
+
+export interface UserBase {
+    email: string;
+    username: string;
+    is_active: boolean;
+}
+
+export interface UserCreate extends UserBase {
+    password: string;
+}
+
+export interface UserUpdate extends UserBase{
+}
+
+export interface UserRead extends UserBase {
+    id: string;
+    is_verified: boolean;
+    last_login_at: string | null;
+}
+
+export interface UserChangePassword {
+    new_password: string;
+    old_password: string;
+}
+
+export interface UserRoles {
+    roles_ids: string[];
+}
+
+export interface AdminChangePassword {
+    new_password: string;
+}

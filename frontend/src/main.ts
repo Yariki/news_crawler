@@ -4,5 +4,12 @@ import {createPinia} from 'pinia'
 import App from './App.vue'
 import router from './router'
 import vuetify from './plugins_vuetify'
+import { useAuthStore } from './stores/auth'
 
-createApp(App).use(createPinia()).use(router).use(vuetify).mount('#app')
+const app = createApp(App);
+app.use(createPinia());
+
+const auth = useAuthStore();
+auth.initFromStorage();
+
+app.use(router).use(vuetify).mount('#app')
