@@ -25,5 +25,16 @@
     "statusBar.debuggingBackground": "#830893",
     "statusBar.debuggingForeground": "#e7e7e7"
 },
-  "peacock.color": "#830893"
+"peacock.color": "#830893",
+"yaml.disableSchemaDetection": [],
+"yaml.schemas": {
+    "file:///home/yariki/.vscode/extensions/continue.continue-1.2.22-linux-x64/config-yaml-schema.json": [
+        ".continue/**/*.yaml",
+        "file:///home/yariki/.continue/config.yaml"
+    ],
+    "file:///home/yariki/.vscode/extensions/continue.continue-2.0.0-linux-x64/config-yaml-schema.json": [
+        ".continue/**/*.yaml",
+        "file:///home/yariki/.continue/config.yaml"
+    ]
+}
 }
