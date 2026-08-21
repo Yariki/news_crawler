@@ -46,7 +46,6 @@
         </v-form>
 
         <div class="d-flex justify-space-between mt-4">
-            <RouterLink to="/forgot-password">Forgot password?</RouterLink>
             <RouterLink to="/register">Create account</RouterLink>
         </div>
     </AuthLayout>
@@ -86,10 +85,12 @@ async function submit() {
 
     loading.value = true;
     try{
-        await authStore.login({
-            'email': email.value,
-            'password': password.value
-        });
+
+        const payload = new URLSearchParams();
+        payload.append('email', email.value);
+        payload.append('password', password.value);
+
+        await authStore.login(payload);
 
         const returnUrl = typeof route.query.returnUrl === 'string' ? route.query.returnUrl : '/';
         await router.push(returnUrl);
@@ -105,7 +106,7 @@ async function submit() {
                 errorMessage.value = 'Unable to log in.';
             }
         } else {
-            errorMessage.value = 'Unable to sign in with current  credentials.';
+            errorMessage.value = 'Unable to sign in with current credentials.';
         }
     }finally {
         loading.value = false;

@@ -53,7 +53,7 @@ import {
 const router = useRouter();
 
 type VuetifyForm = {
-    validate: () => Promise<boolean>
+    validate: () => Promise<{valid: boolean}>;
 }
 
 const auth = useAuthStore();
@@ -75,8 +75,8 @@ async function submit() {
 
     if(!formRef.value) return;
 
-    const isValid = await formRef.value.validate();
-    if (!isValid) return;
+    const { valid } = await formRef.value.validate();
+    if (!valid) return;
 
     const request: UserCreate = {
         email: email.value!,
@@ -93,7 +93,7 @@ async function submit() {
         if (axios.isAxiosError(error)) {
             const status = error.response?.status;
 
-            if (status === 400) {
+            if (status === 400 || status === 422) {
                 errorMessage.value = 'Invalid request. Please check your input.';
             } else if (status === 409) {
                 errorMessage.value = 'Email or username already exists.';

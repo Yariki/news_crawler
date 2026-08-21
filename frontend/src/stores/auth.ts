@@ -22,9 +22,10 @@ export const useAuthStore = defineStore('auth', () => {
         await api.post("/auth/register", cred);
     }
 
-    async function login(cred: { email: string, password: string }) {
+    async function login(cred: URLSearchParams) {
 
-        const { data } = await api.post<TokenPair>("/auth/login", cred);
+        const { data } = await api.post<TokenPair>("/auth/login", cred,
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
 
         access_token.value = data.access_token;
         refresh_token.value = data.refresh_token;
