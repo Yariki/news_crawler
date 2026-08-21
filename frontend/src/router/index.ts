@@ -6,10 +6,14 @@ import KeywordsPage from '../pages/KeywordsPage.vue'
 import JobsPage from '../pages/JobsPage.vue'
 import SourcesPage from '../pages/SourcesPage.vue'
 import SearchPage from '../pages/SearchPage.vue'
+import Register from "../views/register.vue";
+import Login from "../views/login.vue";
 
 export default createRouter({
     history: createWebHistory(),
     routes: [
+        { path: '/register', name: 'register', component: Register },
+        { path: '/login', name: 'login', component: Login },
         {
             path: '/',
             component: AppShell,

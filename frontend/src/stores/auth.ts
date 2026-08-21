@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { api } from '../services/api'
 import {ref, computed, watch} from 'vue'
-import { TokenPair, RefreshRequest } from '../models/types';
+import {TokenPair, RefreshRequest, UserCreate} from '../models/types';
 
 
 export const useAuthStore = defineStore('auth', () => {
@@ -16,10 +16,16 @@ export const useAuthStore = defineStore('auth', () => {
     const hasPermission = (name: string) => permissions.value?.includes(name);
     const hasAnyPermission = (list: string[]) => 
         list.some(name => hasPermission(name));
-    
-    async function login(cred: { email: string, password: string }) {
 
-        const { data } = await api.post<TokenPair>("/auth/login", cred);
+
+    async function register(cred: UserCreate) {
+        await api.post("/auth/register", cred);
+    }
+
+    async function login(cred: URLSearchParams) {
+
+        const { data } = await api.post<TokenPair>("/auth/login", cred,
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
 
         access_token.value = data.access_token;
         refresh_token.value = data.refresh_token;
@@ -84,7 +90,8 @@ export const useAuthStore = defineStore('auth', () => {
         login,
         logout,
         refresh,
-        initFromStorage
+        initFromStorage,
+        register
     };
 });
 
