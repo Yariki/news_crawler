@@ -1,7 +1,5 @@
 import { hasUncaughtExceptionCaptureCallback } from "node:process";
 
-
-
 export const isValidWebUrl = (urlString: string) : boolean => {
   try {
 
@@ -23,3 +21,29 @@ export const isValidWebUrl = (urlString: string) : boolean => {
     return false;
   }
 }
+
+export const emailRules = [
+    (value: string) => !!value || 'Email is required',
+    (value: string) => /.+@.+\..+/.test(value) || 'Enter a valid email address',
+]
+
+export const usernameRules = [
+    (value: string) => !!value || 'Username is required',
+    (value: string) => value.length >= 1 || 'Username is required',
+    (value: string) => value.length <= 255 || 'Username must be 255 characters or fewer',
+]
+
+export const passwordRules = [
+    (value: string) => !!value || 'Password is required',
+    (value: string) => value.length >= 8 || 'Password must be at least 8 characters',
+    (value: string) => value.length <= 255 || 'Password must be 255 characters or fewer',
+    (value: string) => /[A-Z]/.test(value) || 'Password must contain at least one uppercase letter',
+    (value: string) => /[a-z]/.test(value) || 'Password must contain at least one lowercase letter',
+    (value: string) => /\d/.test(value) || 'Password must contain at least one digit',
+    (value: string) => /[^\w\s]/.test(value) || 'Password must contain at least one special character',
+]
+
+export const confirmPasswordRules = (password: string | null) => [
+    (value: string) => !!value || 'Please confirm your password',
+    (value: string) => value === password || 'Passwords do not match',
+]
