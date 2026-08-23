@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { api } from '../services/api'
+import { authClient } from '../lib/axios'
 import {ref, computed, watch} from 'vue'
-import {TokenPair, RefreshRequest, UserCreate} from '../models/types';
+import {TokenPair, UserCreate} from '../models/types';
 
 
 export const useAuthStore = defineStore('auth', () => {
@@ -19,58 +19,62 @@ export const useAuthStore = defineStore('auth', () => {
 
 
     async function register(cred: UserCreate) {
-        await api.post("/auth/register", cred);
+        await authClient.post("/auth/register", cred);
     }
 
     async function login(cred: URLSearchParams) {
 
-        const { data } = await api.post<TokenPair>("/auth/login", cred,
+        const { data } = await authClient.post<TokenPair>("/auth/login", cred,
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
 
         access_token.value = data.access_token;
         refresh_token.value = data.refresh_token;
-        
-        localStorage.setItem("refresh_token", data.refresh_token);
+    }
 
-        api.defaults.headers.common['Authorization'] =
-            `Bearer ${access_token.value}`;
-    }   
-
-    async function logout() {
-        await api.post("/auth/logout", {
-            'refresh_token': refresh_token.value
-        });
+    /** Drops local session state without calling the server. */
+    function clearSession() {
         access_token.value = null;
         refresh_token.value = null;
         roles.value = [];
         permissions.value = [];
+    }
 
-        localStorage.removeItem("refresh_token");
-        delete api.defaults.headers.common['Authorization'];
+    async function logout() {
+        try {
+            if (refresh_token.value) {
+                await authClient.post("/auth/logout", {
+                    'refresh_token': refresh_token.value
+                });
+            }
+        } finally {
+            clearSession();
+        }
     }
 
     async function refresh() {
-        const request = {
-            'refresh_token': refresh_token.value
+        if (!refresh_token.value) {
+            throw new Error('No refresh token available');
         }
-        const { data } = await api.post<TokenPair>("/auth/refresh", request);
+
+        const { data } = await authClient.post<TokenPair>("/auth/refresh", {
+            'refresh_token': refresh_token.value
+        });
 
         access_token.value = data.access_token;
+        // The server rotates the refresh token, so the new one must replace it.
         refresh_token.value = data.refresh_token;
-
-        localStorage.setItem('refresh_token', data.refresh_token);
-        api.defaults.headers.common['Authorization'] = refresh_token.value;
     }
 
-    function initFromStorage() {
+    async function initFromStorage() {
         const stored = localStorage.getItem('refresh_token');
-        if (stored) {
-            refresh_token.value = stored;
+        if (!stored) return;
+
+        refresh_token.value = stored;
+        try {
+            await refresh();
+        } catch {
+            clearSession();
         }
-        refresh().catch(() => {
-            localStorage.removeItem('refresh_token');
-            logout();
-        });
     }
 
     watch(refresh_token, (newValue) => {
@@ -82,13 +86,17 @@ export const useAuthStore = defineStore('auth', () => {
     });
 
     return {
+        access_token,
+        refresh_token,
         roles,
         permissions,
         isAuthenticated,
         hasPermission,
         hasRole,
+        hasAnyPermission,
         login,
         logout,
+        clearSession,
         refresh,
         initFromStorage,
         register
