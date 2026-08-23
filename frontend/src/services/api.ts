@@ -1,14 +1,4 @@
-import axios from 'axios'
-
-const configuredApiOrigin = import.meta.env.VITE_API_ORIGIN?.trim()
-
-const apiBaseUrl = configuredApiOrigin
-    ? `${configuredApiOrigin.replace(/\/$/, '')}/api`
-    : '/api'
-
-export const api = axios.create({
-    baseURL: apiBaseUrl,
-})
+export { api, authClient } from '../lib/axios'
 
 export function getAlertsWebSocketUrl(): string {
     const configuredWsOrigin = import.meta.env.VITE_WS_ORIGIN?.trim()

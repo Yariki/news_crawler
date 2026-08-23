@@ -56,7 +56,6 @@ import { ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 
-import {api} from '../services/api'
 import AuthLayout from '../layouts/AuthLayout.vue'
 import { useAuthStore } from '../stores/auth'
 import { emailRules, passwordRules } from '../utils/validation'
@@ -87,7 +86,7 @@ async function submit() {
     try{
 
         const payload = new URLSearchParams();
-        payload.append('email', email.value);
+        payload.append('username', email.value);
         payload.append('password', password.value);
 
         await authStore.login(payload);
