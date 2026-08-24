@@ -91,8 +91,13 @@ async function submit() {
 
         await authStore.login(payload);
 
-        const returnUrl = typeof route.query.returnUrl === 'string' ? route.query.returnUrl : '/';
-        await router.push(returnUrl);
+        const requestedUrl =
+            typeof route.query.returnUrl === 'string' &&
+                route.query.returnUrl.startsWith('/') &&
+                !route.query.returnUrl.startsWith('//')
+                ? route.query.returnUrl
+                : '/';
+        await router.push(requestedUrl);
     }catch(error){
         if (axios.isAxiosError(error)) {
             const status = error.response?.status;
