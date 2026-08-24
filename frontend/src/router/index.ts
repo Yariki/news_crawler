@@ -8,7 +8,7 @@ import SourcesPage from '../pages/SourcesPage.vue'
 import SearchPage from '../pages/SearchPage.vue'
 import Register from "../views/register.vue";
 import Login from "../views/login.vue";
-import ForbiddenPage from "../views/forbdden-page.vue";
+import ForbiddenPage from "../views/forbidden-page.vue";
 import NotFoundPage from "../views/not-found-page.vue";
 
 
@@ -37,16 +37,15 @@ const router = createRouter({
 
 let initPromise : Promise<void> | null = null;
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to) => {
     const authStore = useAuthStore();
     initPromise ??= authStore.initFromStorage();
     await initPromise;
 
-
     if(to.meta.requiresAuth && !authStore.isAuthenticated) {
         return {
             name: 'login',
-            query: { redirect: to.fullPath }
+            query: { returnUrl: to.fullPath }
         }
     }
 
