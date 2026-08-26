@@ -1,8 +1,15 @@
 import { defineStore } from 'pinia'
 import { authClient } from '../lib/axios'
 import {ref, computed, watch} from 'vue'
-import {TokenPair, UserCreate} from '../models/types';
+import { TokenPair, UserCreate } from '../models/types'
+import { jwtDecode } from 'jwt-decode'
+import type { JwtPayload} from 'jwt-decode'
 
+
+interface NewsJwtPayload extends JwtPayload {
+    roles: string[];
+    permissions: string[];
+}
 
 export const useAuthStore = defineStore('auth', () => {
 
@@ -29,6 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
 
         access_token.value = data.access_token;
         refresh_token.value = data.refresh_token;
+        decodeToken(access_token.value);
     }
 
     /** Drops local session state without calling the server. */
@@ -74,6 +82,23 @@ export const useAuthStore = defineStore('auth', () => {
             await refresh();
         } catch {
             clearSession();
+        }
+    }
+
+    function decodeToken(token: string) {
+
+        if (!token) {
+            return;
+        }
+
+        const decodedToken = jwtDecode<NewsJwtPayload>(token);
+
+        if (decodedToken.roles) {
+            roles.value = decodedToken.roles;
+        }
+
+        if (decodedToken.permissions) {
+            permissions.value = decodedToken.permissions;
         }
     }
 

@@ -30,6 +30,7 @@ class UserRead(UserBase):
     id: UUID
     is_verified: bool
     last_login_at: datetime | None
+    created_at: str
     
     
     @classmethod
@@ -41,6 +42,7 @@ class UserRead(UserBase):
             is_active=obj.is_active,
             is_verified=obj.is_verified,
             last_login_at=obj.last_login_at,
+            created_at=obj.created_at
         )
 
 class UserChangePassword(BaseModel):

@@ -30,7 +30,6 @@ async def get_role_by_id(resource_id: UUID, db_session: DbSession):
     role = await RolePermissionService(db_session).get_role_by_id(resource_id)
     return role
 
-
 @router.post("",
             response_model=RoleRead,
             status_code=HttpStatus.HTTP_201_CREATED,

@@ -22,7 +22,7 @@ async def test_login_user(client, db_session):
         "username": "test@test.com",
         "password": "Password123!"
     }
-
+    
     # Act
     login_response = await client.post("/auth/login", data=login_request)
 
@@ -36,8 +36,12 @@ async def test_login_user(client, db_session):
     claims = decode_token(token_pair['refresh_token'], settings)
 
     jti = claims.get("jti")
+    roles = claims.get('roles')
+    permissions = claims.get('permissions')
     issuer_refresh_token = await db_session.get(IssuedRefreshToken, jti)
     assert issuer_refresh_token is not None
+    assert roles is None
+    assert permissions is None
 
 
 async def test_login_email_is_empty(client):

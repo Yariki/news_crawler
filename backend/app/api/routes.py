@@ -12,6 +12,7 @@ from app.api.dev.api import router as dev_router
 from app.api.auth.api import router as auth_router
 from app.api.admin.users_api import router as admin_users_router
 from app.api.admin.roles_api import router as admin_roles_router
+from app.api.admin.admin_api import router as admin_router
 
 from app.core.config import settings
 
@@ -26,6 +27,7 @@ router.include_router(ws_router)
 router.include_router(auth_router)
 router.include_router(admin_users_router)
 router.include_router(admin_roles_router)
+router.include_router(admin_router)
 
 if settings.app_mode == 'dev':
     router.include_router(dev_router)
