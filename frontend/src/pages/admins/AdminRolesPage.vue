@@ -17,7 +17,7 @@
                 <tr v-for="role in store.roles" :key="role.id">
                     <td>{{ role.name }}</td>
                     <td>{{ role.description }}</td>
-                    <td>{{ role.permissions?.join(', ') }}</td>
+                    <td>{{ role.permissions?.map(r => r.name).join(', ') }}</td>
                     <td>
                         <v-btn icon="mdi-pencil" size="small" variant="text" />
                         <v-btn icon="mdi-delete" size="small" variant="text" color="error" />

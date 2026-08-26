@@ -1,4 +1,4 @@
-from tests.conftest import client, client, set_authorization_context
+from tests.conftest import set_authorization_context
 
 
 async def test_activate_user_success(client,
@@ -40,7 +40,7 @@ async def test_activate_user_success(client,
     assert data_stats["recent_registrations"] == 2
     assert len(data_stats["role_distributions"]) == 1
 
-async def test_activate_user_success(client,
+async def test_get_admin_stats_empty(client,
                                      db_session):
 
     await set_authorization_context(

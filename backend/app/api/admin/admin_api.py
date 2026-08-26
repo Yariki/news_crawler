@@ -21,7 +21,7 @@ router = APIRouter(
             dependencies=[Depends(RequiredRoles("admin"))])
 async def get_admin_stats(db_session: DbSession):
     user_count = await db_session.execute(select(func.count(User.id)))
-    active_user_count = await db_session.execute(select(func.count(User.id)).where(User.is_active == True))
+    active_user_count = await db_session.execute(select(func.count(User.id)).where(User.is_active.is_(True)))
     since = datetime.utcnow() - timedelta(days=7)
     new_user_count = await db_session.execute(select(func.count(User.id)).where(User.created_at >= since))
     distribution = await RolePermissionService(db_session).get_role_distribution()

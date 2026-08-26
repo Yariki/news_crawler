@@ -239,8 +239,8 @@ export interface AdminChangePassword {
 }
 
 export interface AdminRoleDistribution {
-    role: string;
-    count: number;
+    role_name: string;
+    user_count: number;
 }
 
 export interface AdminStats {

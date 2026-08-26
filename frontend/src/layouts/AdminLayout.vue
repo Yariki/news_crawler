@@ -28,8 +28,7 @@
 const items = [
     { title: 'Overview', icon: 'mdi-view-dashboard', route: '/admin' },
     { title: 'Users', icon: 'mdi-account-group', route: '/admin/users' },
-    { title: 'Roles', icon: 'mdi-shield-account', route: '/admin/roles' },
-    {title: 'Permissions', icon: 'mdi-lock', route: '/admin/permissions' },
+    { title: 'Roles', icon: 'mdi-shield-account', route: '/admin/roles' }    
 ];
 
 </script>

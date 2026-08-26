@@ -30,8 +30,7 @@ class UserRead(UserBase):
     id: UUID
     is_verified: bool
     last_login_at: datetime | None
-    created_at: str
-    
+    created_at: datetime
     
     @classmethod
     def from_orm(cls, obj):

@@ -72,7 +72,7 @@ class RoleRead(BaseModel):
     is_system: bool = Field(default=True)
     created_at: datetime
     updated_at: datetime | None
-    permissions: list[PermissionRead] = []
+    permissions: list[PermissionRead] = Field(default_factory=list)
 
     @classmethod
     def from_orm(cls, obj: Role):

@@ -78,12 +78,25 @@ async def refresh_token(refresh_request: RefreshRequest, db: AsyncSession = Depe
         raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
 
     existing_user = await db.scalar(
-        select(User).where(User.id == user_id)
+        select(User)
+        .where(User.id == user_id)
+        .options(selectinload(User.roles).selectinload(Role.permissions))
     )
     if not existing_user or not existing_user.is_active:
         raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
 
-    token_pair, jti, _ = await issue_token_pair(db, str(existing_user.id), settings)
+    roles: list[str] = []
+    permissions: list[str] = []
+    
+    for role in existing_user.roles:
+        if not role:
+            continue
+        roles.append(role.name)
+        for permission in role.permissions:
+            permissions.append(permission.name)
+
+
+    token_pair, jti, _ = await issue_token_pair(db, str(existing_user.id), settings, roles, permissions)
 
     active_refresh_token.status = IssuedRefreshTokenStatus.ROTATED.value
     active_refresh_token.replaced_by_jti = jti

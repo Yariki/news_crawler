@@ -29,7 +29,7 @@
                         <v-btn icon="mdi-delete" size="small" variant="text" color="error" />
                     </td>
                 </tr>
-                <tr v-if="!users.length">
+                <tr v-if="!store.users.length">
                     <td colspan="6" class="text-center text-medium-emphasis">No users found</td>
                 </tr>
             </tbody>
