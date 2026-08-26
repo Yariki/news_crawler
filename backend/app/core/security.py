@@ -46,7 +46,7 @@ def _create_token(*, subject: str, \
     token = jwt.encode(claims, secret_key, algorithm=secret_alg)
     return token, jti, expires_at
 
-async def issue_token_pair(db: AsyncSession, user_id: str, settings: Settings) -> tuple[TokenPair, str, datetime]:
+async def issue_token_pair(db: AsyncSession, user_id: str, settings: Settings, roles: list[str] | None = None, permissions: list[str] | None = None) -> tuple[TokenPair, str, datetime]:
 
     access_ttl_ = timedelta(minutes=settings.access_ttl_minutes)
     refresh_ttl_ = timedelta(minutes=settings.refresh_ttl_minutes)
@@ -57,7 +57,11 @@ async def issue_token_pair(db: AsyncSession, user_id: str, settings: Settings) -
         ttl=access_ttl_,
         issuer=settings.issuer,
         secret_key=settings.security_key,
-        secret_alg=settings.algorithm
+        secret_alg=settings.algorithm,
+        extra_claims={
+            'roles':roles or  [],
+            'permissions': permissions or []
+        }
     )
     refresh_token, jti , expires_at = _create_token(
         subject=user_id,

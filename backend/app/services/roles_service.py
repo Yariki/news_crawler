@@ -3,12 +3,13 @@ from datetime import datetime, timezone
 from typing import Optional, Tuple, override
 from uuid import UUID
 
-from sqlalchemy import Result, select
+from sqlalchemy import Result, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.models import Role
 from app.models.permission import Permission
-from app.schemas.role_models import PermissionCreateUpdate, PermissionRead, RoleCreateUpdate, RoleRead
+from app.models.user import User
+from app.schemas.role_models import PermissionCreateUpdate, PermissionRead, RoleCreateUpdate, RoleRead, RoleDistribution
 from app.schemas.user_models import  UserRead
 from fastapi import HTTPException, status as HttpStatus
 
@@ -45,6 +46,15 @@ class RolePermissionService:
         )
         roles = result.scalars().all()
         return [RoleRead.from_orm(role) for role in roles]
+    
+    async def get_role_distribution(self) -> list[RoleDistribution]:
+        result = await self._db.execute(
+            select(Role.name, func.count(User.id))
+            .join(Role.users)
+            .group_by(Role.name)
+        )
+        distribution = result.all()
+        return [RoleDistribution(role_name=row[0], user_count=row[1]) for row in distribution]
 
     async def create_role(self, role_data: RoleCreateUpdate) -> RoleRead:
 

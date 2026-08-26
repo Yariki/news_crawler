@@ -222,6 +222,7 @@ export interface UserRead extends UserBase {
     id: string;
     is_verified: boolean;
     last_login_at: string | null;
+    created_at: string;
 }
 
 export interface UserChangePassword {
@@ -235,4 +236,38 @@ export interface UserRoles {
 
 export interface AdminChangePassword {
     new_password: string;
+}
+
+export interface AdminRoleDistribution {
+    role_name: string;
+    user_count: number;
+}
+
+export interface AdminStats {
+    total_users: number;
+    active_users: number;
+    recent_registrations: number;
+    role_distribution: AdminRoleDistribution[];
+}
+
+export interface RoleRead {
+    id: string;
+    name: string;
+    description: string;
+    is_system: boolean;
+    created_at: string;
+    updated_at: string | null;
+    permissions: PermissionRead[];
+}
+
+
+export interface PermissionRead {
+    id: string;
+    name: string;
+    description: string;
+    resource: string | null;
+    action: string | null;
+    created_at: string;
+
+    updated_at: string | null;
 }

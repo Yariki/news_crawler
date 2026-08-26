@@ -3,30 +3,11 @@ from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
+from typing import Optional
 
 from app.models import Permission
 from app.models.role import Role
 from app.utils.validation import validate_actions, validate_resources, validate_scope
-
-
-class RoleRead(BaseModel):
-    id: UUID
-    name: str = Field(min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=255)
-    is_system: bool = Field(default=True)
-    created_at: datetime
-    updated_at: datetime | None
-
-    @classmethod
-    def from_orm(cls, obj: Role):
-        return cls(
-            id=obj.id,
-            name=obj.name,
-            description=obj.description,
-            is_system=obj.is_system,
-            created_at=obj.created_at,
-            updated_at=obj.updated_at,
-        )
 
 
 class RoleCreateUpdate(BaseModel):
@@ -79,3 +60,29 @@ class PermissionCreateUpdate(BaseModel):
     def validate_scope(cls, scope: str) -> str:
         validate_scope(scope)
         return scope
+
+class RoleDistribution(BaseModel):
+    role_name: Optional[str]
+    user_count: Optional[int]
+
+class RoleRead(BaseModel):
+    id: UUID
+    name: str = Field(min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=255)
+    is_system: bool = Field(default=True)
+    created_at: datetime
+    updated_at: datetime | None
+    permissions: list[PermissionRead] = Field(default_factory=list)
+
+    @classmethod
+    def from_orm(cls, obj: Role):
+        return cls(
+            id=obj.id,
+            name=obj.name,
+            description=obj.description,
+            is_system=obj.is_system,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+            permissions=[PermissionRead.from_orm(permission) for permission in obj.permissions]
+        )
+

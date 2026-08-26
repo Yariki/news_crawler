@@ -13,6 +13,10 @@ import NotFoundPage from "../views/not-found-page.vue";
 
 
 import {useAuthStore} from "../stores/auth";
+import AdminLayout from '../layouts/AdminLayout.vue'
+import AdminDashboardPage from '../pages/admins/AdminDashboardPage.vue'
+import AdminUsersPage from '../pages/admins/AdminUsersPage.vue'
+import AdminRolesPage from '../pages/admins/AdminRolesPage.vue'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -31,6 +35,16 @@ const router = createRouter({
                 { path: 'search', name: 'search', component: SearchPage, meta: { requiresAuth: true } },
             ],
         },
+        {
+            path: '/admin',
+            component: AdminLayout,
+            meta: { requiresAuth: true, roles: ['admin'] },
+            children: [
+                { path: '', name: 'admin-stats', component: AdminDashboardPage},
+                { path: 'users', name: 'admin-users', component:  AdminUsersPage},
+                { path:'roles', name: 'admin-roles', component:  AdminRolesPage}
+            ]
+        },
         {path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundPage},
     ],
 });
@@ -47,6 +61,11 @@ router.beforeEach(async (to) => {
             name: 'login',
             query: { returnUrl: to.fullPath }
         }
+    }
+    
+    const requiredRoles = to.matched.flatMap(r => r.meta.roles as string[] ?? []);
+    if (requiredRoles.length && !requiredRoles.some(r => authStore.hasRole(r))) {
+        return { name: 'forbidden' };
     }
 
     return true;

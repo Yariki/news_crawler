@@ -3,10 +3,12 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, status as HttpStatus, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.security import verify_password, issue_token_pair, decode_token
 from app.core.token_rotation import TokenReusedException, get_active_token
 from app.models import User
+from app.models import Role
 from app.db.session import get_db
 from app.models.issued_refresh_token import IssuedRefreshTokenStatus
 from app.schemas.security import LogoutRequest, TokenPair, RefreshRequest, TokenType
@@ -33,6 +35,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     existing_user = await db.scalar(
         select(User)
             .where(User.email == form_data.username)
+            .options(selectinload(User.roles).selectinload(Role.permissions))
     )
 
     if not existing_user:
@@ -40,8 +43,18 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
 
     if not existing_user.is_active or not verify_password(form_data.password, existing_user.hashed_password):
         raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
-
-    token_pair, _, _ = await issue_token_pair(db, str(existing_user.id), settings)
+    
+    roles: list[str] = []
+    permissions: list[str] = []
+    
+    for role in existing_user.roles:
+        if not role:
+            continue
+        roles.append(role.name)
+        for permission in role.permissions:
+            permissions.append(permission.name)
+    
+    token_pair, _, _ = await issue_token_pair(db, str(existing_user.id), settings, roles, permissions)
 
     await db.commit()
 
@@ -65,12 +78,25 @@ async def refresh_token(refresh_request: RefreshRequest, db: AsyncSession = Depe
         raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
 
     existing_user = await db.scalar(
-        select(User).where(User.id == user_id)
+        select(User)
+        .where(User.id == user_id)
+        .options(selectinload(User.roles).selectinload(Role.permissions))
     )
     if not existing_user or not existing_user.is_active:
         raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
 
-    token_pair, jti, _ = await issue_token_pair(db, str(existing_user.id), settings)
+    roles: list[str] = []
+    permissions: list[str] = []
+    
+    for role in existing_user.roles:
+        if not role:
+            continue
+        roles.append(role.name)
+        for permission in role.permissions:
+            permissions.append(permission.name)
+
+
+    token_pair, jti, _ = await issue_token_pair(db, str(existing_user.id), settings, roles, permissions)
 
     active_refresh_token.status = IssuedRefreshTokenStatus.ROTATED.value
     active_refresh_token.replaced_by_jti = jti
