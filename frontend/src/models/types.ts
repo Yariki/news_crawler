@@ -223,6 +223,7 @@ export interface UserRead extends UserBase {
     is_verified: boolean;
     last_login_at: string | null;
     created_at: string;
+    roles: string[] | null;
 }
 
 export interface UserChangePassword {
@@ -270,4 +271,21 @@ export interface PermissionRead {
     created_at: string;
 
     updated_at: string | null;
+}
+
+// users managment.
+
+export interface CreateUserDialogData {
+    email: string;
+    username: string;
+    is_active: boolean;
+    password: string;
+    confirm_password: string;
+}
+
+export interface UpdateUserDialogData {
+    id: string;
+    email: string;
+    username: string;
+    is_active: boolean;
 }

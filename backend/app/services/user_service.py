@@ -60,11 +60,14 @@ class UserService:
             is_active=user.is_active,
             is_verified=user.is_verified,
             last_login_at=user.last_login_at,
+            created_at=user.created_at,
+            roles=[]
         )
 
     async def get_by_email(self, email: str) -> UserRead:
         query = (
             select(User)
+            .options(selectinload(User.roles))
             .where(User.email == email, ~User.is_delete)
         )
         result = await self._db.execute(query)
@@ -78,11 +81,14 @@ class UserService:
             is_active=user.is_active,
             is_verified=user.is_verified,
             last_login_at=user.last_login_at,
+            created_at=user.created_at,
+            roles=[role.name for role in user.roles]
         )
 
     async def get_by_id(self, user_id: UUID) -> UserRead:
         query = (
             select(User)
+            .options(selectinload(User.roles))
             .where(User.id == user_id, ~User.is_delete)
         )
         result = await self._db.execute(query)
@@ -96,6 +102,8 @@ class UserService:
             is_active=user.is_active,
             is_verified=user.is_verified,
             last_login_at=user.last_login_at,
+            created_at=user.created_at, 
+            roles=[role.name for role in user.roles],
         )
 
     async def authenticate(self, username: str, password: str) -> Optional[User]:
@@ -114,6 +122,7 @@ class UserService:
         query = (
             select(User)
             .where(User.id == user_id, ~User.is_delete)
+            .options(selectinload(User.roles))
         )
         result = await self._db.execute(query)
         user = result.scalar_one_or_none()
@@ -134,12 +143,15 @@ class UserService:
             is_active=user.is_active,
             is_verified=user.is_verified,
             last_login_at=user.last_login_at,
+            created_at=user.created_at,
+            roles=[role.name for role in user.roles],
         )
 
     async def update_last_login_at(self, user_id: UUID) -> UserRead:
         query = (
             select(User)
             .where(User.id == user_id, ~User.is_delete)
+            .options(selectinload(User.roles))
         )
         result = await self._db.execute(query)
         user = result.scalar_one_or_none()
@@ -157,12 +169,15 @@ class UserService:
             is_active=user.is_active,
             is_verified=user.is_verified,
             last_login_at=user.last_login_at,
+            created_at=user.created_at,
+            roles=[role.name for role in user.roles],
         )
 
     async def get_users(self) -> list[UserRead]:
         query = (
             select(User)
             .where(~User.is_delete)
+            .options(selectinload(User.roles))
         )
         result = await self._db.execute(query)
         users = result.scalars().all()
@@ -174,6 +189,8 @@ class UserService:
                 is_active=user.is_active,
                 is_verified=user.is_verified,
                 last_login_at=user.last_login_at,
+                created_at=user.created_at,
+                roles=[role.name for role in user.roles]
             )
             for user in users
         ]
@@ -195,6 +212,7 @@ class UserService:
         query = (
             select(User)
             .where(User.id == user_id, ~User.is_delete)
+            .options(selectinload(User.roles))
         )
         result = await self._db.execute(query)
         user = result.scalar_one_or_none()
@@ -211,6 +229,8 @@ class UserService:
             is_active=user.is_active,
             is_verified=user.is_verified,
             last_login_at=user.last_login_at,
+            created_at=user.created_at,
+            roles=[role.name for role in user.roles],
         )
 
 
@@ -246,6 +266,8 @@ class UserService:
             is_active=user.is_active,
             is_verified=user.is_verified,
             last_login_at=user.last_login_at,
+            created_at=user.created_at,
+            roles=[role.name for role in user.roles],
         )
 
     async def remove_roles(self, user_id: UUID, role_id: UUID) -> UserRead:
@@ -279,6 +301,8 @@ class UserService:
             is_active=user.is_active,
             is_verified=user.is_verified,
             last_login_at=user.last_login_at,
+            created_at=user.created_at,
+            roles=[role.name for role in user.roles],
         )
 
     async def change_password(self, user_id: UUID, admin_change_password: AdminChangePassword) -> UserRead:
@@ -286,6 +310,7 @@ class UserService:
             
             select(User)
             .where(User.id == user_id, ~User.is_delete)
+            .options(selectinload(User.roles))
         )
         result = await self._db.execute(query)
         user = result.scalar_one_or_none()
@@ -303,4 +328,6 @@ class UserService:
             is_active=user.is_active,
             is_verified=user.is_verified,
             last_login_at=user.last_login_at,
+            created_at=user.created_at,
+            roles=[role.name for role in user.roles]
         )

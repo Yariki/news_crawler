@@ -31,6 +31,7 @@ class UserRead(UserBase):
     is_verified: bool
     last_login_at: datetime | None
     created_at: datetime
+    roles: list[str] = Field(default_factory=list)
     
     @classmethod
     def from_orm(cls, obj):

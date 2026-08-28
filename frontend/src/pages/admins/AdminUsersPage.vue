@@ -2,48 +2,148 @@
     <v-card rounded="xl">
         <v-card-title class="d-flex align-center justify-space-between">
             Users
-            <v-btn color="primary" prepend-icon="mdi-plus" size="small">Add User</v-btn>
+            <v-btn color="primary" prepend-icon="mdi-plus" size="small" @click="showCreateDialog">Add User</v-btn>
         </v-card-title>
-        <v-table>
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Active</th>
-                    <th>Created</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="user in store.users" :key="user.id">
-                    <td>{{ user.username}}</td>
-                    <td>{{ user.email }}</td>
-                    <td>
-                        <v-icon :color="user.is_active ? 'success' : 'error'">
-                            {{ user.is_active ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                        </v-icon>
-                    </td>
-                    <td>{{ new Date(user.created_at).toLocaleDateString() }}</td>
-                    <td>
-                        <v-btn icon="mdi-pencil" size="small" variant="text" />
-                        <v-btn icon="mdi-delete" size="small" variant="text" color="error" />
-                    </td>
-                </tr>
-                <tr v-if="!store.users.length">
-                    <td colspan="6" class="text-center text-medium-emphasis">No users found</td>
-                </tr>
-            </tbody>
-        </v-table>
+        <v-alert v-if="store.error">{{ store.error }}</v-alert>
+        <v-data-table
+            :headers="headers"
+            :items="store.users"
+            :loading="store.loading"
+            item_value="id"
+            >
+
+            <template #item.roles="{ item }">
+                <v-chip-group>
+                    <v-chip v-for="role in item.roles" :key="role" color="primary" text-color="white" x-small>
+                        {{ role }}
+                    </v-chip>
+                </v-chip-group>
+            </template>
+
+            <template #item.is_active="{ item }">
+                <v-chip :color="item.is_active ? 'green' : 'red'" text-color="white" x-small>
+                    {{ item.is_active ? 'Active' : 'Inactive' }}
+                </v-chip>
+            </template>
+
+            <template  #item.last_login_at="{ item }">
+                <span v-if="item.last_login_at">{{ new Date(item.last_login_at).toLocaleString() }}</span>
+                <span v-else>Never</span>
+            </template>
+
+            <template #item.actions="{ item }">
+                <v-btn v-if="!isSelf(item.id)" color="primary" text @click="setActivateUser(item.id)">
+                    {{ item.is_active ? 'Deactivate' : 'Activate' }}
+                </v-btn>
+                <v-btn icon="mdi-pencil" color="primary" text @click="showEditDialog(item.id)"></v-btn>
+                <v-btn v-if="!isSelf(item.id)" icon="mdi-delete" color="red" text @click="deleteUser(item)"></v-btn>
+
+            </template>
+
+        </v-data-table>
     </v-card>
+
+    <EditUserDialog
+        v-model="createUserDialogOpen"
+        @create-user="createUser"
+    ></EditUserDialog>
+
+    <UpdateUserDialog
+        v-model="updateUserDialogOpen"
+        :data="updateUserData"
+        @update-user="updateUser"
+    ></UpdateUserDialog>
+
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import { useAdminStore } from '../../stores/admin';
+import { useAuthStore } from "../../stores/auth";
+import EditUserDialog from "../../components/EditUserDialog.vue";
+import type {CreateUserDialogData, UpdateUserDialogData, UserRead} from "../../models/types"
+import UpdateUserDialog from "../../components/UpdateUserDialog.vue";
+import { useConfirmDialog } from '../../composables/useConfirmDialog';
 
 const store = useAdminStore();
+const authStore = useAuthStore();
+const { confirm } = useConfirmDialog();
+
+const createUserDialogOpen = ref(false);
+const updateUserDialogOpen = ref(false);
+
+const updateUserData = ref<UpdateUserDialogData | null>(null);
+
+const headers = [
+    { title: 'Name', value: 'name' },
+    { title: 'Email', value: 'email' },
+    { title: 'Status', value: 'is_active' },
+    { title: 'Roles', value: 'roles' },
+    { title: '', value: 'actions', sortable: false }
+]
+
+function isSelf(userId: string) {
+    return authStore.currentUserId === userId;
+}
+
+function showEditDialog(userId: string) {
+    const user = store.users.find(u => u.id === userId);
+    if (user) {
+        const userData: UpdateUserDialogData = {
+            id: userId,
+            email: user.email,
+            username: user.username,
+            is_active: user.is_active
+        };
+        updateUserData.value = userData;
+        updateUserDialogOpen.value = true;
+    }
+}
+
+async function updateUser(data: UpdateUserDialogData) { 
+    await store.updateUser(data.id, data.email, data.username, data.is_active);
+}
+
+function showCreateDialog() {
+    createUserDialogOpen.value = true;
+}
+
+async function createUser(userData: CreateUserDialogData) { 
+    await store.createUser(userData.email, userData.username, userData.is_active, userData.password);
+}
+
+async function deleteUser(user: UserRead) {
+
+    const isConfirm = await confirm({
+        message: `Do you want to delete user with user ID ${user.email}`,
+        color: 'error',
+        confirmText: 'Delete'
+    });
+
+    if (!isConfirm) {
+        return;
+    }
+
+    await store.deleteUser(user.id);
+}
+
+async function setActivateUser(userId: string) {
+    const user = store.users.find(u => u.id === userId);
+    if (user) {
+        if (user.is_active) {
+            await store.deactivate(userId);
+        } else {
+            await store.activate(userId);
+        }
+        user.is_active = !user.is_active;
+    }
+}
+
+async function fecthData() {
+    await store.getUsers();
+}
 
 onMounted(async () => {
-    await store.getUsers();
-})
+    await fecthData();
+});
 </script>
