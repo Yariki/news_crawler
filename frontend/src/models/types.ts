@@ -223,7 +223,7 @@ export interface UserRead extends UserBase {
     is_verified: boolean;
     last_login_at: string | null;
     created_at: string;
-    roles: string[] | null;
+    roles: string[];
 }
 
 export interface UserChangePassword {

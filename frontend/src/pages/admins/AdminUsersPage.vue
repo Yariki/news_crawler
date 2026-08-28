@@ -5,16 +5,11 @@
             <v-btn color="primary" prepend-icon="mdi-plus" size="small" @click="showCreateDialog">Add User</v-btn>
         </v-card-title>
         <v-alert v-if="store.error">{{ store.error }}</v-alert>
-        <v-data-table
-            :headers="headers"
-            :items="store.users"
-            :loading="store.loading"
-            item_value="id"
-            >
+        <v-data-table :headers="headers" :items="store.users" :loading="store.loading" item-value="id">
 
             <template #item.roles="{ item }">
                 <v-chip-group>
-                    <v-chip v-for="role in item.roles" :key="role" color="primary" text-color="white" x-small>
+                    <v-chip v-for="role in (item.roles || [])" :key="role" color="primary" text-color="white" x-small>
                         {{ role }}
                     </v-chip>
                 </v-chip-group>
@@ -26,7 +21,7 @@
                 </v-chip>
             </template>
 
-            <template  #item.last_login_at="{ item }">
+            <template #item.last_login_at="{ item }">
                 <span v-if="item.last_login_at">{{ new Date(item.last_login_at).toLocaleString() }}</span>
                 <span v-else>Never</span>
             </template>
@@ -43,16 +38,11 @@
         </v-data-table>
     </v-card>
 
-    <EditUserDialog
-        v-model="createUserDialogOpen"
-        @create-user="createUser"
-    ></EditUserDialog>
+    <EditUserDialog v-model="createUserDialogOpen" @create-user="createUser"></EditUserDialog>
 
-    <UpdateUserDialog
-        v-model="updateUserDialogOpen"
-        :data="updateUserData"
-        @update-user="updateUser"
-    ></UpdateUserDialog>
+    <UpdateUserDialog v-if="updateUserData" v-model="updateUserDialogOpen" :data="updateUserData"
+        @update-user="updateUser">
+    </UpdateUserDialog>
 
 </template>
 
@@ -61,7 +51,7 @@ import { onMounted, ref, watch, computed } from 'vue'
 import { useAdminStore } from '../../stores/admin';
 import { useAuthStore } from "../../stores/auth";
 import EditUserDialog from "../../components/EditUserDialog.vue";
-import type {CreateUserDialogData, UpdateUserDialogData, UserRead} from "../../models/types"
+import type { CreateUserDialogData, UpdateUserDialogData, UserRead } from "../../models/types"
 import UpdateUserDialog from "../../components/UpdateUserDialog.vue";
 import { useConfirmDialog } from '../../composables/useConfirmDialog';
 
@@ -75,11 +65,12 @@ const updateUserDialogOpen = ref(false);
 const updateUserData = ref<UpdateUserDialogData | null>(null);
 
 const headers = [
-    { title: 'Name', value: 'name' },
-    { title: 'Email', value: 'email' },
-    { title: 'Status', value: 'is_active' },
-    { title: 'Roles', value: 'roles' },
-    { title: '', value: 'actions', sortable: false }
+    { title: 'Username', key: 'username' },
+    { title: 'Email', key: 'email' },
+    { title: 'Status', key: 'is_active' },
+    { title: 'Roles', key: 'roles' },
+    { title: 'Last login', key: 'last_login_at' },
+    { title: '', key: 'actions', sortable: false }
 ]
 
 function isSelf(userId: string) {
@@ -100,7 +91,7 @@ function showEditDialog(userId: string) {
     }
 }
 
-async function updateUser(data: UpdateUserDialogData) { 
+async function updateUser(data: UpdateUserDialogData) {
     await store.updateUser(data.id, data.email, data.username, data.is_active);
 }
 
@@ -108,14 +99,14 @@ function showCreateDialog() {
     createUserDialogOpen.value = true;
 }
 
-async function createUser(userData: CreateUserDialogData) { 
+async function createUser(userData: CreateUserDialogData) {
     await store.createUser(userData.email, userData.username, userData.is_active, userData.password);
 }
 
 async function deleteUser(user: UserRead) {
 
     const isConfirm = await confirm({
-        message: `Do you want to delete user with user ID ${user.email}`,
+        message: `Do you want to delete user ${user.email}`,
         color: 'error',
         confirmText: 'Delete'
     });

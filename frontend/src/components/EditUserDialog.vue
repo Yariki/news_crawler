@@ -30,13 +30,8 @@
 
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
-import { useAdminStore } from "../stores/admin";
 import { emailRules, usernameRules, passwordRules, confirmPasswordRules } from "../utils/validation";
 import { CreateUserDialogData } from '../models/types';
-
-
-
-const store = useAdminStore();
 
 const props = defineProps<{
     modelValue: boolean;

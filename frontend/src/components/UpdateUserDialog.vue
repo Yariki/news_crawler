@@ -32,7 +32,7 @@ import { UpdateUserDialogData } from '../models/types';
 
 const props = defineProps<{
     modelValue: boolean;
-    data: UpdateUserDialogData;
+    data: UpdateUserDialogData | null;
 }>();
 
 const emit = defineEmits<{
