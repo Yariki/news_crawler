@@ -19,6 +19,7 @@ export const useAuthStore = defineStore('auth', () => {
     const permissions = ref<string[] | null>(null);
     
     const isAuthenticated = computed(() => !!access_token.value);
+    const currentUserId = ref<string | null>(null);
     const hasRole = (name: string) => roles.value?.includes(name);
     const hasPermission = (name: string) => permissions.value?.includes(name);
     const hasAnyPermission = (list: string[]) => 
@@ -71,7 +72,7 @@ export const useAuthStore = defineStore('auth', () => {
         access_token.value = data.access_token;
         // The server rotates the refresh token, so the new one must replace it.
         refresh_token.value = data.refresh_token;
-        decodeToken(access_token.value);
+        decodeToken(access_token.value)
     }
 
     async function initFromStorage() {
@@ -92,7 +93,9 @@ export const useAuthStore = defineStore('auth', () => {
             return;
         }
         try {
-            const decodedToken = jwtDecode<NewsJwtPayload>(token);    
+            const decodedToken: NewsJwtPayload = jwtDecode<NewsJwtPayload>(token);    
+            currentUserId.value = decodedToken.sub || null;
+
             if (decodedToken.roles) {
             roles.value = decodedToken.roles;
             }
@@ -100,10 +103,12 @@ export const useAuthStore = defineStore('auth', () => {
             if (decodedToken.permissions) {
                 permissions.value = decodedToken.permissions;
             }
-        } finally {
-            clearSession();            
+        } catch(e) {
+            clearSession();
         }
     }
+
+
 
     watch(refresh_token, (newValue) => {
         if (newValue) {
@@ -119,6 +124,7 @@ export const useAuthStore = defineStore('auth', () => {
         roles,
         permissions,
         isAuthenticated,
+        currentUserId,
         hasPermission,
         hasRole,
         hasAnyPermission,

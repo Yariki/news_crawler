@@ -22,9 +22,15 @@
         </v-main>
 
     </v-layout>
+
+    <GlobalConfirmDialog />
+
 </template>
 
 <script setup lang="ts">
+
+import GlobalConfirmDialog  from '../components/GlobalConfirmDialog.vue'
+
 const items = [
     { title: 'Overview', icon: 'mdi-view-dashboard', route: '/admin' },
     { title: 'Users', icon: 'mdi-account-group', route: '/admin/users' },
