@@ -1,4 +1,3 @@
-import { hasUncaughtExceptionCaptureCallback } from "node:process";
 
 export const isValidWebUrl = (urlString: string): boolean => {
     try {
@@ -53,7 +52,7 @@ export const roleNameRules = [
     (value: string) => value.length <= 255 || 'Role name must be 255 characters or fewer',
 ]
 export const roleDescriptionRules = [
-    (value: string) => (!!value && value.length <= 255) || 'Role description must be 255 characters or fewer',
+    (value: string) => !value || value.length <= 255 || 'Role description must be 255 characters or fewer',
 ]
 
 export const permissionDescriptionRules = [
@@ -61,8 +60,9 @@ export const permissionDescriptionRules = [
 ]
 
 export const permissionResourceRules = [
-    (value: string) => (!!value && value.length <= 255) || 'Permission resource must be 255 characters or fewer',
-    (value: string) => (['source', 'article', 'alert', 'job', 'keyword', 'dashboard'].includes(value)) || 'Permission resource can only contain letters, numbers, underscores, and hyphens',
+    (value: string) => !!value || 'Permission resource is required',
+    (value: string) => value.length <= 255 || 'Permission resource must be 255 characters or fewer',
+    (value: string) => (['source', 'article', 'alert', 'job', 'keyword', 'dashboard'].includes(value)) || 'Permission resource must be one of: source, article, alert, job, keyword, dashboard',
 ]
 
 export const permissionActionRules = [

@@ -5,7 +5,7 @@
             <v-card-text>
                 <v-form v-model="isFormValid" @submit.prevent="onCreate">
                     <v-text-field v-model="formData.name" label="Name" :rules="roleNameRules" required />
-                    <v-textarea v-model="formData.description" label="Description" rows="2" />
+                    <v-textarea v-model="formData.description" label="Description" :rules="roleDescriptionRules" rows="2" />
                 </v-form>
             </v-card-text>
             <v-card-actions>
@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch} from 'vue'
-import { roleNameRules } from '../utils/validation'
+import { roleNameRules, roleDescriptionRules } from '../utils/validation'
 import { RoleCreateUpdate } from '../models/types';
 
 const props = defineProps<{

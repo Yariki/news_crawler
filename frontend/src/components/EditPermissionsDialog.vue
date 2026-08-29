@@ -175,6 +175,10 @@ async function removeRow(row: PermissionRow) {
         color: 'error',
     })
     if (!confirmed || !props.role) return
+    if (!confirmed || !props.role.id) {
+        errorMessage.value = 'Permission ID is missing.'
+        return
+    }
 
     const ok = await store.deletePermission(props.role.id, row.id!)
     if (!ok) {
@@ -214,8 +218,7 @@ async function onSave(item: PermissionRow | null = null) {
         }
 
         const created = await store.createPermission(
-            props.role.id,
-            '',
+            props.role.id as string,
             item.description,
             item.resource as PermissionResource,
             item.action as PermissionAction,

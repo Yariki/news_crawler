@@ -109,7 +109,7 @@ async function onPermissionsChanged(permissions: PermissionRead[]) {
     selectedRole.value.permissions = permissions;
 }
 
-onMounted(async () => {1
+onMounted(async () => {
     await store.getRoles();
 })
 </script>

@@ -313,11 +313,11 @@ export interface PermissionCreateUpdate {
 
 export interface PermissionRow {
     key: string;
-    id: string;
+    id: string | null;
     description: string;
-    resource: PermissionResource;
-    action: PermissionAction;
-    scope: PermissionScope;
+    resource: PermissionResource | null;
+    action: PermissionAction | null;
+    scope: PermissionScope | null;
     error: string | null;
 }
 

@@ -182,12 +182,12 @@ export const useAdminStore = defineStore('admin', () => {
         });
     }
 
-    async function deleteRole(role_id: string): Promise<boolean> {
+    async function deleteRole(role_id: string): Promise<boolean | null> {
         return await processRemoteCall(async () => {
             await api.delete(`/admin/roles/${role_id}`);
             deleteRoleFromList(role_id);
             return true;
-        }) as boolean;
+        });
     }   
 
     // permissions
@@ -199,7 +199,7 @@ export const useAdminStore = defineStore('admin', () => {
         });
     }
 
-    async function createPermission(role_id: string, name: string, description: string,
+    async function createPermission(role_id: string, description: string,
         resource: 'source' | 'article' | 'alert' | 'job' | 'keyword' | 'dashboard',
         action: 'create' | 'read' | 'update' | 'delete' | 'run',
         scope: 'own' | 'any' | '*'): Promise<PermissionRead | null> {
@@ -216,10 +216,11 @@ export const useAdminStore = defineStore('admin', () => {
     }
 
     async function deletePermission(role_id: string, permission_id: string): Promise<boolean> {
-        return await processRemoteCall(async () => {
+        const response =  await processRemoteCall(async () => {
             await api.delete(`/admin/roles/${role_id}/permissions/${permission_id}`);
             return true;
-        }) as boolean;
+        });
+        return response === null ? false : response;
     }   
 
     // utils 
