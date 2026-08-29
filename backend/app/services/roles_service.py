@@ -21,7 +21,9 @@ class RolePermissionService:
 
     async def get_role_by_id(self, role_id: UUID) -> Optional[RoleRead]:
         result = await self._db.execute(
-            select(Role).where(Role.id == role_id, ~Role.is_delete)
+            select(Role)
+            .where(Role.id == role_id, ~Role.is_delete)
+            .options(selectinload(Role.permissions))
         )
         role = result.scalar_one_or_none()
 
@@ -35,14 +37,18 @@ class RolePermissionService:
 
     async def get_role_by_name(self, name: str) -> Optional[RoleRead]:
         result = await self._db.execute(
-            select(Role).where(Role.name == name, ~Role.is_delete)
+            select(Role)
+            .where(Role.name == name, ~Role.is_delete)
+            .options(selectinload(Role.permissions))
         )
         role = result.scalar_one_or_none()
         return RoleRead.from_orm(role) if role else None
 
     async def get_roles(self) -> list[RoleRead]:
         result = await self._db.execute(
-            select(Role).where(~Role.is_delete)
+            select(Role)
+            .where(~Role.is_delete)
+            .options(selectinload(Role.permissions))
         )
         roles = result.scalars().all()
         return [RoleRead.from_orm(role) for role in roles]
