@@ -36,9 +36,9 @@
                             <tr><th>Role</th><th>Count</th></tr>
                         </thead>
                         <tbody>
-                            <tr v-for="r in store.state?.role_distribution" :key="r.role">
-                                <td>{{ r.role }}</td>
-                                <td>{{ r.count }}</td>
+                            <tr v-for="r in store.state?.role_distribution" :key="r.role_name">
+                                <td>{{ r.role_name }}</td>
+                                <td>{{ r.user_count }}</td>
                             </tr>
                         </tbody>
                     </v-table>

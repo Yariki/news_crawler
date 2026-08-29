@@ -252,7 +252,7 @@ export interface AdminStats {
 }
 
 export interface RoleRead {
-    id: string;
+    id: string | null;
     name: string;
     description: string;
     is_system: boolean;
@@ -289,3 +289,35 @@ export interface UpdateUserDialogData {
     username: string;
     is_active: boolean;
 }
+
+export interface RoleCreateUpdate {
+
+    name: string;
+    description: string;
+    is_system: boolean;
+}
+
+export type PermissionResource = 'source' | 'article' | 'alert' | 'job' | 'keyword' | 'dashboard';
+
+export type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'run';
+
+export type PermissionScope = '*' | 'own' | 'any'; 
+
+
+export interface PermissionCreateUpdate {
+    description: string;
+    resource: PermissionResource;
+    action: PermissionAction;
+    scope: PermissionScope;
+}
+
+export interface PermissionRow {
+    key: string;
+    id: string | null;
+    description: string;
+    resource: PermissionResource | null;
+    action: PermissionAction | null;
+    scope: PermissionScope | null;
+    error: string | null;
+}
+

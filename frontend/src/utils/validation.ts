@@ -1,25 +1,24 @@
-import { hasUncaughtExceptionCaptureCallback } from "node:process";
 
-export const isValidWebUrl = (urlString: string) : boolean => {
-  try {
+export const isValidWebUrl = (urlString: string): boolean => {
+    try {
 
-    if (urlString === undefined || urlString === null)
-      return false;
+        if (urlString === undefined || urlString === null)
+            return false;
 
-    if (urlString.length === 0)
-      return false;
+        if (urlString.length === 0)
+            return false;
 
-    const url = new URL(urlString);
+        const url = new URL(urlString);
 
-    const hasWebProtocol = url.protocol === "http:" || url.protocol === "https:";
-    const isNotLocal = url.hostname !== "localhost";
-    const isNotLocalLookup = url.hostname !== "127.0.0.1";
+        const hasWebProtocol = url.protocol === "http:" || url.protocol === "https:";
+        const isNotLocal = url.hostname !== "localhost";
+        const isNotLocalLookup = url.hostname !== "127.0.0.1";
 
-    return hasWebProtocol && isNotLocal && isNotLocalLookup;
+        return hasWebProtocol && isNotLocal && isNotLocalLookup;
 
-  } catch {
-    return false;
-  }
+    } catch {
+        return false;
+    }
 }
 
 export const emailRules = [
@@ -46,4 +45,32 @@ export const passwordRules = [
 export const confirmPasswordRules = (password: string | null) => [
     (value: string) => !!value || 'Please confirm your password',
     (value: string) => value === password || 'Passwords do not match',
+]
+export const roleNameRules = [
+    (value: string) => !!value || 'Role name is required',
+    (value: string) => value.length >= 1 || 'Role name is required',
+    (value: string) => value.length <= 255 || 'Role name must be 255 characters or fewer',
+]
+export const roleDescriptionRules = [
+    (value: string) => !value || value.length <= 255 || 'Role description must be 255 characters or fewer',
+]
+
+export const permissionDescriptionRules = [
+    (value: string) => (!!value && value.length <= 255) || 'Permission description must be 255 characters or fewer',
+]
+
+export const permissionResourceRules = [
+    (value: string) => !!value || 'Permission resource is required',
+    (value: string) => value.length <= 255 || 'Permission resource must be 255 characters or fewer',
+    (value: string) => (['source', 'article', 'alert', 'job', 'keyword', 'dashboard'].includes(value)) || 'Permission resource must be one of: source, article, alert, job, keyword, dashboard',
+]
+
+export const permissionActionRules = [
+    (value: string) => (!!value && value.length <= 255) || 'Permission action must be 255 characters or fewer',
+    (value: string) => (['create', 'read', 'update', 'delete', 'run'].includes(value)) || 'Permission action can only contain letters, numbers, underscores, and hyphens',
+]
+
+export const permissionScopeRules = [
+    (value: string) => (!!value && value.length <= 255) || 'Permission scope must be 255 characters or fewer',
+    (value: string) => (['*', 'own', 'any'].includes(value)) || 'Permission scope can only contain letters, numbers, underscores, and hyphens',
 ]
