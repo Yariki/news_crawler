@@ -1,3 +1,4 @@
+from asyncio.log import logger
 import json
 from pathlib import Path
 
@@ -6,6 +7,11 @@ from pydantic import TypeAdapter, ValidationError
 
 from app.core.rbac import Resources
 from app.schemas.resources import ResourceDefinition
+from app.services.resource_actions.resource_actions import RESOURCE_ACTIONS
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class PermissionsCatalog:
@@ -25,23 +31,19 @@ class PermissionsCatalog:
         self._definitions = definitions
     
     @classmethod
-    def create_from_file(cls, file_path: Path) -> "PermissionsCatalog":
-        if not file_path.exists():
-            raise FileNotFoundError(f"File not found: {file_path}")
-        
-        with open(file_path, "r", encoding="utf-8") as f:
-            try:
-                data = json.load(f)
-            except json.JSONDecodeError as e:
-                raise ValueError(f"Invalid JSON in file {file_path}: {e}")
+    def load_resource_actions(cls) -> "PermissionsCatalog":
+        try:
+            data = RESOURCE_ACTIONS
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in RESOURCE_ACTIONS: {e}")
         
         if not isinstance(data, dict) or "permissions" not in data or not isinstance(data["permissions"], list):
-            raise ValueError(f"Invalid structure in file {file_path}: 'permissions' key is missing or not a list.")
+            raise ValueError(f"Invalid structure in RESOURCE_ACTIONS: 'permissions' key is missing or not a list.")
         
         try:
             definitions = TypeAdapter(list[ResourceDefinition]).validate_python(data["permissions"])
         except ValidationError as e:
-            raise ValueError(f"Invalid resource definitions in file {file_path}: {e}")
+            raise ValueError(f"Invalid resource definitions in RESOURCE_ACTIONS: {e}")
         
         return cls(definitions)
         

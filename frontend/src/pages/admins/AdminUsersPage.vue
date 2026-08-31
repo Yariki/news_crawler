@@ -27,7 +27,7 @@
             </template>
 
             <template #item.actions="{ item }">
-                <v-btn v-if="!isSelf(item.id)" color="primary" text @click="setActivateUser(item.id)">
+                <v-btn v-if="!isSelf(item.id)" color="primary" @click="setActivateUser(item.id)">
                     {{ item.is_active ? 'Deactivate' : 'Activate' }}
                 </v-btn>
                 <v-btn icon="mdi-pencil" color="primary" text @click="showEditDialog(item.id)"></v-btn>

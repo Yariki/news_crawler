@@ -19,12 +19,12 @@ export const useAuthStore = defineStore('auth', () => {
     const permissions = ref<string[] | null>(null);
     
     const isAuthenticated = computed(() => !!access_token.value);
+    const isAdmin = computed(() => roles.value?.includes('admin'));
     const currentUserId = ref<string | null>(null);
     const hasRole = (name: string) => roles.value?.includes(name);
     const hasPermission = (name: string) => permissions.value?.includes(name);
     const hasAnyPermission = (list: string[]) => 
         list.some(name => hasPermission(name));
-
 
     async function register(cred: UserCreate) {
         await authClient.post("/auth/register", cred);
@@ -46,6 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
         refresh_token.value = null;
         roles.value = [];
         permissions.value = [];
+        currentUserId.value = null;
     }
 
     async function logout() {
@@ -108,8 +109,6 @@ export const useAuthStore = defineStore('auth', () => {
         }
     }
 
-
-
     watch(refresh_token, (newValue) => {
         if (newValue) {
             localStorage.setItem('refresh_token', newValue);
@@ -125,6 +124,7 @@ export const useAuthStore = defineStore('auth', () => {
         permissions,
         isAuthenticated,
         currentUserId,
+        isAdmin,
         hasPermission,
         hasRole,
         hasAnyPermission,
@@ -136,4 +136,3 @@ export const useAuthStore = defineStore('auth', () => {
         register
     };
 });
-

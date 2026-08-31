@@ -1,4 +1,5 @@
-{
+
+RESOURCE_ACTIONS = {
     "permissions": [
         {
             "resource": "source",

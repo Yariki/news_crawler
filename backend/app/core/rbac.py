@@ -17,6 +17,8 @@ from app.services.ownership_resolver.service import is_user_owner_of_resource
 
 ALL_PERMISSIONS: Final = '*'
 
+ADMIN_ROLE: Final = 'admin'
+
 AUTHORIZATION_CONTEXT_KEY: Final = "authorization_context"
 
 OWNED_RESOURCE_PATH_PARAM_KEY: Final = "resource_id"
@@ -58,7 +60,6 @@ class AuthorizationContext:
     user_id: UUID
     roles: frozenset[str]
     permissions: frozenset[str]
-
 
     def has_role(self, role: str) -> bool:
 
@@ -166,6 +167,8 @@ class RequiredPermissionsAndOwnership:
         matched = [permission for permission in self.permissions if auth_context.has_permission(permission)]
         missing = [permission for permission in self.permissions if permission not in matched]
         
+        if auth_context.has_role(ADMIN_ROLE):
+            return PermissionGranted(auth=auth_context, is_any=True)
         
         if self.mode == PermissionMode.ALL:
             is_allowed = not missing

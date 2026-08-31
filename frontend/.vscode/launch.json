@@ -5,6 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch Integrated Browser",
+            "type": "editor-browser",
+            "request": "launch",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
             "type": "node-terminal",
             "request": "launch",
             "name": "Start Vite Dev Server",
@@ -36,7 +43,7 @@
             "profile": "${workspaceFolder}/.vscode/firefox-debug-profile",
             "keepProfileChanges": true,
             "timeout": 60000
-        }
+        },
     ],
     "compounds": [
         {

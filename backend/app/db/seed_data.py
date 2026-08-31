@@ -3,6 +3,7 @@ from sqlalchemy.future import select
 from app.models.user import User
 from app.models.permission import Permission
 from app.models.role import Role
+from app.core.security import hash_password
 import logging
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ async def __seed_users(session: AsyncSession):
     user = {
         "username": "admin",
         "email": "admin@user.com",
-        "password": "admin",
+        "password": "Admin123!",
         "is_active": True,
         "is_verified": True,
     }
@@ -45,7 +46,7 @@ async def __seed_users(session: AsyncSession):
         session.add(User(
             email=user["email"],
             username=user["username"],
-            hashed_password=user["password"],
+            hashed_password=hash_password(user["password"]),
             is_active=user["is_active"],
             is_verified=user["is_verified"],
         ))
