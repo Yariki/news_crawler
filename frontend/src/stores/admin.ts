@@ -239,16 +239,19 @@ export const useAdminStore = defineStore('admin', () => {
         }) || false;
     }
 
-    async function getUserRoles(user_id: string): Promise<string[] | null> {
+    async function getUserRoles(user_id: string): Promise<RoleRead[] | null> {
         return await processRemoteCall(async () => {
             const response = await api.get(`/admin/users/${user_id}/roles`);
-            return response.data.roles_ids;
+            return response.data;
         });
     }
     
-
-
-
+    async function removeRoleFromUser(user_id: string, role_id: string): Promise<boolean> {
+        return await processRemoteCall(async () => {
+            const response = await api.delete(`/admin/users/${user_id}/roles/${role_id}`);
+            return response.status === 200;
+        }) || false;
+    }
 
     function handleError(cause: unknown, message: string | null = null) {
         error.value = cause instanceof Error ? cause.message : message || 'Failed to load data.';
@@ -322,6 +325,9 @@ export const useAdminStore = defineStore('admin', () => {
         deleteRole,
         getPermissions,
         createPermission,
-        deletePermission
+        deletePermission,
+        assignRolesToUser,
+        getUserRoles,
+        removeRoleFromUser
     };
 });

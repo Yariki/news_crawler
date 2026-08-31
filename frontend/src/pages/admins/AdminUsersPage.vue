@@ -30,6 +30,7 @@
                 <v-btn v-if="!isSelf(item.id)" color="primary" @click="setActivateUser(item.id)">
                     {{ item.is_active ? 'Deactivate' : 'Activate' }}
                 </v-btn>
+                <v-btn icon="mdi-account-key" color="primary" text @click="showRolesDialog(item)"></v-btn>
                 <v-btn icon="mdi-pencil" color="primary" text @click="showEditDialog(item.id)"></v-btn>
                 <v-btn v-if="!isSelf(item.id)" icon="mdi-delete" color="red" text @click="deleteUser(item)"></v-btn>
 
@@ -44,15 +45,20 @@
         @update-user="updateUser">
     </UpdateUserDialog>
 
+    <EditUserRolesDialog v-model="editUserRolesDialogOpen" :user="selectedUser"
+        @roles-changed="onUserRolesChanged">
+    </EditUserRolesDialog>
+
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, computed } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useAdminStore } from '../../stores/admin';
 import { useAuthStore } from "../../stores/auth";
 import EditUserDialog from "../../components/EditUserDialog.vue";
-import type { CreateUserDialogData, UpdateUserDialogData, UserRead } from "../../models/types"
+import type { CreateUserDialogData, RoleRead, UpdateUserDialogData, UserRead } from "../../models/types"
 import UpdateUserDialog from "../../components/UpdateUserDialog.vue";
+import EditUserRolesDialog from "../../components/EditUserRolesDialog.vue";
 import { useConfirmDialog } from '../../composables/useConfirmDialog';
 
 const store = useAdminStore();
@@ -61,8 +67,10 @@ const { confirm } = useConfirmDialog();
 
 const createUserDialogOpen = ref(false);
 const updateUserDialogOpen = ref(false);
+const editUserRolesDialogOpen = ref(false);
 
 const updateUserData = ref<UpdateUserDialogData | null>(null);
+const selectedUser = ref<UserRead | null>(null);
 
 const headers = [
     { title: 'Username', key: 'username' },
@@ -97,6 +105,23 @@ async function updateUser(data: UpdateUserDialogData) {
 
 function showCreateDialog() {
     createUserDialogOpen.value = true;
+}
+
+function showRolesDialog(user: UserRead) {
+    selectedUser.value = user;
+    editUserRolesDialogOpen.value = true;
+}
+
+function onUserRolesChanged(roles: RoleRead[]) {
+    if (!selectedUser.value) {
+        return;
+    }
+
+    const roleNames = roles.map(role => role.name);
+    selectedUser.value.roles = roleNames;
+    store.users = store.users.map(user => user.id === selectedUser.value?.id
+        ? { ...user, roles: roleNames }
+        : user);
 }
 
 async function createUser(userData: CreateUserDialogData) {
