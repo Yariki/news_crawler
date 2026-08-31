@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import {AdminStats, UserRead, RoleRead, UserCreate, UserUpdate, RoleCreateUpdate, PermissionRead, PermissionCreateUpdate} from '../models/types';
+import {AdminStats, UserRead, RoleRead, UserCreate, UserUpdate, RoleCreateUpdate, PermissionRead, PermissionCreateUpdate, UserRoles} from '../models/types';
 import {api } from '../services/api'
 
 export const useAdminStore = defineStore('admin', () => {
@@ -224,6 +224,31 @@ export const useAdminStore = defineStore('admin', () => {
     }   
 
     // utils 
+
+    // assign roles to user
+
+    async function assignRolesToUser(user_id: string, roles_ids: string[]): Promise<boolean> {
+
+        const request: UserRoles = {
+            roles_ids: roles_ids
+        };
+
+        return await processRemoteCall(async () => {
+            const response = await api.post(`/admin/users/${user_id}/roles`, request);
+            return response.status === 200;
+        }) || false;
+    }
+
+    async function getUserRoles(user_id: string): Promise<string[] | null> {
+        return await processRemoteCall(async () => {
+            const response = await api.get(`/admin/users/${user_id}/roles`);
+            return response.data.roles_ids;
+        });
+    }
+    
+
+
+
 
     function handleError(cause: unknown, message: string | null = null) {
         error.value = cause instanceof Error ? cause.message : message || 'Failed to load data.';

@@ -16,10 +16,10 @@ class Role(ChangeTrackingMixin):
 
     users: Mapped[list["User"]] = relationship(
         secondary="user_roles",
-        back_populates="roles",
+        back_populates="roles"
     )
 
     permissions: Mapped[list["Permission"]] = relationship(
         secondary="role_permissions",
-        back_populates="roles",
+        back_populates="roles"
     )

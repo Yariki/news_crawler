@@ -88,7 +88,7 @@ class RolePermissionService:
         )
         self._db.add(new_role)
         await self._db.commit()
-        await self._db.refresh(new_role)
+        await self._db.refresh(new_role, attribute_names=["permissions"])
         return RoleRead.from_orm(new_role)
 
     async def update_role(self, role_id: UUID, role_data: RoleCreateUpdate) -> RoleRead:

@@ -82,6 +82,6 @@ class RoleRead(BaseModel):
             is_system=obj.is_system,
             created_at=obj.created_at,
             updated_at=obj.updated_at,
-            permissions=[PermissionRead.from_orm(permission) for permission in obj.permissions]
+            permissions=[PermissionRead.from_orm(permission) for permission in obj.permissions] if obj.permissions else []
         )
 

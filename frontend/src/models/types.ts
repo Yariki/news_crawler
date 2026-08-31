@@ -321,3 +321,6 @@ export interface PermissionRow {
     error: string | null;
 }
 
+export interface UserRoles {
+    roles_ids: string[];
+}
