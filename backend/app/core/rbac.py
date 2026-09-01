@@ -23,6 +23,7 @@ AUTHORIZATION_CONTEXT_KEY: Final = "authorization_context"
 
 OWNED_RESOURCE_PATH_PARAM_KEY: Final = "resource_id"
 
+METHODS_TO_CHECK_OWNERSHIP = ['put', 'delete', 'patch']
 
 class PermissionMode(StrEnum):
     ALL = "all"
@@ -186,7 +187,7 @@ class RequiredPermissionsAndOwnership:
         if self.resource_type is None:
             return PermissionGranted(auth=auth_context, is_any=is_any)
         
-        if not await self._check_ownership(auth_context, request, db_session):
+        if request.method.lower() in METHODS_TO_CHECK_OWNERSHIP and not await self._check_ownership(auth_context, request, db_session):
             raise HTTPException(
                 status_code=HttpStatus.HTTP_403_FORBIDDEN,
                 detail="User is not the owner of the resource"

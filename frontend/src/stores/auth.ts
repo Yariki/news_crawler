@@ -3,7 +3,9 @@ import { authClient } from '../lib/axios'
 import {ref, computed, watch, handleError} from 'vue'
 import { TokenPair, UserCreate } from '../models/types'
 import { jwtDecode } from 'jwt-decode'
-import type { JwtPayload} from 'jwt-decode'
+import type { JwtPayload } from 'jwt-decode'
+import { useAdminStore } from './admin'
+import { useAppStore } from './app'
 
 
 interface NewsJwtPayload extends JwtPayload {
@@ -42,6 +44,10 @@ export const useAuthStore = defineStore('auth', () => {
 
     /** Drops local session state without calling the server. */
     function clearSession() {
+        const adminStore = useAdminStore();
+        const appStore = useAppStore();
+        adminStore.clearSession();
+        appStore.clearSession();
         access_token.value = null;
         refresh_token.value = null;
         roles.value = [];

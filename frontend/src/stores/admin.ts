@@ -301,6 +301,13 @@ export const useAdminStore = defineStore('admin', () => {
         return null;
     }
 
+    function clearSession() {
+        users.value = [];
+        roles.value = [];
+        error.value = null;
+        state.value = null;
+    }
+
     return {
         loading,
         state,
@@ -328,6 +335,7 @@ export const useAdminStore = defineStore('admin', () => {
         deletePermission,
         assignRolesToUser,
         getUserRoles,
-        removeRoleFromUser
+        removeRoleFromUser,
+        clearSession
     };
 });

@@ -5,8 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Integrated Browser",
+            "name": "Integrated Browser",
             "type": "editor-browser",
+            "request": "launch",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "External Browser",
+            "type": "chrome",
             "request": "launch",
             "url": "http://localhost:5173",
             "webRoot": "${workspaceFolder}"

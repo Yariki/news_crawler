@@ -1,5 +1,6 @@
 import {defineStore} from 'pinia'
-import {api, getAlertsWebSocketUrl} from '../services/api'
+import { getAlertsWebSocketUrl } from '../services/api'
+import {api} from '../lib/axios'
 import {
     CrawlerTypeItem,
     CreateSourcePayload,
@@ -90,9 +91,13 @@ export const useAppStore = defineStore('app', {
         },
         async addKeyword() {
             if (!this.newKeyword.trim()) return
-            await api.post('/keywords', {keyword: this.newKeyword.trim()})
-            this.newKeyword = ''
-            await this.refreshAll()
+            try {
+                await api.post('/keywords', {keyword: this.newKeyword.trim()})
+                this.newKeyword = ''
+                await this.refreshAll()    
+            } catch (e) {
+                console.log('Error adding keyword:', e)
+            }
         },
         async deleteKeyword(keywordId: string) {
             await api.delete(`/keywords/${keywordId}`)
@@ -180,5 +185,25 @@ export const useAppStore = defineStore('app', {
                 this.loading = false;
             }
         },
+        clearSession() {
+            this.alerts = [];
+            this.jobs = [];
+            this.loading = false;
+            this.ws = null;
+            this.sources = [];
+            this.keywords = [];
+            this.jobs = [];
+            this.stats = null;
+            this.searchHits = [];
+            this.sourceForm = {
+                name: '',
+                base_url: '',
+                language: 'ru',
+                source_type: 1,
+                crawler_key: '',
+                scrape_interval_minutes: 60,
+                is_enabled: true,
+            } as CreateSourcePayload;
+        }
     },
 })

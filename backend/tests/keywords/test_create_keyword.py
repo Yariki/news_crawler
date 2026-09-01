@@ -1,7 +1,7 @@
 from tests.conftest import set_authorization_context
 
 
-async def test_create_keyword(client, db_session):
+async def test_create_keyword_admin(client, db_session):
     
     await set_authorization_context(
             db_session,
@@ -15,6 +15,20 @@ async def test_create_keyword(client, db_session):
     assert data["keyword"] == "test"
     assert data["is_enabled"] is True
 
+async def test_create_keyword_user(client, db_session):
+    
+    await set_authorization_context(
+            db_session,
+            "keyword:create:own",
+            user_name="admin",
+            role='user'
+        )
+    
+    response = await client.post("/keywords", json={"keyword": "test"})
+    assert response.status_code == 201
+    data = response.json()
+    assert data["keyword"] == "test"
+    assert data["is_enabled"] is True
 
 async def test_create_keyword_same(client, db_session):
 

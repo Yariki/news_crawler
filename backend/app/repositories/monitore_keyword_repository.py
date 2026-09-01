@@ -42,7 +42,7 @@ class MonitoreKeywordRepository(BaseAuthRepository):
     async def create_keyword(self, keyword: str, user_id: UUID) -> MonitoredKeyword:
         normalized = normalize_keyword(keyword)
         existing = await self.db.scalar(
-            select(MonitoredKeyword).where(MonitoredKeyword.keyword == normalized)
+            select(MonitoredKeyword).where(MonitoredKeyword.keyword == normalized, MonitoredKeyword.owner_id == user_id)
         )
         if existing:
             return existing

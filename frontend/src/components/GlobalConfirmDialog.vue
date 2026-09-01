@@ -24,8 +24,13 @@
 
 <script setup lang="ts">
 
+import {storeToRefs} from 'pinia'
 import { useConfirmDialog } from '../composables/useConfirmDialog';
 
-const { isOpen, options, confirm, handleCancel, handleConfirm } = useConfirmDialog();
+const store = useConfirmDialog();
+
+const { isOpen, options } = storeToRefs(store);
+const { handleCancel, handleConfirm } = store;
+
 
 </script>

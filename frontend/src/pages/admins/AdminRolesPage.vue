@@ -15,8 +15,8 @@
                 <v-chip v-for="p in item.permissions" :key="p.id" size="x-small" class="ma-1">{{ p.name }}</v-chip>
             </template>
             <template #item.actions="{ item }">
-                <v-btn icon="mdi-pencil" size="small" variant="text" @click="editRole(item)" />
-                <v-btn icon="mdi-account-badge" size="small" variant="text" @click="editPermissions(item)" />
+                <v-btn icon="mdi-pencil" size="small" color="primary" variant="text" @click="editRole(item)" />
+                <v-btn icon="mdi-account-badge" size="small" color="primary" variant="text" @click="editPermissions(item)" />
                 <v-btn icon="mdi-delete" size="small" variant="text" color="error" :disabled="item.is_system"
                     @click="deleteRole(item)" />
             </template>

@@ -32,13 +32,10 @@
 
     </v-layout>
 
-    <GlobalConfirmDialog />
-
 </template>
 
 <script setup lang="ts">
 
-import GlobalConfirmDialog  from '../components/GlobalConfirmDialog.vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'

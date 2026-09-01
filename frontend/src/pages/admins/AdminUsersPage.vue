@@ -27,13 +27,29 @@
             </template>
 
             <template #item.actions="{ item }">
-                <v-btn v-if="!isSelf(item.id)" color="primary" @click="setActivateUser(item.id)">
-                    {{ item.is_active ? 'Deactivate' : 'Activate' }}
-                </v-btn>
-                <v-btn icon="mdi-account-key" color="primary" text @click="showRolesDialog(item)"></v-btn>
-                <v-btn icon="mdi-pencil" color="primary" text @click="showEditDialog(item.id)"></v-btn>
-                <v-btn v-if="!isSelf(item.id)" icon="mdi-delete" color="red" text @click="deleteUser(item)"></v-btn>
-
+                <div class="d-flex ga-2 justify-end">
+                    <v-btn v-if="!isSelf(item.id)" color="primary" @click="setActivateUser(item.id)" 
+                                variant="text" 
+                                size="small"
+                                :icon="item.is_active ? 'mdi-account-off-outline' : 'mdi-account-outline'"
+                                v-tooltip="item.is_active ? 'Deactivate user' : 'Activate user'"
+                    
+                    >
+                    </v-btn>
+                    <v-btn icon="mdi-account-key" color="primary" @click="showRolesDialog(item)" 
+                                variant="text" 
+                                size="small"
+                                v-tooltip="'Edit user\'s roles'"
+                    ></v-btn>
+                    <v-btn icon="mdi-pencil" color="primary" text @click="showEditDialog(item.id)" 
+                                variant="text" 
+                                size="small"
+                                v-tooltip="'Edit user'"></v-btn>
+                    <v-btn v-if="!isSelf(item.id)" icon="mdi-delete" color="red" text @click="deleteUser(item)" 
+                                variant="text" 
+                                size="small"
+                                v-tooltip="'Delete user'"></v-btn>
+                </div>
             </template>
 
         </v-data-table>

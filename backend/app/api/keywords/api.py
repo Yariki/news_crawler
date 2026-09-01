@@ -38,7 +38,7 @@ async def get_keyword(resource_id: UUID4, db: AsyncSession = Depends(get_db), ac
 
 @router.post("", status_code=HttpStatus.HTTP_201_CREATED, response_model=MonitoredKeywordRead)
 async def create_keyword(
-    request: MonitoredKeywordCreate, db: AsyncSession = Depends(get_db), access_control=Depends(RequiredPermissionsAndOwnership("keyword:create:own", mode=PermissionMode.ANY))
+    request: MonitoredKeywordCreate, db: AsyncSession = Depends(get_db), access_control=Depends(RequiredPermissionsAndOwnership("keyword:create:own", mode=PermissionMode.ANY, resource_type=OwnedResourceType.MONITORED_KEYWORD))
 ):
 
     request.keyword = request.keyword.lower().strip()
