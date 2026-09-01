@@ -1,5 +1,5 @@
 <template>
-    <v-card rounded="xl">
+    <div>
         <v-card-title class="d-flex align-center justify-space-between">
             Users
             <v-btn color="primary" prepend-icon="mdi-plus" size="small" @click="showCreateDialog">Add User</v-btn>
@@ -53,7 +53,7 @@
             </template>
 
         </v-data-table>
-    </v-card>
+    </div>
 
     <EditUserDialog v-model="createUserDialogOpen" @create-user="createUser"></EditUserDialog>
 

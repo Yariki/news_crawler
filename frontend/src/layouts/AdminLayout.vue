@@ -1,16 +1,20 @@
 <template>
     <v-layout class="h-screen">
-        <v-app-bar app color="primary" dark>
+        <v-app-bar flat color="surface">
             <v-btn icon="mdi-home" to="/" variant="text" />
             <v-toolbar-title>Admin Panel</v-toolbar-title>
             <template #append>
-                <v-btn
-                    v-if="authStore.isAuthenticated"
-                    icon="mdi-logout"
-                    variant="text"
-                    :loading="loggingOut"
-                    @click="handleLogout"
-                />
+                <div v-if="authStore.isAuthenticated">
+                    <span>{{ authStore.user?.username }} ({{ authStore.user?.email }})</span>
+
+                    <v-btn
+                        
+                        icon="mdi-logout"
+                        variant="text"
+                        :loading="loggingOut"
+                        @click="handleLogout"
+                    />
+                </div>
             </template>
         </v-app-bar>
 
@@ -26,7 +30,7 @@
             </v-list>
         </v-navigation-drawer>
 
-        <v-main class="bg-background">
+        <v-main class="bg-background m-5">
             <router-view />
         </v-main>
 

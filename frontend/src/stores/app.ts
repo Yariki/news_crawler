@@ -195,6 +195,7 @@ export const useAppStore = defineStore('app', {
             this.jobs = [];
             this.stats = null;
             this.searchHits = [];
+            this.initialized = false;
             this.sourceForm = {
                 name: '',
                 base_url: '',

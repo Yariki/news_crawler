@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.auth import OptionalBearerToken
 from app.core.security import verify_password, issue_token_pair, decode_token
 from app.core.token_rotation import TokenReusedException, get_active_token
 from app.models import User
@@ -105,6 +106,29 @@ async def refresh_token(refresh_request: RefreshRequest, db: AsyncSession = Depe
     await db.commit()
 
     return token_pair
+
+@router.get('/me', status_code=HttpStatus.HTTP_200_OK, response_model=UserRead)
+async def get_current_user(token: OptionalBearerToken,  db: AsyncSession = Depends(get_db) ) -> UserRead:
+    
+    if not token: 
+        raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Missing token.")
+    
+    claims = decode_token(token, settings)
+
+    user_id = claims.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
+
+    existing_user = await db.scalar(
+        select(User)
+        .where(User.id == user_id)
+        .options(selectinload(User.roles).selectinload(Role.permissions))
+    )
+    if not existing_user or not existing_user.is_active:
+        raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
+
+    return UserRead.from_orm(existing_user)
+
 
 @router.post('/logout', status_code=HttpStatus.HTTP_200_OK)
 async def logout(logout_request: LogoutRequest, db: AsyncSession = Depends(get_db)):

@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="mt-5 ml-5" >
         <v-row>
             <v-col cols="12" sm="6" lg="3">
                 <v-card rounded="xl">

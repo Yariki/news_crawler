@@ -4,13 +4,16 @@
             <v-app-bar-title>News Monitor</v-app-bar-title>
             <template #append>
                 <v-btn icon="mdi-refresh" variant="text" @click="store.refreshAll" :loading="store.loading"/>
-                <v-btn
-                    v-if="authStore.isAuthenticated"
-                    icon="mdi-logout"
-                    variant="text"
-                    :loading="loggingOut"
-                    @click="handleLogout"
-                />
+                <div v-if="authStore.isAuthenticated">
+                    <span>{{ authStore.user?.username }} ({{ authStore.user?.email }})</span>
+                    <v-btn
+                        
+                        icon="mdi-logout"
+                        variant="text"
+                        :loading="loggingOut"
+                        @click="handleLogout"
+                    />
+                </div>
             </template>
         </v-app-bar>
 

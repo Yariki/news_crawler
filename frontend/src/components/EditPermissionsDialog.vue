@@ -3,7 +3,7 @@
         <v-card rounded="xl">
             <v-card-title class="d-flex align-center justify-space-between">
                 <span>Permissions — {{ role?.name }}</span>
-                <v-btn color="primary" size="small" variant="tonal" prepend-icon="mdi-plus"
+                <v-btn color="primary" size="small" variant="text" icon="mdi-plus"
                     :disabled="store.loading || saving" @click="addRow" >
                 </v-btn>
             </v-card-title>
@@ -46,22 +46,24 @@
                             <v-text-field v-if="isDraft(item)" v-model="item.description" :rules="descriptionRules"
                                 density="compact" variant="outlined" hide-details="auto" class="my-2"
                                 placeholder="optional" />
-                            <span v-else class="text-medium-emphasis">{{ item.description || '—' }}</span>
+                            <span v-else class="text-medium-emphasis">{{ item.description || '-' }}</span>
                         </template>
 
                         <template #item.actions="{ item }">
-                            <v-tooltip v-if="item.error" :text="item.error" location="top">
-                                <template #activator="{ props: tip }">
-                                    <v-icon v-bind="tip" color="error" icon="mdi-alert-circle-outline" class="mr-1" />
-                                </template>
-                            </v-tooltip>
-                            <v-btn v-if="isDraft(item)" size="small" color="warning" variant="text"
-                                icon="mdi-content-save" @click="() => onSave(item)" :loading="saving"
-                                :disabled="saving || !isFormValid">
-                                unsaved
-                            </v-btn>
-                            <v-btn icon="mdi-delete" size="small" variant="text" color="error" :disabled="saving"
-                                @click="removeRow(item)" />
+                            <div class="d-flex ga-2 justify-end">
+                                <v-tooltip v-if="item.error" :text="item.error" location="top">
+                                    <template #activator="{ props: tip }">
+                                        <v-icon v-bind="tip" color="error" icon="mdi-alert-circle-outline"/>
+                                    </template>
+                                </v-tooltip>
+                                <v-btn v-if="isDraft(item)" size="small" color="warning" variant="text"
+                                    icon="mdi-content-save" @click="() => onSave(item)" :loading="saving"
+                                    :disabled="saving || !isFormValid">
+                                </v-btn>
+                                <v-btn icon="mdi-delete" size="small" variant="text" color="error" :disabled="saving"
+                                    @click="removeRow(item)" />
+
+                            </div>
                         </template>
                     </v-data-table>
                 </v-form>
