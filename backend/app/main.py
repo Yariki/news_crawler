@@ -50,8 +50,9 @@ async def lifespan(_app: FastAPI):
     elasticsearch_client = ElasticService()
     await elasticsearch_client.ensure_index()
 
-    async with get_db_async() as db:
-        await seed_data(db)
+    if settings.app_mode != "prod":
+        async with get_db_async() as db:
+            await seed_data(db)
 
     await rabbitmq_connect(_app)
     _app.state.permissions_actions_catalog = PermissionsCatalog.load_resource_actions()

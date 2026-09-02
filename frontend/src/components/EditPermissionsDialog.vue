@@ -60,7 +60,7 @@
                                         <v-icon v-bind="tip" color="error" icon="mdi-alert-circle-outline"/>
                                     </template>
                                 </v-tooltip>
-                                <v-btn v-if="isDraft(item)" size="small" color="pri" variant="text"
+                                <v-btn v-if="isDraft(item)" size="small" color="primary" variant="text"
                                     icon="mdi-content-save" @click="() => onSave(item)" :loading="saving"
                                     :disabled="saving || !isFormValid">
                                 </v-btn>
@@ -313,7 +313,7 @@ async function loadPermissions(role: RoleRead) {
     if (all) {
         allPermissions.value = all.map(toRow);
     } else {
-        errorMessage.value += store.error ?? 'Failed to load all permissions';        
+        errorMessage.value = `${errorMessage.value ?? ''} ${store.error ?? 'Failed to load all permissions'}`;
     }
 }
 
@@ -323,8 +323,9 @@ watch(
         if (open && props.role) {
             loadPermissions(props.role)
         } else if (!open) {
-            selectedPermissions.value = []
-            errorMessage.value = null
+            allPermissions.value = [];
+            selectedPermissions.value = [];
+            errorMessage.value = null;
         }
     },
     { immediate: true },

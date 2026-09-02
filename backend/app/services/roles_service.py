@@ -114,6 +114,9 @@ class RolePermissionService:
                 detail=f"Role with ID '{role_id}' not found."
             )
 
+        if(any( p.id == permission_obj.id for p in role.permissions)):
+            return PermissionRead.from_orm(permission_obj)
+
         role.permissions.append(permission_obj)
         self._db.add(role)
         await self._db.commit()

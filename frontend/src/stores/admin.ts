@@ -215,12 +215,11 @@ export const useAdminStore = defineStore('admin', () => {
         });
     }
 
-    async function assignPermission(role_id: string, permission_id: string): Promise<PermissionRead> {
-        const permission = await processRemoteCall(async () => {
+    async function assignPermission(role_id: string, permission_id: string): Promise<PermissionRead | null> {
+        return await processRemoteCall(async () => {
             const response = await api.post(`/admin/roles/${role_id}/permissions/assign`, {permission_id:  permission_id} );
             return response.data;
         });
-        return permission;
     }
 
     async function deletePermission(role_id: string, permission_id: string): Promise<boolean> {

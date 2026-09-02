@@ -14,7 +14,7 @@ router = APIRouter(
     tags=["admin"],
 )
 
-@router.get("",
+@router.get("/",
             response_model=list[PermissionRead],
             status_code=HttpStatus.HTTP_200_OK,
             dependencies=[Depends(RequiredRoles("admin"))])
