@@ -52,6 +52,13 @@ async def _authenticate_token(*, token: str, db: DbSession) -> User | None:
 
 
 async def get_current_user(token: OptionalBearerToken, db: DbSession ) -> User | None:
+    """Resolve the bearer access token to a database user for protected routes.
+
+    The dependency accepts the optional OAuth2 bearer output so callers can
+    customize missing-token behavior elsewhere, but this protected variant
+    always raises 401 when no token is present, when JWT validation fails, when
+    the subject is not a UUID, or when the user no longer exists.
+    """
 
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")

@@ -118,7 +118,19 @@ class PermissionGranted:
     is_any: bool
     
 class RequiredPermissionsAndOwnership:
-    """ """
+    """FastAPI dependency that enforces RBAC permissions and optional ownership.
+
+    Route handlers use this as the project's "require permissions" dependency.
+    Permission names must be `resource:action:scope`, for example
+    `source:read:own`. The dependency supports all-permissions or
+    any-permission matching, treats users with the `admin` role as globally
+    allowed, and returns `PermissionGranted` so repositories can decide whether
+    to filter reads to `owner_id` or expose all rows.
+
+    When `resource_type` is provided, mutating requests (`PUT`, `PATCH`,
+    `DELETE`) also verify that the `{resource_id}` path parameter belongs to
+    the current user unless the caller is an admin or has an `:any` grant.
+    """
     def __init__(self, *permissions: str, mode: PermissionMode = PermissionMode.ALL, resource_type: OwnedResourceType | None = None) -> None:
 
         if not permissions:
@@ -139,6 +151,13 @@ class RequiredPermissionsAndOwnership:
         self.resource_type = resource_type
 
     async def _check_ownership(self, auth_context: AuthorizationContext, request: Request, db_session: AsyncSession) -> bool:
+        """Return whether the current user owns the path resource.
+
+        The route must expose the resource UUID as `{resource_id}`. Missing,
+        non-string, and malformed IDs are rejected as bad requests; existing
+        resources are resolved through the ownership resolver for the configured
+        `OwnedResourceType`.
+        """
 
         resource_id = request.path_params.get(OWNED_RESOURCE_PATH_PARAM_KEY)
 
