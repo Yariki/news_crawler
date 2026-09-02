@@ -1,5 +1,5 @@
 <template>
-    <v-card rounded="xl">
+    <div>
         <v-card-title class="d-flex align-center justify-space-between">
             Users
             <v-btn color="primary" prepend-icon="mdi-plus" size="small" @click="showCreateDialog">Add User</v-btn>
@@ -27,16 +27,33 @@
             </template>
 
             <template #item.actions="{ item }">
-                <v-btn v-if="!isSelf(item.id)" color="primary" text @click="setActivateUser(item.id)">
-                    {{ item.is_active ? 'Deactivate' : 'Activate' }}
-                </v-btn>
-                <v-btn icon="mdi-pencil" color="primary" text @click="showEditDialog(item.id)"></v-btn>
-                <v-btn v-if="!isSelf(item.id)" icon="mdi-delete" color="red" text @click="deleteUser(item)"></v-btn>
-
+                <div class="d-flex ga-2 justify-end">
+                    <v-btn v-if="!isSelf(item.id)" color="primary" @click="setActivateUser(item.id)" 
+                                variant="text" 
+                                size="small"
+                                :icon="item.is_active ? 'mdi-account-off-outline' : 'mdi-account-outline'"
+                                v-tooltip="item.is_active ? 'Deactivate user' : 'Activate user'"
+                    
+                    >
+                    </v-btn>
+                    <v-btn icon="mdi-account-key" color="primary" @click="showRolesDialog(item)" 
+                                variant="text" 
+                                size="small"
+                                v-tooltip="'Edit user\'s roles'"
+                    ></v-btn>
+                    <v-btn icon="mdi-pencil" color="primary" text @click="showEditDialog(item.id)" 
+                                variant="text" 
+                                size="small"
+                                v-tooltip="'Edit user'"></v-btn>
+                    <v-btn v-if="!isSelf(item.id)" icon="mdi-delete" color="red" text @click="deleteUser(item)" 
+                                variant="text" 
+                                size="small"
+                                v-tooltip="'Delete user'"></v-btn>
+                </div>
             </template>
 
         </v-data-table>
-    </v-card>
+    </div>
 
     <EditUserDialog v-model="createUserDialogOpen" @create-user="createUser"></EditUserDialog>
 
@@ -44,15 +61,20 @@
         @update-user="updateUser">
     </UpdateUserDialog>
 
+    <EditUserRolesDialog v-model="editUserRolesDialogOpen" :user="selectedUser"
+        @roles-changed="onUserRolesChanged">
+    </EditUserRolesDialog>
+
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, computed } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useAdminStore } from '../../stores/admin';
 import { useAuthStore } from "../../stores/auth";
 import EditUserDialog from "../../components/EditUserDialog.vue";
-import type { CreateUserDialogData, UpdateUserDialogData, UserRead } from "../../models/types"
+import type { CreateUserDialogData, RoleRead, UpdateUserDialogData, UserRead } from "../../models/types"
 import UpdateUserDialog from "../../components/UpdateUserDialog.vue";
+import EditUserRolesDialog from "../../components/EditUserRolesDialog.vue";
 import { useConfirmDialog } from '../../composables/useConfirmDialog';
 
 const store = useAdminStore();
@@ -61,8 +83,10 @@ const { confirm } = useConfirmDialog();
 
 const createUserDialogOpen = ref(false);
 const updateUserDialogOpen = ref(false);
+const editUserRolesDialogOpen = ref(false);
 
 const updateUserData = ref<UpdateUserDialogData | null>(null);
+const selectedUser = ref<UserRead | null>(null);
 
 const headers = [
     { title: 'Username', key: 'username' },
@@ -97,6 +121,23 @@ async function updateUser(data: UpdateUserDialogData) {
 
 function showCreateDialog() {
     createUserDialogOpen.value = true;
+}
+
+function showRolesDialog(user: UserRead) {
+    selectedUser.value = user;
+    editUserRolesDialogOpen.value = true;
+}
+
+function onUserRolesChanged(roles: RoleRead[]) {
+    if (!selectedUser.value) {
+        return;
+    }
+
+    const roleNames = roles.map(role => role.name);
+    selectedUser.value.roles = roleNames;
+    store.users = store.users.map(user => user.id === selectedUser.value?.id
+        ? { ...user, roles: roleNames }
+        : user);
 }
 
 async function createUser(userData: CreateUserDialogData) {

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import {AdminStats, UserRead, RoleRead, UserCreate, UserUpdate, RoleCreateUpdate, PermissionRead, PermissionCreateUpdate} from '../models/types';
+import {AdminStats, UserRead, RoleRead, UserCreate, UserUpdate, RoleCreateUpdate, PermissionRead, PermissionCreateUpdate, UserRoles} from '../models/types';
 import {api } from '../services/api'
 
 export const useAdminStore = defineStore('admin', () => {
@@ -192,7 +192,7 @@ export const useAdminStore = defineStore('admin', () => {
 
     // permissions
 
-    async function getPermissions(role_id: string): Promise<PermissionRead[] | null> {
+    async function getRolePermissions(role_id: string): Promise<PermissionRead[] | null> {
         return await processRemoteCall(async () => {
             const response = await api.get(`/admin/roles/${role_id}/permissions`);
             return response.data;
@@ -215,6 +215,13 @@ export const useAdminStore = defineStore('admin', () => {
         });
     }
 
+    async function assignPermission(role_id: string, permission_id: string): Promise<PermissionRead | null> {
+        return await processRemoteCall(async () => {
+            const response = await api.post(`/admin/roles/${role_id}/permissions/assign`, {permission_id:  permission_id} );
+            return response.data;
+        });
+    }
+
     async function deletePermission(role_id: string, permission_id: string): Promise<boolean> {
         const response =  await processRemoteCall(async () => {
             await api.delete(`/admin/roles/${role_id}/permissions/${permission_id}`);
@@ -223,7 +230,41 @@ export const useAdminStore = defineStore('admin', () => {
         return response === null ? false : response;
     }   
 
+    async function getAllPermissions(): Promise<PermissionRead[] | null> {
+        return await processRemoteCall(async () => {
+            const response = await api.get(`/admin/permissions`);
+            return response.data;
+        });
+    }
     // utils 
+
+    // assign roles to user
+
+    async function assignRolesToUser(user_id: string, roles_ids: string[]): Promise<boolean> {
+
+        const request: UserRoles = {
+            roles_ids: roles_ids
+        };
+
+        return await processRemoteCall(async () => {
+            const response = await api.post(`/admin/users/${user_id}/roles`, request);
+            return response.status === 200;
+        }) || false;
+    }
+
+    async function getUserRoles(user_id: string): Promise<RoleRead[] | null> {
+        return await processRemoteCall(async () => {
+            const response = await api.get(`/admin/users/${user_id}/roles`);
+            return response.data;
+        });
+    }
+    
+    async function removeRoleFromUser(user_id: string, role_id: string): Promise<boolean> {
+        return await processRemoteCall(async () => {
+            const response = await api.delete(`/admin/users/${user_id}/roles/${role_id}`);
+            return response.status === 200;
+        }) || false;
+    }
 
     function handleError(cause: unknown, message: string | null = null) {
         error.value = cause instanceof Error ? cause.message : message || 'Failed to load data.';
@@ -273,6 +314,13 @@ export const useAdminStore = defineStore('admin', () => {
         return null;
     }
 
+    function clearSession() {
+        users.value = [];
+        roles.value = [];
+        error.value = null;
+        state.value = null;
+    }
+
     return {
         loading,
         state,
@@ -295,8 +343,14 @@ export const useAdminStore = defineStore('admin', () => {
         createRole,
         updateRole,
         deleteRole,
-        getPermissions,
+        getPermissions: getRolePermissions,
         createPermission,
-        deletePermission
+        deletePermission,
+        assignRolesToUser,
+        getUserRoles,
+        removeRoleFromUser,
+        clearSession,
+        getAllPermissions,
+        assignPermission
     };
 });

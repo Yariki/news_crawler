@@ -23,7 +23,7 @@ interface RetriableConfig extends InternalAxiosRequestConfig {
     _retry?: boolean
 }
 
-const AUTH_ENDPOINTS = ['/auth/refresh', '/auth/login', '/auth/logout']
+const AUTH_ENDPOINTS = ['/auth/refresh', '/auth/login', '/auth/logout', '/auth/me']
 
 /**
  * Imported lazily inside the interceptors: the active Pinia instance does not

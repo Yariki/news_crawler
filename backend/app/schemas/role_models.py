@@ -21,6 +21,7 @@ class PermissionRead(BaseModel):
     description: str | None = Field(default=None, max_length=255)
     resource: str | None = Field(default=None, max_length=255)
     action: str | None = Field(default=None, max_length=255)
+    scope: str | None = Field(default=None, max_length=255)
     created_at: datetime
     updated_at: datetime | None
 
@@ -32,6 +33,7 @@ class PermissionRead(BaseModel):
             description=obj.description,
             resource=obj.resource,
             action=obj.action,
+            scope=obj.scope,
             created_at=obj.created_at,
             updated_at=obj.updated_at,
         )
@@ -82,6 +84,8 @@ class RoleRead(BaseModel):
             is_system=obj.is_system,
             created_at=obj.created_at,
             updated_at=obj.updated_at,
-            permissions=[PermissionRead.from_orm(permission) for permission in obj.permissions]
+            permissions=[PermissionRead.from_orm(permission) for permission in obj.permissions] if obj.permissions else []
         )
 
+class AssignPermission(BaseModel):
+    permission_id: UUID

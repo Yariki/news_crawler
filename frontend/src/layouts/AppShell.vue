@@ -4,6 +4,16 @@
             <v-app-bar-title>News Monitor</v-app-bar-title>
             <template #append>
                 <v-btn icon="mdi-refresh" variant="text" @click="store.refreshAll" :loading="store.loading"/>
+                <div v-if="authStore.isAuthenticated">
+                    <span>{{ authStore.user?.username }} ({{ authStore.user?.email }})</span>
+                    <v-btn
+                        
+                        icon="mdi-logout"
+                        variant="text"
+                        :loading="loggingOut"
+                        @click="handleLogout"
+                    />
+                </div>
             </template>
         </v-app-bar>
 
@@ -18,6 +28,8 @@
                     :prepend-icon="item.icon"
                     :title="item.title"
                 />
+                <v-list-item v-if="authStore.isAdmin" to="/admin" rounded="lg" prepend-icon="mdi-shield-account-outline" title="Admin" />
+
             </v-list>
 
             <template #append>
@@ -50,12 +62,17 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted} from 'vue'
+import {onMounted, ref} from 'vue'
+import {useRouter} from 'vue-router'
 import {useAppStore} from '../stores/app'
+import {useAuthStore} from '../stores/auth'
 import {useMessages} from "../stores/messages";
 
 const store = useAppStore()
+const authStore = useAuthStore()
 const messagesStore = useMessages();
+const router = useRouter()
+const loggingOut = ref(false)
 
 const navItems = [
     {title: 'Dashboard', to: '/', icon: 'mdi-view-dashboard-outline'},
@@ -71,4 +88,18 @@ onMounted(async () => {
         store.connectAlerts()
     }
 })
+
+async function handleLogout() {
+    if (loggingOut.value) return
+
+    loggingOut.value = true
+    try {
+        await authStore.logout()
+    } catch {
+        authStore.clearSession()
+    } finally {
+        loggingOut.value = false
+        await router.replace({ name: 'login' })
+    }
+}
 </script>

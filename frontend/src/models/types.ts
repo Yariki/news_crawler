@@ -268,8 +268,8 @@ export interface PermissionRead {
     description: string;
     resource: string | null;
     action: string | null;
+    scope: string | null;
     created_at: string;
-
     updated_at: string | null;
 }
 
@@ -321,3 +321,6 @@ export interface PermissionRow {
     error: string | null;
 }
 
+export interface UserRoles {
+    roles_ids: string[];
+}

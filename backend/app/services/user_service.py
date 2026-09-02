@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import Role
+from app.schemas.role_models import RoleRead
 from app.schemas.user_models import AdminChangePassword, UserCreate, UserRead, UserUpdate, UserChangePassword
 from app.models.user import User
 from app.core.security import hash_password, verify_password
@@ -106,6 +107,18 @@ class UserService:
             roles=[role.name for role in user.roles],
         )
 
+    async def get_user_roles(self, user_id: UUID) -> list[RoleRead]:
+        query = (
+            select(User)
+            .options(selectinload(User.roles).selectinload(Role.permissions))
+            .where(User.id == user_id, ~User.is_delete)
+        )
+        result = await self._db.execute(query)
+        user = result.scalar_one_or_none()
+        if user is None:
+            raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="User not found")
+        return [RoleRead.from_orm(role) for role in user.roles]
+    
     async def authenticate(self, username: str, password: str) -> Optional[User]:
         query = (
             select(User)

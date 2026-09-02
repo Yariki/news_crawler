@@ -11,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 from app.core.config import settings
 from app.db.base import Base
+from app.db.seed_data import seed_data
+from app.db.session import get_db_async
 from app.messaging.handling_messages.handle_messages import handle_message
 from app.messaging.rabbitmq_client import RabbitMQClient, get_rabbitmq_client
 from app.services.es import ElasticService
@@ -48,8 +50,12 @@ async def lifespan(_app: FastAPI):
     elasticsearch_client = ElasticService()
     await elasticsearch_client.ensure_index()
 
+    if settings.app_mode != "prod":
+        async with get_db_async() as db:
+            await seed_data(db)
+
     await rabbitmq_connect(_app)
-    _app.state.permissions_actions_catalog = PermissionsCatalog.create_from_file(Path(settings.permissions_actions_catalog))
+    _app.state.permissions_actions_catalog = PermissionsCatalog.load_resource_actions()
 
     outbox_relay = OutboxRelay(elasticsearch_client, rabbitmq)
     outbox_relay_task = asyncio.create_task(outbox_relay.run_forever())

@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
-import { authClient } from '../lib/axios'
+import { authClient, api } from '../lib/axios'
 import {ref, computed, watch, handleError} from 'vue'
-import { TokenPair, UserCreate } from '../models/types'
+import { TokenPair, UserCreate, UserRead } from '../models/types'
 import { jwtDecode } from 'jwt-decode'
-import type { JwtPayload} from 'jwt-decode'
+import type { JwtPayload } from 'jwt-decode'
+import { useAdminStore } from './admin'
+import { useAppStore } from './app'
 
 
 interface NewsJwtPayload extends JwtPayload {
@@ -19,12 +21,14 @@ export const useAuthStore = defineStore('auth', () => {
     const permissions = ref<string[] | null>(null);
     
     const isAuthenticated = computed(() => !!access_token.value);
+    const isAdmin = computed(() => roles.value?.includes('admin'));
     const currentUserId = ref<string | null>(null);
     const hasRole = (name: string) => roles.value?.includes(name);
     const hasPermission = (name: string) => permissions.value?.includes(name);
     const hasAnyPermission = (list: string[]) => 
         list.some(name => hasPermission(name));
 
+    const user = ref<UserRead | null>(null);
 
     async function register(cred: UserCreate) {
         await authClient.post("/auth/register", cred);
@@ -37,15 +41,21 @@ export const useAuthStore = defineStore('auth', () => {
 
         access_token.value = data.access_token;
         refresh_token.value = data.refresh_token;
-        decodeToken(access_token.value);
+        await decodeToken(access_token.value);
     }
 
     /** Drops local session state without calling the server. */
     function clearSession() {
+        const adminStore = useAdminStore();
+        const appStore = useAppStore();
+        adminStore.clearSession();
+        appStore.clearSession();
         access_token.value = null;
         refresh_token.value = null;
         roles.value = [];
         permissions.value = [];
+        currentUserId.value = null;
+        user.value = null;
     }
 
     async function logout() {
@@ -72,7 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
         access_token.value = data.access_token;
         // The server rotates the refresh token, so the new one must replace it.
         refresh_token.value = data.refresh_token;
-        decodeToken(access_token.value)
+        await decodeToken(access_token.value);
     }
 
     async function initFromStorage() {
@@ -87,7 +97,13 @@ export const useAuthStore = defineStore('auth', () => {
         }
     }
 
-    function decodeToken(token: string | null) {
+    async function getMe() {
+        const { data } = await api.get<UserRead>("/auth/me");
+        user.value = data;
+        return data;
+    }
+
+    async function decodeToken(token: string | null) {
 
         if (!token) {
             return;
@@ -95,20 +111,20 @@ export const useAuthStore = defineStore('auth', () => {
         try {
             const decodedToken: NewsJwtPayload = jwtDecode<NewsJwtPayload>(token);    
             currentUserId.value = decodedToken.sub || null;
-
             if (decodedToken.roles) {
-            roles.value = decodedToken.roles;
+                roles.value = decodedToken.roles;
             }
 
             if (decodedToken.permissions) {
                 permissions.value = decodedToken.permissions;
             }
+
+            await getMe();
+
         } catch(e) {
             clearSession();
         }
     }
-
-
 
     watch(refresh_token, (newValue) => {
         if (newValue) {
@@ -125,6 +141,8 @@ export const useAuthStore = defineStore('auth', () => {
         permissions,
         isAuthenticated,
         currentUserId,
+        isAdmin,
+        user,
         hasPermission,
         hasRole,
         hasAnyPermission,
@@ -136,4 +154,3 @@ export const useAuthStore = defineStore('auth', () => {
         register
     };
 });
-

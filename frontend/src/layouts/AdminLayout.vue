@@ -1,8 +1,21 @@
 <template>
     <v-layout class="h-screen">
-        <v-app-bar app color="primary" dark>
+        <v-app-bar flat color="surface">
             <v-btn icon="mdi-home" to="/" variant="text" />
             <v-toolbar-title>Admin Panel</v-toolbar-title>
+            <template #append>
+                <div v-if="authStore.isAuthenticated">
+                    <span>{{ authStore.user?.username }} ({{ authStore.user?.email }})</span>
+
+                    <v-btn
+                        
+                        icon="mdi-logout"
+                        variant="text"
+                        :loading="loggingOut"
+                        @click="handleLogout"
+                    />
+                </div>
+            </template>
         </v-app-bar>
 
         <v-navigation-drawer width="260">
@@ -17,25 +30,43 @@
             </v-list>
         </v-navigation-drawer>
 
-        <v-main class="bg-background">
+        <v-main class="bg-background m-5">
             <router-view />
         </v-main>
 
     </v-layout>
 
-    <GlobalConfirmDialog />
-
 </template>
 
 <script setup lang="ts">
 
-import GlobalConfirmDialog  from '../components/GlobalConfirmDialog.vue'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
+const loggingOut = ref(false)
 
 const items = [
     { title: 'Overview', icon: 'mdi-view-dashboard', route: '/admin' },
     { title: 'Users', icon: 'mdi-account-group', route: '/admin/users' },
     { title: 'Roles', icon: 'mdi-shield-account', route: '/admin/roles' }    
 ];
+
+async function handleLogout() {
+    if (loggingOut.value) return
+
+    loggingOut.value = true
+    try {
+        await authStore.logout()
+    } catch {
+        authStore.clearSession()
+    } finally {
+        loggingOut.value = false
+        await router.replace({ name: 'login' })
+    }
+}
 
 </script>
 

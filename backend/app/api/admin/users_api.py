@@ -2,6 +2,7 @@ from fastapi import status as HttpStatus, APIRouter, Depends
 
 from app.core.rbac import  RequiredRoles
 from app.db.session import DbSession
+from app.schemas.role_models import RoleRead
 from app.schemas.user_models import AdminChangePassword, UserRead, UserCreate, UserUpdate, UserRoles
 from app.services.user_service import UserService
 
@@ -63,6 +64,12 @@ async def deactivate_user(user_id: UUID, db: DbSession):
 async def change_user_password(user_id: UUID, admin_change_password: AdminChangePassword, db: DbSession):
     user = await UserService(db).change_password(user_id, admin_change_password)
     return user
+
+@router.get("/{user_id}/roles", status_code=HttpStatus.HTTP_200_OK, response_model=list[RoleRead],
+            dependencies=[Depends(RequiredRoles('admin'))])
+async def get_user_roles(user_id: UUID, db: DbSession):
+    roles = await UserService(db).get_user_roles(user_id)
+    return roles
 
 @router.post("/{user_id}/roles", status_code=HttpStatus.HTTP_200_OK, response_model=UserRead,
             dependencies=[Depends(RequiredRoles('admin'))])

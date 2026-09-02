@@ -20,7 +20,6 @@ async_engine = create_async_engine(settings.database_url, future=True, pool_pre_
 SessionLocal = sessionmaker(bind=engine, class_=Session, autoflush=False, expire_on_commit=False)
 AsyncSessionLocal = async_sessionmaker(bind=async_engine, autoflush=False, expire_on_commit=False, class_=AsyncSession)
 
-@contextmanager
 def get_sync_db() -> Iterator[Session]:
     db = SessionLocal()
     try:
@@ -28,10 +27,15 @@ def get_sync_db() -> Iterator[Session]:
     finally:
         db.close()
 
-@asynccontextmanager
 async def get_db() -> AsyncIterator[AsyncSession]:
     async with AsyncSessionLocal() as db:
         yield db
+
+@asynccontextmanager
+async def get_db_async() -> AsyncIterator[AsyncSession]:
+    async with AsyncSessionLocal() as db:
+        yield db
+        
 
 
 SyncDbSession = Annotated[Session, Depends(get_sync_db)]

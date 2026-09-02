@@ -1,5 +1,5 @@
 <template>
-    <v-card rounded="xl">
+    <div>
         <v-card-title class="d-flex align-center justify-space-between">
             Roles
             <v-btn color="primary" prepend-icon="mdi-plus" size="small" @click="addRole()">Add Role</v-btn>
@@ -15,13 +15,13 @@
                 <v-chip v-for="p in item.permissions" :key="p.id" size="x-small" class="ma-1">{{ p.name }}</v-chip>
             </template>
             <template #item.actions="{ item }">
-                <v-btn icon="mdi-pencil" size="small" variant="text" @click="editRole(item)" />
-                <v-btn icon="mdi-account-badge" size="small" variant="text" @click="editPermissions(item)" />
+                <v-btn icon="mdi-pencil" size="small" color="primary" variant="text" @click="editRole(item)" />
+                <v-btn icon="mdi-account-badge" size="small" color="primary" variant="text" @click="editPermissions(item)" />
                 <v-btn icon="mdi-delete" size="small" variant="text" color="error" :disabled="item.is_system"
                     @click="deleteRole(item)" />
             </template>
         </v-data-table>
-    </v-card>
+    </div>
 
     <EditRoleDialog v-model="isRoleEditDialogOpen" :form-data="roleData" :is-edit-mode="isEditMode"
         @update:modelValue="isRoleEditDialogOpen = $event" @create-role="onSaveRole" />
@@ -53,10 +53,10 @@ const roleData = ref<RoleCreateUpdate>({
 });
 
 const headers = [
-    { title: 'Name', key: 'name' },
-    { title: 'Description', key: 'description' },
-    { title: 'Permissions', key: 'permissions' },
-    { title: '', key: 'actions', sortable: false },
+    { title: 'Name', key: 'name', width: '100px' },
+    { title: 'Description', key: 'description', width: '200px' },
+    { title: 'Permissions', key: 'permissions', width: '300px' },
+    { title: '', key: 'actions', sortable: false, width: '150px' },
 ]
 
 function editRole(role: RoleRead, editMode: boolean = true) {
