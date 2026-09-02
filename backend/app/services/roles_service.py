@@ -230,3 +230,11 @@ class RolePermissionService:
             )
 
         return [UserRead.from_orm(user) for user in role.users]
+    
+    async def get_permissions(self) -> list[PermissionRead]:
+        result = await self._db.execute(
+            select(Permission)
+            .where(~Permission.is_delete)
+        )
+        permissions = result.scalars().all()
+        return [PermissionRead.from_orm(permission) for permission in permissions]
