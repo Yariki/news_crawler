@@ -192,7 +192,7 @@ export const useAdminStore = defineStore('admin', () => {
 
     // permissions
 
-    async function getPermissions(role_id: string): Promise<PermissionRead[] | null> {
+    async function getRolePermissions(role_id: string): Promise<PermissionRead[] | null> {
         return await processRemoteCall(async () => {
             const response = await api.get(`/admin/roles/${role_id}/permissions`);
             return response.data;
@@ -215,6 +215,14 @@ export const useAdminStore = defineStore('admin', () => {
         });
     }
 
+    async function assignPermission(role_id: string, permission_id: string): Promise<PermissionRead> {
+        const permission = await processRemoteCall(async () => {
+            const response = await api.post(`/admin/roles/${role_id}/permissions/assign`, {permission_id:  permission_id} );
+            return response.data;
+        });
+        return permission;
+    }
+
     async function deletePermission(role_id: string, permission_id: string): Promise<boolean> {
         const response =  await processRemoteCall(async () => {
             await api.delete(`/admin/roles/${role_id}/permissions/${permission_id}`);
@@ -223,6 +231,12 @@ export const useAdminStore = defineStore('admin', () => {
         return response === null ? false : response;
     }   
 
+    async function getAllPermissions(): Promise<PermissionRead[] | null> {
+        return await processRemoteCall(async () => {
+            const response = await api.get(`/admin/permissions`);
+            return response.data;
+        });
+    }
     // utils 
 
     // assign roles to user
@@ -330,12 +344,14 @@ export const useAdminStore = defineStore('admin', () => {
         createRole,
         updateRole,
         deleteRole,
-        getPermissions,
+        getPermissions: getRolePermissions,
         createPermission,
         deletePermission,
         assignRolesToUser,
         getUserRoles,
         removeRoleFromUser,
-        clearSession
+        clearSession,
+        getAllPermissions,
+        assignPermission
     };
 });

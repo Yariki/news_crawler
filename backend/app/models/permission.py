@@ -12,7 +12,8 @@ class Permission(ChangeTrackingMixin):
     description: Mapped[str | None] = mapped_column(String(255), nullable=True)
     resource: Mapped[str | None] = mapped_column(String(255), nullable=True)
     action: Mapped[str | None] = mapped_column(String(255), nullable=True)
-
+    scope: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    
     def __repr__(self) -> str:
         return f"<Permission {self.name}>"
 

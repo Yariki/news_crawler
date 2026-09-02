@@ -17,9 +17,13 @@
                 </v-alert>
 
                 <v-form ref="formRef" v-model="isFormValid">
-                    <v-data-table :headers="headers" :items="rows" item-value="key" :loading="store.loading"
+                    <v-data-table :headers="headers" :items="allPermissions" item-value="key" :loading="store.loading"
                         density="comfortable" hide-default-footer :items-per-page="-1"
                         no-data-text="No permissions assigned to this role yet.">
+
+                        <template #item.selected="{ item }">
+                            <v-checkbox-btn v-if="!isDraft(item)" :model-value="isSelected(item.id)" @update:model-value="checked => toggleSelected(item.id, checked)" density="compact" hide-details="auto" class="my-2" />
+                        </template>
 
                         <template #item.resource="{ item }">
                             <v-select v-if="isDraft(item)" v-model="item.resource" :items="store.resources"
@@ -56,7 +60,7 @@
                                         <v-icon v-bind="tip" color="error" icon="mdi-alert-circle-outline"/>
                                     </template>
                                 </v-tooltip>
-                                <v-btn v-if="isDraft(item)" size="small" color="warning" variant="text"
+                                <v-btn v-if="isDraft(item)" size="small" color="pri" variant="text"
                                     icon="mdi-content-save" @click="() => onSave(item)" :loading="saving"
                                     :disabled="saving || !isFormValid">
                                 </v-btn>
@@ -95,29 +99,33 @@ import { permissionActionRules, permissionResourceRules, permissionScopeRules } 
 const props = defineProps<{
     modelValue: boolean
     role: RoleRead | null
-}>()
+}>();
 
 const emit = defineEmits<{
     (e: 'update:modelValue', value: boolean): void
     (e: 'permissions-changed', permissions: PermissionRead[]): void
-}>()
+}>();
 
-const store = useAdminStore()
-const { confirm } = useConfirmDialog()
+const store = useAdminStore();
+const { confirm } = useConfirmDialog();
 
-const formRef = ref<InstanceType<typeof VForm> | null>(null)
-const isFormValid = ref(false)
-const saving = ref(false)
-const errorMessage = ref<string | null>(null)
-const rows = ref<PermissionRow[]>([])
+const formRef = ref<InstanceType<typeof VForm> | null>(null);
+const isFormValid = ref(false);
+const saving = ref(false);
+const errorMessage = ref<string | null>(null);
+const selectedPermissions = ref<PermissionRow[]>([]);
+const allPermissions = ref<PermissionRow[]>([]);
+
+const selectedPermissionIds = computed(() => selectedPermissions.value.map(p => p.id).filter(id => id !== null) as string[]);
 
 const headers = [
+    { title: '', key: 'selected' },
     { title: 'Resource', key: 'resource', width: '20%' },
     { title: 'Action', key: 'action', width: '20%' },
     { title: 'Scope', key: 'scope', width: '15%' },
     { title: 'Description', key: 'description' },
     { title: '', key: 'actions', sortable: false, align: 'end' as const, width: '120px' },
-]
+];
 
 // description is optional server-side; the shared rule requires a value, so keep a local one
 const descriptionRules = [
@@ -129,7 +137,7 @@ const isOpen = computed({
     set: (value: boolean) => emit('update:modelValue', value),
 })
 
-const draftRows = computed(() => rows.value.filter(isDraft))
+const draftRows = computed(() => allPermissions.value.filter(isDraft))
 
 function isDraft(row: PermissionRow): boolean {
     return row.id === null
@@ -150,8 +158,8 @@ function toRow(permission: PermissionRead): PermissionRow {
 }
 
 function addRow() {
-    rows.value = [
-        ...rows.value,
+    allPermissions.value = [
+        ...allPermissions.value,
         {
             key: `draft-${crypto.randomUUID()}`,
             id: null,
@@ -164,9 +172,31 @@ function addRow() {
     ]
 }
 
+function isSelected(id: string | null) {
+    const value = id !== null && selectedPermissionIds.value.includes(id);
+    return value;
+}
+
+async function toggleSelected(id: string | null, checked: boolean) {
+    if (id === null) return
+
+    const selectedPermission = allPermissions.value.find(p => p.id === id);
+    
+    const ok = checked && props.role !== null
+        ? await store.assignPermission(props.role?.id, id)
+        : await store.deletePermission(props.role?.id, id);
+    if(ok) {
+        if (!checked && selectedPermission !== null) {
+            selectedPermissions.value = selectedPermissions.value.filter(p => p.id !== id)
+        } else if (checked && selectedPermission !== null) {
+            selectedPermissions.value.push(selectedPermission);
+        }
+    }
+}
+
 async function removeRow(row: PermissionRow) {
     if (isDraft(row)) {
-        rows.value = rows.value.filter(r => r.key !== row.key)
+        allPermissions.value = allPermissions.value.filter(r => r.key !== row.key)
         return
     }
 
@@ -187,12 +217,12 @@ async function removeRow(row: PermissionRow) {
         errorMessage.value = store.error ?? 'Failed to remove the permission.'
         return
     }
-    rows.value = rows.value.filter(r => r.key !== row.key)
+    allPermissions.value = allPermissions.value.filter(r => r.key !== row.key)
     emitChanged()
 }
 
 function isDuplicate(row: PermissionRow): boolean {
-    return rows.value.some(other =>
+    return allPermissions.value.some(other =>
         other.key !== row.key &&
         other.resource === row.resource &&
         other.action === row.action &&
@@ -232,10 +262,11 @@ async function onSave(item: PermissionRow | null = null) {
             return;
         }
 
-        const saved = toRow(created)
-        rows.value = rows.value.map(r => (r.key === item.key ? saved : r))
+        const saved = toRow(created);
+        allPermissions.value = allPermissions.value.map(r => (r.key === item.key ? saved : r));
+        selectedPermissions.value = [...selectedPermissions.value, saved];
 
-        const failed = rows.value.filter(r => r.error)
+        const failed = allPermissions.value.filter(r => r.error)
         errorMessage.value = failed.length ? `${failed.length} permission(s) could not be saved.` : null
         emitChanged()
     } finally {
@@ -244,7 +275,7 @@ async function onSave(item: PermissionRow | null = null) {
 }
 
 function emitChanged() {
-    emit('permissions-changed', rows.value.filter(r => !isDraft(r)).map(r => ({
+    emit('permissions-changed', allPermissions.value.filter(r => !isDraft(r) && selectedPermissionIds.value.includes(r.id!)).map(r => ({
         id: r.id!,
         name: `${r.resource}:${r.action}:${r.scope}`,
         description: r.description,
@@ -270,13 +301,19 @@ async function onClose() {
 
 async function loadPermissions(role: RoleRead) {
     errorMessage.value = null
-    rows.value = (role.permissions ?? []).map(toRow)
+    selectedPermissions.value = (role.permissions ?? []).map(toRow)
 
     const fresh = await store.getPermissions(role.id)
     if (fresh) {
-        rows.value = fresh.map(toRow)
+        selectedPermissions.value = fresh.map(toRow);
     } else {
-        errorMessage.value = store.error ?? 'Failed to load permissions.'
+        errorMessage.value = store.error ?? 'Failed to load permissions.';
+    }
+    const all = await store.getAllPermissions()
+    if (all) {
+        allPermissions.value = all.map(toRow);
+    } else {
+        errorMessage.value += store.error ?? 'Failed to load all permissions';        
     }
 }
 
@@ -286,7 +323,7 @@ watch(
         if (open && props.role) {
             loadPermissions(props.role)
         } else if (!open) {
-            rows.value = []
+            selectedPermissions.value = []
             errorMessage.value = null
         }
     },

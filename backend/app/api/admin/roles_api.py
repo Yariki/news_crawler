@@ -2,7 +2,7 @@ from fastapi import status as HttpStatus, APIRouter, Depends
 
 from app.core.rbac import RequiredRoles
 from app.db.session import DbSession
-from app.schemas.role_models import PermissionRead, RoleCreateUpdate, RoleRead, PermissionCreateUpdate
+from app.schemas.role_models import AssignPermission, PermissionRead, RoleCreateUpdate, RoleRead, PermissionCreateUpdate
 
 from app.schemas.user_models import UserRead
 from app.services.roles_service import RolePermissionService
@@ -76,6 +76,13 @@ async def add_permission_to_role(resource_id: UUID, permission: PermissionCreate
     permission_read = await RolePermissionService(db_session).add_permission_to_role(resource_id, permission)
     return permission_read
 
+@router.post("/{resource_id}/permissions/assign",
+             response_model=PermissionRead,
+             status_code=HttpStatus.HTTP_201_CREATED,
+             dependencies=[Depends(RequiredRoles("admin"))])
+async def assign_permission_to_role(resource_id: UUID, permission: AssignPermission, db_session: DbSession):
+    permission_read = await RolePermissionService(db_session).assign_permission_to_role(resource_id, permission)
+    return permission_read
 
 @router.delete("/{resource_id}/permissions/{permission_id}",
                response_model=None,
