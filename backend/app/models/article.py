@@ -6,6 +6,7 @@ from datetime import datetime
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.config import normalization_settings
 from app.db.base import PrimaryIdMixin, OwnerMixin
 
 class Article(OwnerMixin):
@@ -21,6 +22,8 @@ class Article(OwnerMixin):
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     content_html: Mapped[str | None] = mapped_column(Text, nullable=True)
     content_text: Mapped[str] = mapped_column(Text, nullable=False)
+    normilized_text: Mapped[str] = mapped_column(Text, nullable=False)
+    normalized_text_lower: Mapped[str] = mapped_column(Text, nullable=False)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     language: Mapped[str] = mapped_column(String(32), nullable=False)
     tags_csv: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -28,6 +31,10 @@ class Article(OwnerMixin):
     checksum: Mapped[str] = mapped_column(String(64), nullable=False)
     is_alert: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     matched_keywords_csv: Mapped[str | None] = mapped_column(Text, nullable=True)
+    urls: Mapped[list[str]] = mapped_column(JSON, nullable=True)
+    hashtags: Mapped[list[str]] = mapped_column(JSON, nullable=True)
+    mentions: Mapped[list[str]] = mapped_column(JSON, nullable=True)
+    normalization_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     source = relationship("Source", back_populates="articles")
     keyword_hits = relationship("KeywordHit", back_populates="article", cascade="all, delete-orphan")

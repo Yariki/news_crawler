@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from sys import prefix
 
 from pydantic import Field
+from pydantic.dataclasses import dataclass
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from app.core.env_settings import get_env_file
 
@@ -25,13 +27,13 @@ class Settings(BaseSettings):
     checker_timeout_seconds: float = Field(default=30.0, alias="CHECKER_TIMEOUT_SECONDS")
     beat_tick_seconds: int = Field(default=10, alias="BEAT_TICK_SECONDS")
     beat_batch_size: int = Field(default=50, alias="BEAT_BATCH_SIZE")
-    
+
     news_monitor_exchange_name: str = Field(default="news_monitor_updates", alias="NEWS_MONITOR_EXCHANGE_NAME")
     crawling_update_queue_name: str = Field(default="crawling_update", alias="CRAWLING_UPDATE_QUEUE_NAME")
 
     dlx_name: str = Field(default="news_monitor_dlx", alias="DLX_NAME")
     dlq_name: str = Field(default="news_monitor_dlx_queue", alias="DLQ_NAME")
-    
+
     outbox_poll_interval_seconds: int = Field(default=5, alias="OUTBOX_POLL_INTERVAL_SECONDS")
     outbox_batch_size: int = Field(default=50, alias="OUTBOX_BATCH_SIZE")
     outbox_backoff_base_seconds: int = Field(default=10, alias="OUTBOX_BACKOFF_BASE_SECONDS")
@@ -70,10 +72,26 @@ class Settings(BaseSettings):
     def alembic_database_url(self) -> str:
         return self.database_url.replace("+asyncpg", "+psycopg")
 
-
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
 
+class NormalizationSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=get_env_file(), extra="ignore", env_prefix="NORMALIZATION_")
+
+    unicode_form: str = Field(default="NFKC", alias="UNICODE_FORM")
+
+    keep_urls: bool = Field(default=True, alias="KEEP_URLS")
+    keep_hashtags: bool = Field(default=True, alias="KEEP_HASHTAGS")
+    keep_mentiones: bool = Field(default=True, alias="KEEP_MENTIONS")
+
+    whitespaces: bool = Field(default=True, alias="WHITESPACES")
+    max_blank_lines: int = Field(default=1, alias="MAX_BLANK_LINES")
+    max_repeated_punctuations: int = Field(default=3, alias="MAX_REPEATED_PUNCTUATIONS")
+
+@lru_cache
+def get_normalization_settings() -> NormalizationSettings:
+    return NormalizationSettings()
 
 settings = get_settings()
+normalization_settings = NormalizationSettings()
