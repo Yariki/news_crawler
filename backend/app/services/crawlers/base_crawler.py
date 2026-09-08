@@ -8,7 +8,7 @@ import httpx
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.config import settings
+from app.core.config import get_normalization_settings, settings
 from app.core.rbac import PermissionGranted
 from app.messaging.messages.job_update import JobUpdateMessage
 from app.models import MonitoredKeyword, CrawlJob, Source, Article, KeywordHit
@@ -31,6 +31,7 @@ from app.db.session import AsyncSessionLocal
 import logging
 
 from app.services.robots import RobotsService
+from app.utils.normalization.text_normalization import TextNormalization
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +106,9 @@ class BaseCrawler(ABC):
         job = await crawl_rp.create_crawl_job(source_id, Status.RUNNING)
 
         await self._send_job_update(job, articles_found=0, articles_created=0)  # Initial job update
-
+        
+        text_normalizer = TextNormalization(settings=get_normalization_settings())
+        
         try:
             scraper = self._build_scraper(source)
             feeds = await scraper.discover_urls()
@@ -122,9 +125,10 @@ class BaseCrawler(ABC):
                 article_data = await scraper.fetch_article(feed)
                 if not article_data:
                     continue
-
+                
+                normalized_text = text_normalizer.normalize_text(article_data.content_text)
                 matched_words = detect_keywords(
-                    article_data.content_text, active_keywords
+                    normalized_text.normalization_text, active_keywords
                 )
                 article = Article(
                     source_id=UUID(source_id),
@@ -136,6 +140,12 @@ class BaseCrawler(ABC):
                     fetched_at=datetime.now(timezone.utc),
                     content_html=article_data.content_html,
                     content_text=article_data.content_text,
+                    normalized_text=normalized_text.normalization_text,
+                    normalized_text_lower=normalized_text.normalization_text_lower,
+                    urls=normalized_text.urls,
+                    hashtags=normalized_text.hashtags,
+                    mentions=normalized_text.mentions,
+                    normalization_version=normalized_text.normalization_version,
                     summary=article_data.summary,
                     language=article_data.language,
                     tags_csv=(
@@ -153,7 +163,7 @@ class BaseCrawler(ABC):
                 await article_rp.add_article(article)
 
                 for keyword in matched_words:
-                    await keyword_rp.create_keyword_hit(KeywordHit(article_id=article.id, keyword=keyword.strip()), owner_id=source.owner_id)
+                    await keyword_rp.create_keyword_hit(KeywordHit(article_id=article.id, keyword=keyword.strip(), owner_id=source.owner_id))
 
                 created += 1
 

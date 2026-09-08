@@ -2,7 +2,10 @@ import asyncio
 from datetime import timezone, datetime
 from uuid import uuid4
 
+
 from app.models import Source, Article
+from app.utils.normalization.text_normalization import TextNormalization
+from app.core.config import get_normalization_settings
 from app.models.status import Status
 from app.repositories.crawljob_repository import CrawlJobRepository
 from app.repositories.outbox_repository import OutboxRepository
@@ -27,6 +30,8 @@ class FakeCrawlerService(BaseCrawler):
         job = await crawl_rp.create_crawl_job(source_id, Status.RUNNING)
         await self._send_job_update(job, articles_found=0, articles_created=0)
         
+        text_normalizer = TextNormalization(settings=get_normalization_settings())
+        
         try:
             active_keywords = await self._get_keywords()
             
@@ -41,19 +46,27 @@ class FakeCrawlerService(BaseCrawler):
             for url_feed in urls:
                 fetched_article = await scraper.fetch_article(url_feed)
 
-                matched_keywords = detect_keywords(fetched_article.content_text, active_keywords)
+                normalized_text = text_normalizer.normalize_text(fetched_article.content_text)
+                matched_keywords = detect_keywords(normalized_text.normalization_text, active_keywords)
+                
 
                 article = Article(
                     id = uuid4(),
-                    source_id=source_id,
+                    source_id=UUID(source_id),
                     external_id=fetched_article.external_id,
                     url=fetched_article.url,
                     title=fetched_article.title,
                     author=fetched_article.author,
                     published_at=fetched_article.published_at,
-                    fetched_at=datetime.now(timezone.utc).isoformat(),
+                    fetched_at=datetime.now(timezone.utc),
                     content_html=fetched_article.content_html,
                     content_text=fetched_article.content_text,
+                    normalized_text=normalized_text.normalization_text,
+                    normalized_text_lower=normalized_text.normalization_text_lower,
+                    urls=normalized_text.urls,
+                    hashtags=normalized_text.hashtags,
+                    mentions=normalized_text.mentions,
+                    normalization_version=normalized_text.normalization_version,
                     summary=fetched_article.summary,
                     language=fetched_article.language or source.language,
                     tags_csv=(

@@ -1,6 +1,6 @@
 
 from datetime import datetime, timezone
-import uuid
+from uuid import UUID
 
 
 import httpx
@@ -10,11 +10,12 @@ from sqlalchemy import select
 
 from app.models.status import Status
 from app.services.keyword_detector import detect_keywords
+from app.utils.normalization.text_normalization import TextNormalization
 from ...core.rbac import PermissionGranted
 
 from ...scrapers.telegram.telegram_scraper import TelegramScrapper
 from ...services.crawlers.base_crawler import BaseCrawler
-from ...core.config import settings
+from ...core.config import get_normalization_settings, settings
 from ...models import Source, CrawlJob, Article, KeywordHit
 from app.repositories.crawljob_repository import CrawlJobRepository
 from app.repositories.outbox_repository import OutboxRepository
@@ -59,6 +60,8 @@ class TelegramCrawlerService(BaseCrawler):
             job.articles_found = len(scraped_articles)
 
             active_keywords = await self._get_keywords()
+            
+            text_normalizer = TextNormalization(settings=get_normalization_settings())
 
             for article_data in scraped_articles:
 
@@ -67,11 +70,12 @@ class TelegramCrawlerService(BaseCrawler):
                 )
                 if exists:
                     continue
-
-                matched_keywords = detect_keywords(article_data.content_text, active_keywords)
+                
+                normalized_text = text_normalizer.normalize_text(article_data.content_text)
+                matched_keywords = detect_keywords(normalized_text.normalization_text, active_keywords)
 
                 article = Article(
-                    source_id=source_id,
+                    source_id=UUID(source_id),
                     external_id=article_data.external_id,
                     url=article_data.url,
                     title=article_data.title,
@@ -80,6 +84,12 @@ class TelegramCrawlerService(BaseCrawler):
                     fetched_at=datetime.now(timezone.utc),
                     content_html=article_data.content_html,
                     content_text=article_data.content_text,
+                    normalized_text=normalized_text.normalization_text,
+                    normalized_text_lower=normalized_text.normalization_text_lower,
+                    urls=normalized_text.urls,
+                    hashtags=normalized_text.hashtags,
+                    mentions=normalized_text.mentions,
+                    normalization_version=normalized_text.normalization_version,
                     summary=article_data.summary,
                     language=article_data.language or source.language,
                     tags_csv=(
