@@ -24,7 +24,8 @@ class OutboxRepository:
             payload_json=payload,
             status=OutboxStatus.PENDING,
             created_at=datetime.now(timezone.utc),
-            next_attempt_at=datetime.now(timezone.utc)
+            next_attempt_at=datetime.now(timezone.utc),
+            owner_id=payload["owner_id"] if "owner_id" in payload else None
         )
         self._db.add(new_event)
         return new_event

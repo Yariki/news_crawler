@@ -124,14 +124,14 @@ class BaseCrawler(ABC):
 
                 article_data = await scraper.fetch_article(feed)
                 if not article_data:
-                    continue
+                    continue 
                 
-                normalized_text = text_normalizer.normalize_text(article_data.content_text)
+                normalized_text_result = text_normalizer.normalize_text(article_data.content_text)
                 matched_words = detect_keywords(
-                    normalized_text.normalization_text, active_keywords
+                    normalized_text_result.normalization_text, active_keywords
                 )
                 article = Article(
-                    source_id=UUID(source_id),
+                    source_id=source_id,
                     external_id=article_data.external_id,
                     url=feed.url,
                     title=article_data.title,
@@ -140,12 +140,12 @@ class BaseCrawler(ABC):
                     fetched_at=datetime.now(timezone.utc),
                     content_html=article_data.content_html,
                     content_text=article_data.content_text,
-                    normalized_text=normalized_text.normalization_text,
-                    normalized_text_lower=normalized_text.normalization_text_lower,
-                    urls=normalized_text.urls,
-                    hashtags=normalized_text.hashtags,
-                    mentions=normalized_text.mentions,
-                    normalization_version=normalized_text.normalization_version,
+                    normilized_text=normalized_text_result.normalization_text,
+                    normalized_text_lower=normalized_text_result.normalization_text_lower,
+                    urls=normalized_text_result.urls,
+                    hashtags=normalized_text_result.hashtags,
+                    mentions=normalized_text_result.mentions,
+                    normalization_version=normalized_text_result.normalization_version,
                     summary=article_data.summary,
                     language=article_data.language,
                     tags_csv=(
@@ -233,9 +233,9 @@ class BaseCrawler(ABC):
                 event_type=OutboxEventType.ARTICLE_INDEX.value,
                 payload=payload
             )
-            logger.info("Enqueued outbox event for article %s with payload: %s", article.id, payload)
+            logger.info("Enqueued outbox event for article %s", article.id)
             
-            if matched_words:
+            if matched_words and len(matched_words) > 0:
                 outbox_rp.enqueue(
                     aggregate_id=article.id,
                     event_type=OutboxEventType.KEYWORDS_MATCH.value,
@@ -245,6 +245,7 @@ class BaseCrawler(ABC):
                         "url": article.url,
                         "matched_keywords": matched_words,
                         "published_at": article.published_at.isoformat() if article.published_at else None,
+                        "owner_id": str(source.owner_id) if source.owner_id else None,
                     }
                 )
                 logger.info("Enqueued outbox event for article %s with matched keywords: %s", article.id, matched_words)
