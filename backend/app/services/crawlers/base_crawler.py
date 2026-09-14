@@ -172,6 +172,8 @@ class BaseCrawler(ABC):
                 await self._update_job_info(crawl_rp, job, created)
 
                 await self._db.commit()
+                
+                existing_urls.add(feed.url)
 
                 if use_delay and crawl_delay:
                     logger.debug(f"Sleeping for {crawl_delay} seconds to respect crawl delay")

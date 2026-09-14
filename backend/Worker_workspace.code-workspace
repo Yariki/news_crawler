@@ -1,0 +1,70 @@
+{
+	"folders": [
+		{
+			"name": "backend",
+			"path": "."
+		}
+	],
+	"settings": {
+		"python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+		"python.testing.cwd": "${workspaceFolder}",
+		"python.testing.pytestArgs": [
+			"tests"
+		],
+		"python.testing.unittestEnabled": false,
+		"python.testing.pytestEnabled": true,
+		"workbench.colorCustomizations": {
+			"activityBar.activeBackground": "#98ead0",
+			"activityBar.background": "#98ead0",
+			"activityBar.foreground": "#15202b",
+			"activityBar.inactiveForeground": "#15202b99",
+			"activityBarBadge.background": "#c37be4",
+			"activityBarBadge.foreground": "#15202b",
+			"commandCenter.border": "#15202b99",
+			"sash.hoverBorder": "#98ead0",
+			"statusBar.background": "#6ee2bd",
+			"statusBar.foreground": "#15202b",
+			"statusBarItem.hoverBackground": "#43d9aa",
+			"statusBarItem.remoteBackground": "#b660df",
+			"statusBarItem.remoteForeground": "#15202b",
+			"titleBar.activeBackground": "#6ee2bd",
+			"titleBar.activeForeground": "#15202b",
+			"titleBar.inactiveBackground": "#6ee2bd99",
+			"titleBar.inactiveForeground": "#15202b99",
+			"tab.hoverBackground": "#d1d1d1",
+			"tab.activeForeground": "#e7e7e7",
+			"activityBarTop.activeBackground": "#98ead0",
+			"activityBarTop.background": "#98ead0",
+			"activityBarTop.foreground": "#15202b",
+			"activityBarTop.inactiveForeground": "#15202b99",
+			"commandCenter.foreground": "#15202b",
+			"statusBar.debuggingBackground": "#6ee2bd",
+			"statusBar.debuggingForeground": "#15202b",
+			"activityBar.activeBorder": "#15202b",
+			"activityBarTop.activeBorder": "#15202b"
+		},
+		"peacock.color": "#6ee2bd",
+		"files.exclude": {
+			"**/.git": true,
+			"**/.svn": true,
+			"**/.hg": true,
+			"**/.DS_Store": true,
+			"**/Thumbs.db": true,
+			"**/__pycache__": true,
+			"**/dist": true,
+			"**/build": true,
+			"**/news_crawler.egg-info": true
+		},
+		"docwriter.style": "Auto-detect",
+		"chat.tools.terminal.autoApprove": {
+			"/^python -m compileall -q app/utils/normalization && python -c \"import inspect; from app\\.utils\\.normalization\\.normalization_result import NormalizationResult; print\\(inspect\\.signature\\(NormalizationResult\\)\\)\"$/": {
+				"approve": true,
+				"matchCommandLine": true
+			},
+			"/^python -c \"import inspect; from app\\.utils\\.normalization\\.normalization_result import NormalizationResult; print\\(inspect\\.signature\\(NormalizationResult\\)\\); NormalizationResult\\('raw', 'normalized', 'normalized', \\[\\], \\['tag'\\], \\['mention'\\], 1\\)\"$/": {
+				"approve": true,
+				"matchCommandLine": true
+			}
+		}
+	}
+}

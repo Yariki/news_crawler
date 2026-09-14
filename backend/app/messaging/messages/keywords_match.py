@@ -12,11 +12,13 @@ class KeywordsMatchMessage(BaseMessage):
     title: str
     url: str
     published_at: str
+    owner_id: str
 
-    def __init__(self, article_id: str, title: str, url: str, matched_keywords: list[str], published_at: str,id: UUID | None = None, type: MessageTypes | None = None):
+    def __init__(self, article_id: str, title: str, url: str, matched_keywords: list[str], published_at: str, owner_id: str, id: UUID | None = None, type: MessageTypes | None = None):
         super().__init__(id=id,type=MessageTypes.KEYWORDS_MATCH)
         self.article_id = article_id
         self.title = title
         self.url = url
         self.matched_keywords = matched_keywords
         self.published_at = published_at
+        self.owner_id = owner_id

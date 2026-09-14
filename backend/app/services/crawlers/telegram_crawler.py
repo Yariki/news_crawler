@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.models.status import Status
+from app.repositories.article_repository import ArticleRepository
+from app.repositories.keyword_hit_repository import KeywordHitRepository
 from app.services.keyword_detector import detect_keywords
 from app.utils.normalization.text_normalization import TextNormalization
 from ...core.rbac import PermissionGranted
@@ -60,15 +62,16 @@ class TelegramCrawlerService(BaseCrawler):
             job.articles_found = len(scraped_articles)
 
             active_keywords = await self._get_keywords()
+            article_rp = ArticleRepository(self._db)
+            keyword_rp = KeywordHitRepository(self._db)
             
             text_normalizer = TextNormalization(settings=get_normalization_settings())
+            
+            existing_urls = set(await article_rp.get_articles_urls([article_data.url for article_data in scraped_articles]))
 
             for article_data in scraped_articles:
 
-                exists = await self._db.scalar(
-                    select(Article).where(Article.url == article_data.url)
-                )
-                if exists:
+                if article_data.url in existing_urls:
                     continue
                 
                 normalized_text = text_normalizer.normalize_text(article_data.content_text)
@@ -105,15 +108,15 @@ class TelegramCrawlerService(BaseCrawler):
                 )
                 self._db.add(article)
                 await self._db.flush()  # Flush to get the article ID for keyword hits
-                if matched_keywords:
-                    for keyword in matched_keywords:
-                        keyword_hit = KeywordHit(
-                            article_id=article.id,
-                            keyword=keyword,
-                            owner_id=source.owner_id,
-                        )
-                        self._db.add(keyword_hit)
+                
+                for keyword in matched_keywords:
+                    await keyword_rp.create_keyword_hit(KeywordHit(
+                        article_id=article.id,
+                        keyword=keyword,
+                        owner_id=source.owner_id,
+                    ))
 
+                existing_urls.add(article_data.url)
                 await self._enqueue_outbox_event(source, article, matched_keywords)
                 await self._update_job_info(crawl_rp, job, created)
 
