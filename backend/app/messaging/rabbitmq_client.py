@@ -1,4 +1,5 @@
 
+import asyncio
 import json
 import logging
 from typing import Any, Awaitable, Callable, Tuple
@@ -14,9 +15,23 @@ from aio_pika.abc import (
     ConsumerTag,
 )
 
+from yarl import URL
+
 from app.messaging.messages.base import to_dict
 
 logger = logging.getLogger(__name__)
+
+
+def _connection_url() -> URL:
+    """Build the broker URL with an explicit heartbeat.
+
+    aiormq only reads ``heartbeat`` from the URL query - passing it as a
+    ``connect_robust`` keyword is silently dropped - so it has to be set here.
+    """
+    url = URL(settings.rabbitmq_url)
+    if "heartbeat" in url.query:
+        return url
+    return url.update_query(heartbeat=str(settings.rabbitmq_heartbeat))
 
 class RabbitMQClient:
     """RabbitMQ client for managing connections, exchanges, queues, and message publishing/consuming."""
@@ -34,23 +49,42 @@ class RabbitMQClient:
     async def _stop_all_consumers(self):
         """Stop all active consumers by canceling their consumer tags."""
         for queue_name, (consumer_tag, queue) in self._queue_cache.items():
-            assert self._channel is not None, "Channel must be initialized before stopping consumers."
-            await queue.cancel(consumer_tag)
-            logger.info("Stopped consuming messages from queue: %s", queue_name)
+            try:
+                await queue.cancel(consumer_tag)
+                logger.info("Stopped consuming messages from queue: %s", queue_name)
+            except Exception:
+                # The channel may already be gone (broker drop, shutdown race); nothing left to cancel.
+                logger.warning("Could not cancel consumer on queue %s", queue_name, exc_info=True)
         self._queue_cache.clear()
-    
-    
+
+    async def _discard_connection(self):
+        """Tear down the current connection so a robust one can't keep reconnecting in the background."""
+        connection, self._connection = self._connection, None
+        self._channel = None
+        self._exchange = None
+        self._queue_cache.clear()
+
+        if connection is None or connection.is_closed:
+            return
+        try:
+            await connection.close()
+        except Exception:
+            logger.warning("Error closing previous RabbitMQ connection", exc_info=True)
+
     async def connect(self):
         """Establish a connection to RabbitMQ and create a channel."""
+        # A RobustConnection retries forever on its own, so a stale one has to be closed
+        # explicitly or it lingers as a zombie reconnect loop for the life of the process.
+        await self._discard_connection()
         try:
-            self._connection = await aio_pika \
-                .connect_robust(settings.rabbitmq_url)
+            self._connection = await aio_pika.connect_robust(_connection_url())
             self._channel = await self._connection.channel()
             await self._channel.set_qos(prefetch_count=1)
         except Exception as e:
             logger.error(f"Failed to connect to RabbitMQ: {e}")
+            await self._discard_connection()
             raise
-    
+
     async def declare_infrastructure(self):
         """Declare the necessary exchanges, queues, and bindings for the application."""
         if not self._channel:
@@ -87,14 +121,12 @@ class RabbitMQClient:
     
     async def close(self):
         """Close the RabbitMQ connection."""
-        if self._connection and self._connection.is_closed:
+        if self._connection is None or self._connection.is_closed:
+            await self._discard_connection()
             return
         await self._stop_all_consumers()
-        await self._connection.close()
-        self._connection = None
-        self._channel = None
-        self._exchange = None
-    
+        await self._discard_connection()
+
     async def publish(self, message_body: Any, routing_key: str | None = None):
         """Publish a message to the exchange with the specified routing key."""
         if not self.is_ready:
@@ -138,12 +170,36 @@ class RabbitMQClient:
         
 
 _rabbitmq_client: RabbitMQClient | None = None
+_rabbitmq_client_lock = asyncio.Lock()
 
 async def get_rabbitmq_client() -> RabbitMQClient:
-    """Get a singleton instance of RabbitMQClient, ensuring it's connected and ready."""
+    """Get a singleton instance of RabbitMQClient, (re)connecting if it is missing or no longer ready."""
     global _rabbitmq_client
-    if _rabbitmq_client is None:
-        _rabbitmq_client = RabbitMQClient()
-        await _rabbitmq_client.connect()
-        await _rabbitmq_client.declare_infrastructure()
-    return _rabbitmq_client
+    async with _rabbitmq_client_lock:
+        if _rabbitmq_client is not None and _rabbitmq_client.is_ready:
+            return _rabbitmq_client
+
+        client = _rabbitmq_client or RabbitMQClient()
+        try:
+            # connect() discards any stale connection first, so reconnecting here
+            # never leaves an orphaned robust connection retrying in the background.
+            await client.connect()
+            await client.declare_infrastructure()
+        except Exception:
+            # Don't leave a half-initialized client cached for future callers to reuse.
+            _rabbitmq_client = None
+            raise
+        _rabbitmq_client = client
+        return _rabbitmq_client
+
+
+async def close_rabbitmq_client() -> None:
+    """Close and drop the singleton client, if one was created."""
+    global _rabbitmq_client
+    async with _rabbitmq_client_lock:
+        if _rabbitmq_client is None:
+            return
+        try:
+            await _rabbitmq_client.close()
+        finally:
+            _rabbitmq_client = None

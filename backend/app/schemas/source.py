@@ -11,7 +11,7 @@ class SourceCreateUpdate(BaseModel):
     name: str = Field(min_length=1)
     base_url: HttpUrl
     language: str
-    source_type: int = Field(gt=0, le=SourceType.RSS.value)
+    source_type: int = Field(ge=0, le=SourceType.RSS.value)
     crawler_key: str
     scrape_interval_minutes: int = Field(gt=0, default=1440)
     is_enabled: bool = True
