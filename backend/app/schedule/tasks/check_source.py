@@ -1,12 +1,10 @@
 
-import asyncio
 from functools import partial
 import logging
 from uuid import UUID
 from sqlalchemy import select
 
 from ...core.rbac import PermissionGranted, AuthorizationContext, load_authorization_context
-from ...messaging.rabbitmq_client import RabbitMQClient
 
 from ...models.source import Source
 
@@ -19,11 +17,10 @@ from ...services.crawlers.rss_crawler import RssCrawlService
 from ...services.crawlers.telegram_crawler import TelegramCrawlerService
 from ...messaging.rabbitmq_client import get_rabbitmq_client
 
+from ..async_runner import run_async
 from ..celery_app import celery_app
 
 logger = logging.getLogger(__name__)
-
-_worker_loop = None
 
 async def _run_job(
     source_id: str,
@@ -64,14 +61,6 @@ async def _run_scheduled_job(source_id: UUID) -> None:
         logger.exception(f"Error running scheduled job for source {source_id}")
         raise
 
-def _get_worker_loop():
-    global _worker_loop
-    if _worker_loop is None or _worker_loop.is_closed():
-        _worker_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(_worker_loop)
-    return _worker_loop
-
 @celery_app.task(name="schedule.tasks.run_scheduled_job")
 def run_scheduled_job(source_id: str) -> None:
-    loop = _get_worker_loop()
-    return loop.run_until_complete(_run_scheduled_job(UUID(source_id)))
+    return run_async(_run_scheduled_job(UUID(source_id)))

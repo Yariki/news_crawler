@@ -29,8 +29,12 @@ class CrawlJobRepository(BaseAuthRepository):
         job = await self.db.get(CrawlJob, params.id)
         if not job:
             raise ValueError("CrawlJob not found")
-
-        for key, value in params.__dict__.items():
+        
+        list_attr = list(params.__dict__.items())
+        
+        for key, value in list_attr:
+            if key == "_sa_instance_state":
+                continue
             setattr(job, key, value)
 
         await self.db.flush()

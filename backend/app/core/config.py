@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     telegram_api_id: str = Field(default="", alias="TELEGRAM_API_ID")
     telegram_api_hash: str = Field(default="", alias="TELEGRAM_API_HASH")
     rabbitmq_url: str = Field(default="amqp://guest:guest@localhost:5672/", alias="RABBITMQ_URL")
+    rabbitmq_heartbeat: int = Field(default=60, alias="RABBITMQ_HEARTBEAT")
     celery_task_queue: str = Field(default="scheduler.checks", alias="CELERY_TASK_QUEUE")
     checker_timeout_seconds: float = Field(default=30.0, alias="CHECKER_TIMEOUT_SECONDS")
     beat_tick_seconds: int = Field(default=10, alias="BEAT_TICK_SECONDS")

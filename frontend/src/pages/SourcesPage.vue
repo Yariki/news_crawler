@@ -105,7 +105,7 @@ const languageRule = [
 const sourceTypeRule = [
   value => {
     const val = +value;
-    if (val > 0 && val <= SourceTypes.length) return true;
+    if (val >= 0 && val <= SourceTypes.length) return true;
     return "Source type must not be empty";
   }
 ]
