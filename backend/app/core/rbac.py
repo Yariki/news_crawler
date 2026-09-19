@@ -213,7 +213,7 @@ class RequiredPermissionsAndOwnership:
             )
         
         return PermissionGranted(auth=auth_context, is_any=is_any)
-
+    
 class RequiredRoles:
 
     def __init__(self, *roles: str) -> None:
