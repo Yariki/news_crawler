@@ -4,6 +4,8 @@ import json
 from collections.abc import Iterable
 from uuid import UUID
 from app.core.config import settings
+from app.core.rbac import RequiredPermissionsAndOwnership, PermissionMode
+from app.db.session import DbSession, get_db
 from app.core.security import decode_token
 
 from fastapi import WebSocket, status
@@ -23,6 +25,10 @@ class NotificationHub:
             logger.info("Accepting websocket connection...")
             user_token = await websocket.receive_json()
             decoded_token = decode_token(user_token.get("token"), settings)
+            
+            access_control = RequiredPermissionsAndOwnership("alert:read:own", mode=PermissionMode.ANY)
+            
+            
             if not decoded_token:
                 logger.warning("Invalid token")
                 await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
@@ -55,6 +61,10 @@ class NotificationHub:
                 dead.append(user_id)
         for user_id in dead:
             self.disconnect(user_id)
+            
+    async def _validate_user(self, token: str) -> bool:
+        # TODO: implement validation of the user token
+        pass
 
 
 notification_hub = NotificationHub()
