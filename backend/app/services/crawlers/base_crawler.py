@@ -74,6 +74,7 @@ class BaseCrawler(ABC):
             source_id=job.source_id if job.source_id else None,
             started_at=str(job.started_at.isoformat()),
             finished_at=str(job.finished_at.isoformat()) if job.finished_at else "",
+            owner_id=job.owner_id if job.owner_id else None
         )
         await self._rabbitmq_client.publish(job_update_message)
 
@@ -106,9 +107,9 @@ class BaseCrawler(ABC):
         job = await crawl_rp.create_crawl_job(source_id, Status.RUNNING)
 
         await self._send_job_update(job, articles_found=0, articles_created=0)  # Initial job update
-        
+
         text_normalizer = TextNormalization(settings=get_normalization_settings())
-        
+
         try:
             scraper = self._build_scraper(source)
             feeds = await scraper.discover_urls()
@@ -124,8 +125,8 @@ class BaseCrawler(ABC):
 
                 article_data = await scraper.fetch_article(feed)
                 if not article_data:
-                    continue 
-                
+                    continue
+
                 normalized_text_result = text_normalizer.normalize_text(article_data.content_text)
                 matched_words = detect_keywords(
                     normalized_text_result.normalization_text, active_keywords
@@ -172,7 +173,7 @@ class BaseCrawler(ABC):
                 await self._update_job_info(crawl_rp, job, created)
 
                 await self._db.commit()
-                
+
                 existing_urls.add(feed.url)
 
                 if use_delay and crawl_delay:
@@ -202,8 +203,9 @@ class BaseCrawler(ABC):
             logger.exception("Unexpected error crawling source %s", source_id)
         finally:
             await crawl_rp.update_crawl_job(job)
+            await self._commit_changes()
             await self._send_job_update(job)
-
+            
         return job
 
     async def _update_job_info(self, crawl_rp, job, created):
@@ -236,7 +238,7 @@ class BaseCrawler(ABC):
                 payload=payload
             )
             logger.info("Enqueued outbox event for article %s", article.id)
-            
+
             if matched_words and len(matched_words) > 0:
                 outbox_rp.enqueue(
                     aggregate_id=article.id,
@@ -252,3 +254,9 @@ class BaseCrawler(ABC):
                 )
                 logger.info("Enqueued outbox event for article %s with matched keywords: %s", article.id, matched_words)
 
+    async def _commit_changes(self):
+        try:
+            await self._db.commit()
+        except Exception:
+            await self._db.rollback()
+            logger.exception("Error committing to the database")

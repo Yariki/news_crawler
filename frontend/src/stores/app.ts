@@ -13,6 +13,7 @@ import {
     KeywordsMatchMessage,
     Status,
 } from "../models/types";
+import {useAuthStore} from './auth'
 
 const sortJobsByStartedAtDesc = (jobs: JobItem[]): JobItem[] => {
     return [...jobs].sort((a, b) => {
@@ -125,12 +126,14 @@ export const useAppStore = defineStore('app', {
             await this.refreshAll()
         },
         connectAlerts() {
-            if (this.ws) return
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) return
+            const authStore = useAuthStore()
+            
             const ws = new WebSocket(getAlertsWebSocketUrl())
             ws.onopen = () => {
-                ws.send('ping')
+                ws.send(JSON.stringify({ type: 'authenticate', token: authStore.access_token }))
                 setInterval(() => ws.readyState === WebSocket.OPEN && ws.send('ping'), 15000)
-            }
+            };
             ws.onmessage = (event) => {
                 //TODO: implement processing messages  from the server.
                 // There are two types of messages: "alert" and "job_update". For now, we only process "alert" messages.
@@ -140,9 +143,11 @@ export const useAppStore = defineStore('app', {
                     this.processAlertMessage(message.payload)
                 } else if (message_type === 'JOB_UPDATE') {
                     this.processJobUpdateMessage(message.payload)
+                } else if (message_type === 'CONNECTION_SUCCESSFUL') {
+                    console.log('Connection successful')
                 }
-            }
-            this.ws = ws
+            };
+            this.ws = ws;
         },
         processAlertMessage(message: KeywordsMatchMessage) {
             this.alerts.unshift(message)

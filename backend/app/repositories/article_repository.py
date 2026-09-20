@@ -49,7 +49,9 @@ class ArticleRepository:
         if not existing_article:
             return None
         
-        for key, value in updated_article.__dict__.items():
+        for key, value in list(updated_article.__dict__.items()):
+            if key == "_sa_instance_state":
+                continue
             if key != "id" and value is not None:
                 setattr(existing_article, key, value)
         

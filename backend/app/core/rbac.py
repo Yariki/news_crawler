@@ -214,6 +214,31 @@ class RequiredPermissionsAndOwnership:
         
         return PermissionGranted(auth=auth_context, is_any=is_any)
 
+    async def check_permissions(self, db: DbSession, user_id: str) -> PermissionGranted:
+
+        auth_context = await load_authorization_context(db=db, user_id=user_id)
+
+        matched = [permission for permission in self.permissions if auth_context.has_permission(permission)]
+        missing = [permission for permission in self.permissions if permission not in matched]
+
+        if auth_context.has_role(ADMIN_ROLE):
+            return PermissionGranted(auth=auth_context, is_any=True)
+
+        if self.mode == PermissionMode.ALL:
+            is_allowed = not missing
+        else:
+            is_allowed = len(matched) > 0
+
+        if not is_allowed:
+            raise HTTPException(
+                status_code=HttpStatus.HTTP_403_FORBIDDEN,
+                detail=f"Missing required permissions: {', '.join(missing)}"
+            )
+
+        is_any = any(permission.endswith(":any") for permission in matched)
+
+        return PermissionGranted(auth=auth_context, is_any=is_any)
+    
 class RequiredRoles:
 
     def __init__(self, *roles: str) -> None:
