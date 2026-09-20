@@ -33,7 +33,7 @@ export const Languages = [
     {value: 'other', label: 'Other'},
 ];
 
-export enum SourseType {
+export enum SourceType {
     Unknown = 0,
     NewsSite = 1,
     Blog = 2,
@@ -62,7 +62,7 @@ export interface SourceItem {
     name: string
     base_url: string
     language: string
-    source_type: SourseType
+    source_type: SourceType
     crawler_key: string
     is_enabled: boolean
     scrape_interval_minutes: number
@@ -117,7 +117,7 @@ export interface CreateSourcePayload {
     name: string
     base_url: string
     language: string
-    source_type: SourseType
+    source_type: SourceType
     crawler_key: string
     scrape_interval_minutes: number
     is_enabled: boolean

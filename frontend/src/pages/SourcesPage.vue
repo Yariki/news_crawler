@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import {useAppStore} from '../stores/app'
-import { SourceType, Languages } from '../models/types';
+import { Languages, SourceType, SourceTypes } from '../models/types';
 import { useMessages } from '../stores/messages';
 import { isValidWebUrl } from '../utils/validation';
 
