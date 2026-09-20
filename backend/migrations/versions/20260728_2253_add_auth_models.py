@@ -96,7 +96,14 @@ def upgrade() -> None:
     op.bulk_insert(roles_table, roles, multiinsert=False)
     user: dict[str, str | bool] = {"username": "admin", "email": "admin@example.com", "hashed_password": hash_password(settings.admin_password), "is_active": True, "is_verified": True, "is_delete": False}
     op.bulk_insert(users_table, [user], multiinsert=False)
-    
+
+    admin_role_id  = op.get_bind().execute(sa.select(roles_table.c.id).where(roles_table.c.name == "admin")).scalar()
+    admin_user_id  = op.get_bind().execute(sa.select(users_table.c.id).where(users_table.c.username == "admin")).scalar()
+
+    op.execute(
+        sa.insert(meta_obj.tables['user_roles']).values(user_id=admin_user_id, role_id=admin_role_id, created_at=sa.text('now()'), updated_at=sa.text('now()'), is_delete=False)
+    )
+
     # ### end Alembic commands ###
 
 
