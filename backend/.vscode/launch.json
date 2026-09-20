@@ -5,6 +5,74 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Windows Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "env": {
+        "APP_MODE": "dev"
+      }
+    },
+    {
+      "name": "Windows FastAPI",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "module": "uvicorn",
+      "args": [
+        "app.main:app",
+        "--reload",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
+      "jinja": true,
+      "env": {
+        "APP_MODE": "dev"
+      }
+    },
+    {
+      "name": "WWindows Celery Worker",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "module": "celery",
+      "args": [
+        "-A",
+        "app.schedule.celery_app:celery_app",
+        "worker",
+        "--loglevel=info",
+        "--concurrency=1",
+        "-P",
+        "solo"
+      ],
+      "console": "integratedTerminal",
+      "env": {
+        "APP_MODE": "dev"
+      },
+      "justMyCode": false
+    },
+    {
+      "name": "Windows Celery Beat",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "module": "celery",
+      "args": [
+        "-A",
+        "app.schedule.celery_beat",
+        "beat",
+        "--loglevel=info"
+      ],
+      "console": "integratedTerminal",
+      "env": {
+        "APP_MODE": "dev"
+      }
+    },
+    {
       "name": "Current File",
       "type": "debugpy",
       "request": "launch",

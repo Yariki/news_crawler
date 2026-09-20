@@ -55,6 +55,8 @@ class Settings(BaseSettings):
 
     permissions_actions_catalog: str = Field(default="app/services/resource_actions/resource_actions.json", alias="PERMISSIONS_ACTIONS_CATALOG")
 
+    admin_password: str = Field(default="admin", alias="ADMIN_PASSWORD")
+
 
     @property
     def cors_origins_list(self) -> list[str]:

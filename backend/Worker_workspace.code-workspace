@@ -43,7 +43,7 @@
 			"activityBar.activeBorder": "#15202b",
 			"activityBarTop.activeBorder": "#15202b"
 		},
-		"peacock.color": "#6ee2bd",
+		"peacock.color": "#ae21da",
 		"files.exclude": {
 			"**/.git": true,
 			"**/.svn": true,

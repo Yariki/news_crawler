@@ -9,6 +9,8 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from app.core.security import hash_password
+from app.core.config import settings
 
 
 # revision identifiers, used by Alembic.
@@ -92,8 +94,7 @@ def upgrade() -> None:
     ]
     
     op.bulk_insert(roles_table, roles, multiinsert=False)
-    
-    user: dict[str, str | bool] = {"username": "admin", "email": "admin@example.com", "hashed_password": "hashed_password", "is_active": True, "is_verified": True, "is_delete": False}
+    user: dict[str, str | bool] = {"username": "admin", "email": "admin@example.com", "hashed_password": hash_password(settings.admin_password), "is_active": True, "is_verified": True, "is_delete": False}
     op.bulk_insert(users_table, [user], multiinsert=False)
     
     # ### end Alembic commands ###
