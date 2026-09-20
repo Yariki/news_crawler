@@ -99,7 +99,7 @@ watch(
         await store.refreshJobs()
     }
   },
-  { immediate: true } 
+  { immediate: false } 
 );
 
 async function handleLogout() {
