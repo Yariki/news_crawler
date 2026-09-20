@@ -3,14 +3,15 @@
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from app.core.rbac import PermissionMode, RequiredPermissionsAndOwnership
 from app.services.notifications import notification_hub
+from app.db.session import  AsyncSession, get_db
 
 router = APIRouter(prefix="/ws")
 
 
 @router.websocket("/alerts")
-async def alerts_ws(websocket: WebSocket):
+async def alerts_ws(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
     """WebSocket endpoint for real-time alerts."""
-    await notification_hub.connect(websocket)
+    await notification_hub.connect(websocket, db)
     try:
         while True:
             await websocket.receive_text()

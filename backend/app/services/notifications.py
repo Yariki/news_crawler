@@ -3,14 +3,19 @@ from __future__ import annotations
 import json
 from collections.abc import Iterable
 from uuid import UUID
+
+from sqlalchemy import select
+
 from app.core.config import settings
 from app.core.rbac import RequiredPermissionsAndOwnership, PermissionMode
-from app.db.session import DbSession, get_db
+from app.db.session import  AsyncSession
 from app.core.security import decode_token
 
 from fastapi import WebSocket, status
 
 import logging
+
+from app.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -18,22 +23,25 @@ class NotificationHub:
     def __init__(self) -> None:
         self._connections: dict[UUID, WebSocket] = {}
 
-    async def connect(self, websocket: WebSocket) -> None:
+    async def connect(self, websocket: WebSocket, db: AsyncSession) -> None:
         
         try:
             await websocket.accept()
             logger.info("Accepting websocket connection...")
             user_token = await websocket.receive_json()
             decoded_token = decode_token(user_token.get("token"), settings)
-            
-            access_control = RequiredPermissionsAndOwnership("alert:read:own", mode=PermissionMode.ANY)
-            
-            
+
             if not decoded_token:
                 logger.warning("Invalid token")
                 await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
                 return
-            
+
+            is_valid_user = await self._validate_user(decoded_token, db)
+            if not is_valid_user:
+                logger.warning("User validation failed")
+                await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+                return
+
             user_id = UUID(decoded_token.get("sub"))
             logger.info(f"User {user_id} connected successfully.")
             
@@ -62,9 +70,29 @@ class NotificationHub:
         for user_id in dead:
             self.disconnect(user_id)
             
-    async def _validate_user(self, token: str) -> bool:
-        # TODO: implement validation of the user token
-        pass
+    async def _validate_user(self, decoded_token: dict[str, str], db: AsyncSession) -> bool:
+        user_id = decoded_token.get("sub")
+        if not user_id:
+            logger.warning("Token does not contain user ID")
+            return False
 
+        query = select(User).where(User.id == user_id, User.is_active.is_(True))
+        result = await db.execute(query)
+        user = result.scalar_one_or_none()
+        if not user:
+            logger.warning(f"User {user_id} not found or inactive")
+            return False
+        access_control = RequiredPermissionsAndOwnership("alert:read:own", mode=PermissionMode.ANY)
+        try:
+
+            granted = await access_control.check_permissions(db, user_id)
+            if not granted:
+                logger.warning(f"User {user_id} does not have permission to read alerts")
+                return False
+
+            return True
+        except Exception as e:
+            logger.error(f"Error checking permissions for user {user_id}: {e}")
+            return False
 
 notification_hub = NotificationHub()
