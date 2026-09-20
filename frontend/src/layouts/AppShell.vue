@@ -62,16 +62,18 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, ref} from 'vue'
+import {onMounted, ref, watch} from 'vue'
 import {useRouter} from 'vue-router'
-import {useAppStore} from '../stores/app'
 import {useAuthStore} from '../stores/auth'
 import {useMessages} from "../stores/messages";
+import { useRoute } from 'vue-router'
+import {useAppStore} from '../stores/app';
 
 const store = useAppStore()
 const authStore = useAuthStore()
 const messagesStore = useMessages();
 const router = useRouter()
+const route = useRoute()
 const loggingOut = ref(false)
 
 const navItems = [
@@ -87,7 +89,18 @@ onMounted(async () => {
         await store.refreshAll()
         store.connectAlerts()
     }
-})
+});
+
+watch(
+  () => route.path,
+  async (newPath) => {
+    console.log(`Route changed to: ${newPath}`)
+    if (newPath === '/jobs') {
+        await store.refreshJobs()
+    }
+  },
+  { immediate: true } 
+);
 
 async function handleLogout() {
     if (loggingOut.value) return

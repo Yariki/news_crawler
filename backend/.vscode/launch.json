@@ -5,7 +5,26 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Windows Current File",
+      "name": "FastAPI (Windows)",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "module": "uvicorn",
+      "args": [
+        "app.main:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "APP_MODE": "dev"
+      }
+    },
+    {
+      "name": "Current File (Windows)",
       "type": "debugpy",
       "request": "launch",
       "python": "${workspaceFolder}/.venv/Scripts/python.exe",
@@ -16,26 +35,7 @@
       }
     },
     {
-      "name": "Windows FastAPI",
-      "type": "debugpy",
-      "request": "launch",
-      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
-      "module": "uvicorn",
-      "args": [
-        "app.main:app",
-        "--reload",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        "8000"
-      ],
-      "jinja": true,
-      "env": {
-        "APP_MODE": "dev"
-      }
-    },
-    {
-      "name": "Windows Celery Worker",
+      "name": "Celery Worker (Windows)",
       "type": "debugpy",
       "request": "launch",
       "python": "${workspaceFolder}/.venv/Scripts/python.exe",
@@ -50,13 +50,13 @@
         "solo"
       ],
       "console": "integratedTerminal",
+      "justMyCode": false,
       "env": {
         "APP_MODE": "dev"
-      },
-      "justMyCode": false
+      }
     },
     {
-      "name": "Windows Celery Beat",
+      "name": "Celery Beat (Windows)",
       "type": "debugpy",
       "request": "launch",
       "python": "${workspaceFolder}/.venv/Scripts/python.exe",
