@@ -54,8 +54,14 @@ class NotificationHub:
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
 
-    def disconnect(self, user_id: UUID) -> None:
-        if user_id in self._connections:
+    async def disconnect(self, web_socket: WebSocket) -> None:
+        user_id = None
+        for uid, ws in self._connections.items():
+            if ws == web_socket:
+                user_id = uid
+                break
+        if user_id:
+            await self._connections[user_id].close()
             del self._connections[user_id]
 
     async def broadcast(self, event_type: str, payload: dict) -> None:

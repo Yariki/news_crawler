@@ -19,4 +19,4 @@ async def alerts_ws(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
         # Since we no longer have the user_id here, we need to handle disconnection differently.
         # One approach is to modify the NotificationHub to track connections by websocket as well.
         # For now, we'll just close the websocket.
-        await websocket.close()
+        await notification_hub.disconnect(websocket)
