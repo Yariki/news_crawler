@@ -1,6 +1,6 @@
 import asyncio
 from datetime import timezone, datetime
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 
 from app.models import Source, Article
@@ -46,13 +46,13 @@ class FakeCrawlerService(BaseCrawler):
             for url_feed in urls:
                 fetched_article = await scraper.fetch_article(url_feed)
 
-                normalized_text = text_normalizer.normalize_text(fetched_article.content_text)
-                matched_keywords = detect_keywords(normalized_text.normalization_text, active_keywords)
+                raw_normalized_text = text_normalizer.normalize_text(fetched_article.content_text)
+                matched_keywords = detect_keywords(raw_normalized_text.normalization_text, active_keywords)
                 
 
                 article = Article(
                     id = uuid4(),
-                    source_id=UUID(source_id),
+                    source_id=source.id,
                     external_id=fetched_article.external_id,
                     url=fetched_article.url,
                     title=fetched_article.title,
@@ -61,12 +61,12 @@ class FakeCrawlerService(BaseCrawler):
                     fetched_at=datetime.now(timezone.utc),
                     content_html=fetched_article.content_html,
                     content_text=fetched_article.content_text,
-                    normalized_text=normalized_text.normalization_text,
-                    normalized_text_lower=normalized_text.normalization_text_lower,
-                    urls=normalized_text.urls,
-                    hashtags=normalized_text.hashtags,
-                    mentions=normalized_text.mentions,
-                    normalization_version=normalized_text.normalization_version,
+                    normilized_text=raw_normalized_text.normalization_text,
+                    normalized_text_lower=raw_normalized_text.normalization_text_lower,
+                    urls=raw_normalized_text.urls,
+                    hashtags=raw_normalized_text.hashtags,
+                    mentions=raw_normalized_text.mentions,
+                    normalization_version=raw_normalized_text.normalization_version,
                     summary=fetched_article.summary,
                     language=fetched_article.language or source.language,
                     tags_csv=(

@@ -35,7 +35,7 @@
       }
     },
     {
-      "name": "WWindows Celery Worker",
+      "name": "Windows Celery Worker",
       "type": "debugpy",
       "request": "launch",
       "python": "${workspaceFolder}/.venv/Scripts/python.exe",
