@@ -1,4 +1,3 @@
-
 import asyncio
 import json
 import logging
@@ -167,7 +166,7 @@ class RabbitMQClient:
             await queue.cancel(consumer_tag)
             del self._queue_cache[queue_name]
             logger.info("Stopped consuming messages from queue: %s", queue_name)
-        
+
 
 _rabbitmq_client: RabbitMQClient | None = None
 _rabbitmq_client_lock = asyncio.Lock()
@@ -188,6 +187,10 @@ async def get_rabbitmq_client() -> RabbitMQClient:
         except Exception:
             # Don't leave a half-initialized client cached for future callers to reuse.
             _rabbitmq_client = None
+            try:
+                await client.close()
+            finally:
+                _rabbitmq_client = None
             raise
         _rabbitmq_client = client
         return _rabbitmq_client

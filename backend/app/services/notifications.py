@@ -51,6 +51,7 @@ class NotificationHub:
             logger.info(f"Current connections: {list(self._connections.keys())}")
         except Exception as e:
             logger.error(f"Failed to accept websocket connection: {e}")
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
 
     def disconnect(self, user_id: UUID) -> None:

@@ -257,5 +257,6 @@ class BaseCrawler(ABC):
     async def _commit_changes(self):
         try:
             await self._db.commit()
-        except Exception as ex:
-            logger.error("Error committing to the database: %s", ex)
+        except Exception:
+            await self._db.rollback()
+            logger.exception("Error committing to the database")

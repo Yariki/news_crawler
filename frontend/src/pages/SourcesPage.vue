@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import {useAppStore} from '../stores/app'
-import { SourceTypes, Languages } from '../models/types';
+import { SourceType, Languages } from '../models/types';
 import { useMessages } from '../stores/messages';
 import { isValidWebUrl } from '../utils/validation';
 
@@ -105,7 +105,7 @@ const languageRule = [
 const sourceTypeRule = [
   value => {
     const val = +value;
-    if (val >= 0 && val <= SourceTypes.length) return true;
+    if (val >= SourceType.Unknown && val <= SourceType.RSS) return true;
     return "Source type must not be empty";
   }
 ]
