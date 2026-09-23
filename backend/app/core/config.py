@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from sys import prefix
+import secrets
 
 from pydantic import Field
-from pydantic.dataclasses import dataclass
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from app.core.env_settings import get_env_file
+
+
+def generate_security_key() -> str:
+    return secrets.token_urlsafe(64)
 
 
 class Settings(BaseSettings):
@@ -41,7 +44,7 @@ class Settings(BaseSettings):
     outbox_max_attempts: int = Field(default=8, alias="OUTBOX_MAX_ATTEMPTS")
 
     security_key: str = Field(
-        default="*args, **kwargs",
+        default_factory=generate_security_key,
         alias="SECURITY_KEY",
     )
 
