@@ -35,7 +35,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
 
     existing_user = await db.scalar(
         select(User)
-            .where(User.email == form_data.username)
+            .where(User.email == form_data.username, ~User.is_delete)
             .options(selectinload(User.roles).selectinload(Role.permissions))
     )
 
@@ -125,7 +125,7 @@ async def get_current_user(token: OptionalBearerToken,  db: AsyncSession = Depen
 
     existing_user = await db.scalar(
         select(User)
-        .where(User.id == user_id)
+        .where(User.id == user_id, ~User.is_delete)
         .options(selectinload(User.roles).selectinload(Role.permissions))
     )
     if not existing_user or not existing_user.is_active:
