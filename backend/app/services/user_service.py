@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.token_rotation import revoke_all_refresh_tokens_for_user
 from app.models import Role
 from app.schemas.role_models import RoleRead
 from app.schemas.user_models import AdminChangePassword, UserCreate, UserRead, UserUpdate, UserChangePassword
@@ -344,3 +345,5 @@ class UserService:
             created_at=user.created_at,
             roles=[role.name for role in user.roles]
         )
+    async def revoke_all_refresh_tokens_for_user(self, user_id: UUID) -> None:
+        await revoke_all_refresh_tokens_for_user(self._db, user_id)

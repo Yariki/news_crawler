@@ -80,7 +80,7 @@ async def refresh_token(refresh_request: RefreshRequest, db: AsyncSession = Depe
 
     existing_user = await db.scalar(
         select(User)
-        .where(User.id == user_id)
+        .where(User.id == user_id, ~User.is_delete)
         .options(selectinload(User.roles).selectinload(Role.permissions))
     )
     if not existing_user or not existing_user.is_active:

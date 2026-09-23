@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.models.issued_refresh_token import IssuedRefreshToken, IssuedRefreshTokenStatus
 
@@ -51,3 +52,17 @@ async def mark_token_as_revoked(db: AsyncSession, jti: str, replaced_by_jti: str
     await db.commit()
     await db.refresh(issued_refresh_token)
     return issued_refresh_token
+
+async def revoke_all_refresh_tokens_for_user(db: AsyncSession, user_id: UUID):
+    result = await db.execute(
+        select(IssuedRefreshToken)
+        .where(IssuedRefreshToken.user_id == user_id, IssuedRefreshToken.status == IssuedRefreshTokenStatus.ACTIVE.value)
+    )
+    active_tokens = result.scalars().all()
+
+    for token in active_tokens:
+        token.status = IssuedRefreshTokenStatus.REVOKED.value
+        token.terminal_at = datetime.now(timezone.utc)
+        db.add(token)
+
+    await db.commit()
