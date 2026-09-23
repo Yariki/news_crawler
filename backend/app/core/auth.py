@@ -10,6 +10,9 @@ from app.core.security import decode_token
 from app.db.session import DbSession
 from app.models import User
 from app.core.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 oath2_schemas = OAuth2PasswordBearer(
     tokenUrl="auth/login",
@@ -26,7 +29,7 @@ async def _load_user(*, user_id: UUID, db: DbSession) -> User | None:
 
     statement = (
         select(User)
-        .where(User.id == user_id)
+        .where(User.id == user_id, User.is_delete.is_(False))
     )
 
     result = await db.execute(statement)
@@ -39,19 +42,23 @@ async def _authenticate_token(*, token: str, db: DbSession) -> User | None:
 
     type = claims.get("type")
     if type != TokenType.ACCESS:
+        logger.warning("Invalid token type: %s", type)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
 
     user_id = claims.get("sub")
     if not user_id:
+        logger.warning("Missing user_id in token claims")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
     try:
         user_uuid = UUID(str(user_id))
     except (TypeError, ValueError):
+        logger.warning("Invalid user_id format: %s", user_id)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
     user = await _load_user(user_id=user_uuid, db=db)
     if not user:
+        logger.warning("User not found for user_id or it was deleted: %s", user_uuid)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
     return user

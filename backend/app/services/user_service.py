@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.token_rotation import revoke_all_refresh_tokens_for_user
 from app.models import Role
 from app.schemas.role_models import RoleRead
 from app.schemas.user_models import AdminChangePassword, UserCreate, UserRead, UserUpdate, UserChangePassword
@@ -219,6 +220,9 @@ class UserService:
             raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="User not found")
 
         user.is_delete = True
+
+        await revoke_all_refresh_tokens_for_user(self._db, user.id)
+
         await self._db.commit()
 
     async def change_user_activation_status(self, user_id: UUID, is_active: bool) -> UserRead:
