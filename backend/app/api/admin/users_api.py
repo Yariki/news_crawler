@@ -45,7 +45,6 @@ async def update_user(user_id: UUID, user: UserUpdate, db: DbSession):
             dependencies=[Depends(RequiredRoles('admin'))])
 async def delete_user(user_id: UUID, db: DbSession):
     await UserService(db).delete_user(user_id)
-    await UserService(db).revoke_all_refresh_tokens_for_user(user_id)
     return None
 
 @router.post("/{user_id}/activate", status_code=HttpStatus.HTTP_201_CREATED, response_model=UserRead,

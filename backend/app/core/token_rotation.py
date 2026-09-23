@@ -64,5 +64,3 @@ async def revoke_all_refresh_tokens_for_user(db: AsyncSession, user_id: UUID):
         token.status = IssuedRefreshTokenStatus.REVOKED.value
         token.terminal_at = datetime.now(timezone.utc)
         db.add(token)
-
-    await db.commit()

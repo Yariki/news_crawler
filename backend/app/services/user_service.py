@@ -220,6 +220,9 @@ class UserService:
             raise HTTPException(status_code=HttpStatus.HTTP_404_NOT_FOUND, detail="User not found")
 
         user.is_delete = True
+
+        await revoke_all_refresh_tokens_for_user(self._db, user.id)
+
         await self._db.commit()
 
     async def change_user_activation_status(self, user_id: UUID, is_active: bool) -> UserRead:
@@ -345,5 +348,3 @@ class UserService:
             created_at=user.created_at,
             roles=[role.name for role in user.roles]
         )
-    async def revoke_all_refresh_tokens_for_user(self, user_id: UUID) -> None:
-        await revoke_all_refresh_tokens_for_user(self._db, user_id)
