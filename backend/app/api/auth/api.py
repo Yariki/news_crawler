@@ -115,6 +115,10 @@ async def get_current_user(token: OptionalBearerToken,  db: AsyncSession = Depen
     
     claims = decode_token(token, settings)
 
+    type = claims.get("type")
+    if type != TokenType.ACCESS:
+        raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
+    
     user_id = claims.get("user_id")
     if not user_id:
         raise HTTPException(status_code=HttpStatus.HTTP_401_UNAUTHORIZED, detail="Invalid token.")

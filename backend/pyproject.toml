@@ -2,7 +2,7 @@
 pythonpath = ["."]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "-v --tb=short --strict-markers"
+addopts = "-v --tb=short --strict-markers -p no:cases"
 markers = [
     "integration: marks integration tests",
     "slow: marks slow tests",
