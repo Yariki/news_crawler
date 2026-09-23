@@ -1,6 +1,7 @@
 from typing import Annotated, Any, NoReturn
 from uuid import UUID
 
+from app.schemas.security import TokenType
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
@@ -35,6 +36,11 @@ async def _load_user(*, user_id: UUID, db: DbSession) -> User | None:
 async def _authenticate_token(*, token: str, db: DbSession) -> User | None:
 
     claims = decode_token(token, settings)
+
+    type = claims.get("type")
+    if type != TokenType.ACCESS:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+
     user_id = claims.get("sub")
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
