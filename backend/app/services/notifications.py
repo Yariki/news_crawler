@@ -54,23 +54,37 @@ class NotificationHub:
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
 
-    async def disconnect(self, web_socket: WebSocket) -> None:
-        user_id = None
-        for uid, ws in self._connections.items():
-            if ws == web_socket:
-                user_id = uid
-                break
-        if user_id:
+    async def disconnect(self, user_id: UUID) -> None:
+        if user_id and user_id in self._connections:
             await self._connections[user_id].close()
             del self._connections[user_id]
 
+    async def disconnect_websocket(self, websocket: WebSocket) -> None:
+        user_id = None
+        for uid, ws in self._connections.items():
+            if ws == websocket:
+                user_id = uid
+                break
+        if user_id:
+            await self.disconnect(user_id)
+
     async def broadcast(self, event_type: str, payload: dict) -> None:
         dead: list[UUID] = []
-        owner_id= UUID(payload.get("owner_id", None)) if payload.get("owner_id", None) else None
+        owner_id_value = payload.get("owner_id", None)
+        if isinstance(owner_id_value, UUID):
+            owner_id = owner_id_value
+        elif owner_id_value:
+            owner_id = UUID(owner_id_value)
+        else:
+            owner_id = None
         if not owner_id:
             logger.warning("Invalid payload. There is no owner_id in the payload.")
             return
-        message = json.dumps({"type": event_type, "payload": payload}, ensure_ascii=False)
+        normalized_payload = {
+            key: (str(value) if isinstance(value, UUID) else value)
+            for key, value in payload.items()
+        }
+        message = json.dumps({"type": event_type, "payload": normalized_payload}, ensure_ascii=False)
         for user_id, connection in list(self._connections.items()):
             try:
                 if owner_id and user_id == owner_id:
@@ -78,7 +92,7 @@ class NotificationHub:
             except Exception:
                 dead.append(user_id)
         for user_id in dead:
-            self.disconnect(user_id)
+            await self.disconnect(user_id)
             
     async def _validate_user(self, decoded_token: dict[str, str], db: AsyncSession) -> bool:
         user_id = decoded_token.get("sub")
