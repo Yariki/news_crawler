@@ -15,7 +15,7 @@ async def backup_sources(db: AsyncSession = Depends(get_db), \
                         access_control=Depends(RequiredPermissionsAndOwnership("source:read:own", mode=PermissionMode.ANY))):
 
     try:
-        data =  await export_sources(db, access_control.auth.user_id)
+        data =  await export_sources(db, access_control.auth.user_id, access_control)
         return StreamingResponse(
                 io.BytesIO(data), 
                 media_type="application/json",
