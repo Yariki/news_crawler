@@ -46,3 +46,20 @@ async def test_broadcast_disconnects_failing_socket():
     assert failing_ws.closed
     assert hub._connections == {other_id: other_ws}
     assert not other_ws.closed
+
+
+async def test_broadcast_accepts_uuid_owner_id_and_serializes_uuid_values():
+    hub = NotificationHub()
+    owner_id, other_id = uuid4(), uuid4()
+    owner_ws, other_ws = FakeWebSocket(), FakeWebSocket()
+    job_id = uuid4()
+    hub._connections = {owner_id: owner_ws, other_id: other_ws}
+
+    await hub.broadcast("JOB_UPDATE", {"owner_id": owner_id, "job_id": job_id})
+
+    assert len(owner_ws.sent) == 1
+    assert json.loads(owner_ws.sent[0]) == {
+        "type": "JOB_UPDATE",
+        "payload": {"owner_id": str(owner_id), "job_id": str(job_id)},
+    }
+    assert other_ws.sent == []

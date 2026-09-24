@@ -70,11 +70,21 @@ class NotificationHub:
 
     async def broadcast(self, event_type: str, payload: dict) -> None:
         dead: list[UUID] = []
-        owner_id= UUID(payload.get("owner_id", None)) if payload.get("owner_id", None) else None
+        owner_id_value = payload.get("owner_id", None)
+        if isinstance(owner_id_value, UUID):
+            owner_id = owner_id_value
+        elif owner_id_value:
+            owner_id = UUID(owner_id_value)
+        else:
+            owner_id = None
         if not owner_id:
             logger.warning("Invalid payload. There is no owner_id in the payload.")
             return
-        message = json.dumps({"type": event_type, "payload": payload}, ensure_ascii=False)
+        normalized_payload = {
+            key: (str(value) if isinstance(value, UUID) else value)
+            for key, value in payload.items()
+        }
+        message = json.dumps({"type": event_type, "payload": normalized_payload}, ensure_ascii=False)
         for user_id, connection in list(self._connections.items()):
             try:
                 if owner_id and user_id == owner_id:
