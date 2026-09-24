@@ -17,7 +17,7 @@ async def send_job_update_message(message: JobUpdateMessage,  request: Request):
     rabbitmq_client = request.app.state.rabbitmq
 
     if not rabbitmq_client and not rabbitmq_client.is_ready:
-        raise HTTPException(status_code=HTTPStatus.HTTP_500_INTERNAL_SERVER_ERROR, detail="RabbitMQ not ready")
+        raise HTTPException(status_code=HTTPStatus.HTTP_503_SERVICE_UNAVAILABLE, detail="RabbitMQ not ready")
 
     await rabbitmq_client.publish(message)
 
@@ -31,7 +31,7 @@ async def send_keywords_match_message(message: KeywordsMatchMessage,  request: R
     rabbitmq_client = request.app.state.rabbitmq
 
     if not rabbitmq_client and not rabbitmq_client.is_ready:
-        raise HTTPException(status_code=HTTPStatus.HTTP_500_INTERNAL_SERVER_ERROR, detail="RabbitMQ not ready")
+        raise HTTPException(status_code=HTTPStatus.HTTP_503_SERVICE_UNAVAILABLE, detail="RabbitMQ not ready")
 
     await rabbitmq_client.publish(message)
 
