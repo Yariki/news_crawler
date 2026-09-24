@@ -4,7 +4,10 @@
         <v-row>
             <v-col cols="12" lg="5">
                 <v-card rounded="xl">
-                    <v-card-title>Add source and bind crawler</v-card-title>
+                    <v-card-title>
+                      Add source and bind crawler
+                     
+                    </v-card-title>
                     <v-card-text>
                         <v-form @submit.prevent="store.createSource">
                             <v-text-field v-model="store.sourceForm.name" label="Display name" :rules="nameRule" class="mb-2"/>
@@ -33,7 +36,12 @@
             </v-col>
             <v-col cols="12" lg="7">
                 <v-card rounded="xl">
-                    <v-card-title>Registered sources</v-card-title>
+                    <v-card-title class="d-flex align-center justify-space-between">
+                      <span>Registered sources</span>
+                      <v-spacer />
+                      <v-btn icon="mdi-upload" @click="() => {}" variant="text" size="small" color="primary" v-tooltip="'Import Source'"/>
+                      <v-btn icon="mdi-download" @click="store.downloadSources" variant="text" size="small" color="primary" v-tooltip="'Export Source'"/>
+                    </v-card-title>
                     <v-data-table :headers="sourceHeaders" :items="store.sources" density="comfortable">
                         <template #item.is_enabled="{ item }">
                             <v-chip :color="item.is_enabled ? 'success' : 'default'" size="small">

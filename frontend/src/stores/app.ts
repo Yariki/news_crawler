@@ -210,6 +210,31 @@ export const useAppStore = defineStore('app', {
                 scrape_interval_minutes: 60,
                 is_enabled: true,
             } as CreateSourcePayload;
+        },
+        async downloadSources() {
+            try {
+                const response = await api.get('/backup/sources/download', {'responseType': 'blob'});
+                const filename = this.getFileName(response.headers['content-disposition']) ?? 'backup.json'
+                const url = URL.createObjectURL(response.data as Blob)
+
+                const a = document.createElement('a')
+                a.href = url
+                a.download = filename
+                document.body.appendChild(a)
+                a.click()
+                a.remove()
+                URL.revokeObjectURL(url)
+            } catch (e) {
+                console.error(e);
+                return null;
+            }
+        },
+        getFileName(disposition?: string): string | null {
+            if (!disposition) return null;
+            const utf8 = /filename\*=UTF-8''([^;]+)/i.exec(disposition)
+            if (utf8) return decodeURIComponent(utf8[1])
+            const plain = /filename="?([^";]+)"?/i.exec(disposition)
+            return plain ? plain[1] : null
         }
     },
 })
