@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Response, status
 from app.core.rbac import RequiredPermissionsAndOwnership, PermissionMode
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,6 +25,7 @@ async def backup_sources(db: AsyncSession = Depends(get_db), \
     except Exception as e:
         return Response(
             content="Error occured during backup sources",
-            media_type="application/text; charset=utf-8"
+            media_type="application/text; charset=utf-8",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
     
