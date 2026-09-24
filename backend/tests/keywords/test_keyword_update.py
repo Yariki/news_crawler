@@ -39,7 +39,7 @@ async def test_update_keyword_not_found(client, db_session):
     update_response = await client.put(f"/keywords/{non_existent_id}", json={"keyword": "updated", "is_enabled": False})
     assert update_response.status_code == 404
     error_data = update_response.json()
-    assert error_data["detail"] == "The resource not found."    
+    assert error_data["detail"] == "Keyword not found"
     
 
 async def test_update_keyword_invalid_data(client, db_session):

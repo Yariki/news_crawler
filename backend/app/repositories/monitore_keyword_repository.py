@@ -34,7 +34,14 @@ class MonitoreKeywordRepository(BaseAuthRepository):
         return keywords
 
     async def get_keyword(self, keyword_id: UUID4) -> MonitoredKeyword:
-        item = await self.db.get(MonitoredKeyword, keyword_id)
+
+        query = (
+            select(MonitoredKeyword).where(MonitoredKeyword.id == keyword_id)
+        )
+        query = self.filter_owned_resources(query, MonitoredKeyword)
+
+        item = await self.db.scalar(query)
+
         if item is None:
             raise HTTPException(status_code=404, detail="Keyword not found")
         return item
