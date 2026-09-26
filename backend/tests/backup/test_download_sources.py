@@ -166,7 +166,7 @@ async def test_upload_sources_too_large(db_session, client):
     data = [{"base_url": "http://feeds.bbci.co.uk/ukrainian/rss.xml", "name": "BBC Ukraine", "language": "uk",
              "source_type": 8, "crawler_key": "", "scrape_interval_minutes": 1440, "is_enabled": True}]
     # Create a file larger than MAX_UPLOAD_BYTES (1 MB)
-    large_data = json.dumps(data * 1024 * 1024).encode()
+    large_data =  b"x" * (1 * 1024 * 1024 + 1)
     files = {"file": ("sources.json", large_data, "application/json")}
 
     resp = await client.post("/backup/sources/upload", files=files)

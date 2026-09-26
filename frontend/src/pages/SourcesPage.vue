@@ -103,6 +103,7 @@ async function importFile(event: Event) {
   const target = event.target as HTMLInputElement;
   if (!target.files || target.files.length === 0) return;
   const file = target.files[0];
+  target.value = '';
   importing.value = true;
   try {
     const result = await store.uploadFile(file);
