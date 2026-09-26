@@ -41,6 +41,7 @@ env:
   HELM_CHART_PATH: k8s/news-crawler
   BACKEND_IMAGE_NAME: news-crawler-backend
   FRONTEND_IMAGE_NAME: news-crawler-frontend
+  ELASTICSEARCH_IMAGE_NAME: news-crawler-elasticsearch
 
 jobs:
   # ──────────────────────────────────────────────────────────────────────────
@@ -165,6 +166,14 @@ jobs:
           push: true
           tags: ${{ env.ACR_LOGIN_SERVER }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
+      - name: Build And Push Elasticsearch Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.elasticsearch
+          push: true
+          tags: ${{ env.ACR_LOGIN_SERVER }}/${{ env.ELASTICSEARCH_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
       - name: Helm Upgrade
         shell: bash
         env:
@@ -188,6 +197,8 @@ jobs:
             --set-string backend.image.tag="$IMAGE_TAG" \
             --set-string frontend.image.repository="$ACR_LOGIN_SERVER/$FRONTEND_IMAGE_NAME" \
             --set-string frontend.image.tag="$IMAGE_TAG" \
+            --set-string elasticsearch.image.repository="$ACR_LOGIN_SERVER/$ELASTICSEARCH_IMAGE_NAME" \
+            --set-string elasticsearch.image.tag="$IMAGE_TAG" \
             --set-string frontend.ingress.host="$INGRESS_HOST" \
             --set-string backend.config.corsOrigins="${INGRESS_SCHEME}://${INGRESS_HOST}" \
             --set-string postgres.database="$PG_DATABASE" \

@@ -48,7 +48,7 @@ async def lifespan(_app: FastAPI):
     global outbox_relay, outbox_relay_task
     """Lifespan function to initialize resources before the application starts."""
     elasticsearch_client = ElasticService()
-    await elasticsearch_client.ensure_index()
+    await elasticsearch_client.ensure_infrastructure()
 
     if settings.app_mode != "prod":
         async with get_db_async() as db:

@@ -62,7 +62,7 @@ postgres:
 elasticsearch:
   enabled: true
   image:
-    repository: docker.elastic.co/elasticsearch/elasticsearch
+    repository: news-crawler-elasticsearch
     tag: 8.15.5
     pullPolicy: IfNotPresent
   service:
