@@ -33,7 +33,7 @@ async def export_sources(db: AsyncSession, owner_id: UUID, access_granted: Permi
 async def import_sources(db: AsyncSession, owner_id: UUID, access_granted: PermissionGranted, data: bytes) -> bool:
     try:
         sources = json.loads(data.decode('utf-8'))
-    except json.JSONDecodeError:
+    except (UnicodeDecodeError, json.JSONDecodeError):
         raise HTTPException(status_code=HTTPStatus.HTTP_400_BAD_REQUEST, detail="Invalid JSON data")
     if not isinstance(sources, list):
         raise HTTPException(status_code=HTTPStatus.HTTP_400_BAD_REQUEST, detail="JSON data must be a list of sources")
