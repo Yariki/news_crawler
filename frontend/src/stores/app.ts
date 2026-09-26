@@ -244,11 +244,7 @@ export const useAppStore = defineStore('app', {
             try {
                 const formData = new FormData();
                 formData.append('file', file);
-                const response = await api.post('/backup/sources/upload', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
+                const response = await api.post('/backup/sources/upload', formData);
                 await this.refreshAll();
                 return {status: "ok", message: "File uploaded successfully"};
             } catch (e) {
