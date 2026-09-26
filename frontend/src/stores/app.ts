@@ -247,9 +247,16 @@ export const useAppStore = defineStore('app', {
                 const response = await api.post('/backup/sources/upload', formData);
                 await this.refreshAll();
                 return {status: "ok", message: "File uploaded successfully"};
-            } catch (e) {
+            } catch (e: unknown) {
                 console.error(e);
-                return {status: "error", message: e?.response?.data?.detail};
+                const details = e instanceof Error ? e.message : e?.response?.data?.detail;
+                let message = '';
+                if(details && Array.isArray(details)) {
+                    message = details.map((d: {index: number, base_url: string, error: string }) => `${d.index}: ${d.base_url} - ${d.error}`).join('\n');
+                } else {
+                    message = details ?? "An error occurred while uploading the file";
+                }
+                return {status: "error", message: message};
             }
         }
 
