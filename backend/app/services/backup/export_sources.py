@@ -48,9 +48,9 @@ async def import_sources(db: AsyncSession, owner_id: UUID, access_granted: Permi
 
     import_errors = []  # List to store import errors
     for index, item in enumerate(sources):
-        base_url = item.get('base_url') if isinstance(item, dict) else None
+        base_url = item.get('base_url').rstrip('/') if isinstance(item, dict) else None
         try:
-            if base_url and base_url.rstrip('/') in existing_urls:
+            if base_url in existing_urls:
                 continue
 
             payload = SourceCreateUpdate.model_validate(item)
