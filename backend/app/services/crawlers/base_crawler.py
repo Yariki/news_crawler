@@ -148,7 +148,7 @@ class BaseCrawler(ABC):
                     mentions=normalized_text_result.mentions,
                     normalization_version=normalized_text_result.normalization_version,
                     summary=article_data.summary,
-                    language=article_data.language,
+                    language=source.language,
                     tags_csv=(
                         ",".join(article_data.tags) if article_data.tags else None
                     ),
@@ -226,7 +226,7 @@ class BaseCrawler(ABC):
                 "title": article.title,
                 "published_at": article.published_at.isoformat() if article.published_at else None,
                 "url": article.url,
-                "language": article.language,
+                "language": source.language,
                 "is_alert": article.is_alert,
                 "matched_keywords": matched_words,
                 "content_text": article.content_text,
