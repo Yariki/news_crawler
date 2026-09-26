@@ -23,6 +23,10 @@ const sortJobsByStartedAtDesc = (jobs: JobItem[]): JobItem[] => {
     })
 }
 
+export interface UploadFileResult {
+    status: "ok" | "error";
+    message: string;
+}
 
 export const useAppStore = defineStore('app', {
     state: () => ({
@@ -235,6 +239,23 @@ export const useAppStore = defineStore('app', {
             if (utf8) return decodeURIComponent(utf8[1])
             const plain = /filename="?([^";]+)"?/i.exec(disposition)
             return plain ? plain[1] : null
+        },
+        async uploadFile(file: File) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                const response = await api.post('/backup/sources/upload', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                await this.refreshAll();
+                return {status: "ok", message: "File uploaded successfully"};
+            } catch (e) {
+                console.error(e);
+                return {status: "error", message: e?.response?.data?.detail};
+            }
         }
+
     },
 })

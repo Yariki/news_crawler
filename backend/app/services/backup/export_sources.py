@@ -30,7 +30,7 @@ async def export_sources(db: AsyncSession, owner_id: UUID, access_granted: Permi
     return json.dumps([dict(row) for row in result]).encode('utf-8')
 
 
-async def import_sources(db: AsyncSession, owner_id: UUID, access_granted: PermissionGranted, data: bytes) -> None:
+async def import_sources(db: AsyncSession, owner_id: UUID, access_granted: PermissionGranted, data: bytes) -> bool:
     try:
         sources = json.loads(data.decode('utf-8'))
     except json.JSONDecodeError:
@@ -42,10 +42,17 @@ async def import_sources(db: AsyncSession, owner_id: UUID, access_granted: Permi
         db=db,
         access_control=access_granted
     )
+
+    existing_sources = await source_service.list_sources()
+    existing_urls = [source.base_url for source in existing_sources]
+
     import_errors = []  # List to store import errors
     for index, item in enumerate(sources):
         base_url = item.get('base_url') if isinstance(item, dict) else None
         try:
+            if base_url in existing_urls:
+                continue
+
             payload = SourceCreateUpdate.model_validate(item)
             await source_service.create_source(payload=payload)
         except Exception as e:
@@ -56,5 +63,5 @@ async def import_sources(db: AsyncSession, owner_id: UUID, access_granted: Permi
             status_code=HTTPStatus.HTTP_400_BAD_REQUEST,
             detail=[error.dict() for error in import_errors]
         )
-
+    return True
 
