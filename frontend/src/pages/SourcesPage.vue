@@ -39,7 +39,8 @@
                     <v-card-title class="d-flex align-center justify-space-between">
                       <span>Registered sources</span>
                       <v-spacer />
-                      <v-btn icon="mdi-upload" @click="() => {}" variant="text" size="small" color="primary" v-tooltip="'Import Source'"/>
+                      <input ref="fileInput" type="file" @change="importFile" accept=".json" style="display: none;" />
+                      <v-btn icon="mdi-upload" @click="openFilePicker" variant="text" size="small" color="primary" v-tooltip="'Import Source'"/>
                       <v-btn icon="mdi-download" @click="store.downloadSources" variant="text" size="small" color="primary" v-tooltip="'Export Source'"/>
                     </v-card-title>
                     <v-data-table :headers="sourceHeaders" :items="store.sources" density="comfortable">
@@ -63,10 +64,14 @@ import {useAppStore} from '../stores/app'
 import { Languages, SourceType, SourceTypes } from '../models/types';
 import { useMessages } from '../stores/messages';
 import { isValidWebUrl } from '../utils/validation';
+import { ref } from 'vue';
+
 
 
 const store = useAppStore()
 const messageStore = useMessages();
+const fileInput = ref<HTMLInputElement | null>(null);
+const importing = ref(false);
 
 const sourceHeaders = [
     {title: 'Name', key: 'name'},
@@ -85,6 +90,33 @@ async function runSource(id: string) {
     case "error":
       messageStore.onError(data.message);
       break;
+  }
+}
+
+function openFilePicker() {
+  if (fileInput.value) {
+    fileInput.value.click();
+  }
+}
+
+async function importFile(event: Event) {
+  const target = event.target as HTMLInputElement;
+  if (!target.files || target.files.length === 0) return;
+  const file = target.files[0];
+  target.value = '';
+  importing.value = true;
+  try {
+    const result = await store.uploadFile(file);
+    if (result.status === "ok") {
+      messageStore.addMessage(result.message);
+    } else {
+      messageStore.onError(result.message);
+    }
+  } catch (e) {
+    console.error(e);
+    messageStore.onError("An error occurred while importing the file");
+  } finally {
+    importing.value = false;
   }
 }
 

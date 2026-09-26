@@ -23,6 +23,10 @@ const sortJobsByStartedAtDesc = (jobs: JobItem[]): JobItem[] => {
     })
 }
 
+export interface UploadFileResult {
+    status: "ok" | "error";
+    message: string;
+}
 
 export const useAppStore = defineStore('app', {
     state: () => ({
@@ -235,6 +239,26 @@ export const useAppStore = defineStore('app', {
             if (utf8) return decodeURIComponent(utf8[1])
             const plain = /filename="?([^";]+)"?/i.exec(disposition)
             return plain ? plain[1] : null
+        },
+        async uploadFile(file: File) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                const response = await api.post('/backup/sources/upload', formData);
+                await this.refreshAll();
+                return {status: "ok", message: "File uploaded successfully"};
+            } catch (e: unknown) {
+                console.error(e);
+                const details = e instanceof Error ? e.message : e?.response?.data?.detail;
+                let message = '';
+                if(details && Array.isArray(details)) {
+                    message = details.map((d: {index: number, base_url: string, error: string }) => `${d.index}: ${d.base_url} - ${d.error}`).join('\n');
+                } else {
+                    message = details ?? "An error occurred while uploading the file";
+                }
+                return {status: "error", message: message};
+            }
         }
+
     },
 })
